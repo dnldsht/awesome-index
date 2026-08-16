@@ -13,12 +13,7 @@ export type Props = {
   title?: string;
 };
 
-const {
-  listSlug,
-  categories,
-  currentSlug,
-  title = "Categories",
-} = Astro.props;
+const { listSlug, categories, currentSlug, title = "Categories" } = Astro.props;
 
 /**
  * Ordered by slug, not by size. A slug is the heading path joined with "/", so

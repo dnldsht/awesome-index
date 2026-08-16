@@ -14,6 +14,7 @@ import {
   type ListSummary,
   type RepoWithSections,
 } from "../../lib/queries.ts";
+import { listSearchUrl } from "../../lib/search.ts";
 import {
   absolute,
   categoryPagePath,
@@ -213,7 +214,10 @@ const jsonLd = [
       </li>
       <li aria-hidden="true">›</li>
       <li>
-        <a class="hover:text-accent hover:underline" href={listPath(entry.slug)}>
+        <a
+          class="hover:text-accent hover:underline"
+          href={listPath(entry.slug)}
+        >
           {entry.name}
         </a>
       </li>
@@ -349,9 +353,16 @@ const jsonLd = [
     </section>
   </div>
 
-  <p class="mt-10 text-sm">
+  <p class="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm">
     <a class="text-accent hover:underline" href={listPath(entry.slug)}>
       Back to Awesome {entry.name}
+    </a>
+    {
+      /* a plain link, not a widget: this page ships no JavaScript, and the
+        search page reads its own filters out of the query string */
+    }
+    <a class="text-accent hover:underline" href={listSearchUrl(entry.slug)}>
+      Search Awesome {entry.name} →
     </a>
   </p>
 </Base>

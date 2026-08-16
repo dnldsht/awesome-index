@@ -7,7 +7,8 @@ import { absolute, listPath } from "../lib/urls.ts";
 const summaries = await listSummaries();
 const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
 
-const title = "Awesome Index — GitHub's awesome lists, with the dead entries marked";
+const title =
+  "Awesome Index — GitHub's awesome lists, with the dead entries marked";
 const description = `${compactNumber(total)} projects from ${summaries.length} curated awesome lists, each showing how recently anyone actually worked on it.`;
 
 const jsonLd = [
@@ -22,7 +23,9 @@ const jsonLd = [
 ---
 
 <Base title={title} description={description} jsonLd={jsonLd}>
-  <h1 class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
+  <h1
+    class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl"
+  >
     Every awesome list<br />tells you what exists.
     <span class="text-mute">None of them tell you what still works.</span>
   </h1>

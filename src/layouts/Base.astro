@@ -63,12 +63,14 @@ const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
       media="(prefers-color-scheme: dark)"
     />
 
-    {/*
+    {
+      /*
       Runs before the first paint so an explicit choice never flashes the other
       theme. It is deliberately tiny and inline: pulling it into a module would
       cost a round trip, and the round trip is the flash. Absence of the key
       means "follow the system", which the stylesheet already handles.
-    */}
+    */
+    }
     <script is:inline>
       try {
         const t = localStorage.getItem("theme");
@@ -137,12 +139,14 @@ const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
       </div>
     </footer>
 
-    {/*
+    {
+      /*
       The button is the only stateful control on a content page, so it gets a
       dozen lines of inline script rather than an island: hydrating a component
       to toggle one attribute would ship a framework to every page on the site.
       The label always names the theme the click will switch *to*.
-    */}
+    */
+    }
     <script is:inline>
       (() => {
         const button = document.getElementById("theme-toggle");

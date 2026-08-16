@@ -31,14 +31,14 @@ pages and a few thousand.
 
 ## URLs
 
-| Shape | Example |
-| :---- | :------ |
-| list | `/rust/` |
-| list, page 2+ | `/rust/page/2/` |
-| category | `/rust/libraries/artificial-intelligence/` |
-| category, page 2+ | `/rust/libraries/artificial-intelligence/page/2/` |
-| entries filed under no heading | `/javascript/uncategorized/` |
-| repository | `/r/tokio-rs/tokio/` |
+| Shape                          | Example                                           |
+| :----------------------------- | :------------------------------------------------ |
+| list                           | `/rust/`                                          |
+| list, page 2+                  | `/rust/page/2/`                                   |
+| category                       | `/rust/libraries/artificial-intelligence/`        |
+| category, page 2+              | `/rust/libraries/artificial-intelligence/page/2/` |
+| entries filed under no heading | `/javascript/uncategorized/`                      |
+| repository                     | `/r/tokio-rs/tokio/`                              |
 
 Page 1 never carries a `page/1` suffix, so no URL moves when a listing grows
 past one page. Paginated pages self-canonical rather than pointing back at page

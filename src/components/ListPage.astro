@@ -11,6 +11,7 @@ import type {
 } from "../lib/queries.ts";
 import { firstOnPage } from "../lib/pagination.ts";
 import { ogListPath } from "../lib/og.ts";
+import { listSearchUrl } from "../lib/search.ts";
 import { absolute, githubUrl, listPagePath, repoPath } from "../lib/urls.ts";
 
 /**
@@ -151,6 +152,20 @@ const jsonLd = [
           </Fragment>
         ))
       }
+    </p>
+
+    {
+      /* a plain link, not a widget: this page stays free of JavaScript, and the
+        search page reads its own filters out of the query string */
+    }
+    <p class="mt-4 text-sm">
+      <a
+        class="text-accent decoration-accent underline-offset-4 hover:underline"
+        href={listSearchUrl(entry.slug)}
+      >
+        Search {fullNumber(summary.repoCount)}
+        {entry.name} projects →
+      </a>
     </p>
   </header>
 

@@ -41,17 +41,17 @@ const Heading = `h${headingLevel}` as "h2" | "h3";
     </span>
   </div>
 
-  {
-    note && (
-      <p class="mt-1 max-w-prose text-[0.925rem] text-ink-soft">{note}</p>
-    )
-  }
+  {note && <p class="mt-1 max-w-prose text-[0.925rem] text-ink-soft">{note}</p>}
 
   <p class="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-mute">
     {repo.primaryLanguage && <span>{repo.primaryLanguage}</span>}
     {repo.primaryLanguage && repo.license && <span aria-hidden="true">·</span>}
     {repo.license && <span>{repo.license}</span>}
-    {(repo.primaryLanguage || repo.license) && <span aria-hidden="true">·</span>}
+    {
+      (repo.primaryLanguage || repo.license) && (
+        <span aria-hidden="true">·</span>
+      )
+    }
 
     {/* the status is stated in words, never by the stripe colour alone */}
     <span style="color: var(--pulse)">{LIVENESS_LABEL[pulse]}</span>

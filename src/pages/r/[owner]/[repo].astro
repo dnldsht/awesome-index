@@ -20,6 +20,12 @@ import {
 } from "../../../lib/format.ts";
 import { allRepoIds, sectionOf } from "../../../lib/queries.ts";
 import {
+  inlinePair,
+  nameSortValue,
+  pushedSortValue,
+  starsSortValue,
+} from "../../../lib/search.ts";
+import {
   absolute,
   categoryPath,
   githubUrl,
@@ -267,7 +273,38 @@ const name = repo.id.slice(repo.ownerLogin.length + 1);
 const pulse = liveness(repo.pushedAt);
 const pushedAgo = relativeTime(repo.pushedAt);
 
-const primary = appearances.find((a) => a.sections.length > 0) ?? appearances[0];
+/**
+ * The search index is written from here and from nowhere else.
+ *
+ * This is the only route carrying `data-pagefind-body`, which is what makes
+ * Pagefind index repository pages *only*. Before, with no body marker anywhere,
+ * Pagefind indexed all 6,992 pages, so every repository was indexed three or
+ * four times over — once here, once on its list page, once per category page
+ * that lists it — and a search for one project returned the same project four
+ * times. One repository, one page, one result.
+ *
+ * The attributes below hang off the elements that already show the same fact to
+ * a reader, so a filter can never describe something the page does not say. The
+ * values go through `inlinePair` because Pagefind parses these attributes as
+ * comma-separated `key:value` pairs.
+ */
+const searchMeta = {
+  stars: inlinePair("stars", repo.stars),
+  starsSort: inlinePair("stars", starsSortValue(repo.stars)),
+  pushed: inlinePair("pushed", pushedSortValue(repo.pushedAt)),
+  nameSort: inlinePair("name", nameSortValue(repo.id)),
+  pulse: inlinePair("pulse", pulse),
+  archived: inlinePair("archived", repo.archived ? "yes" : "no"),
+  language: repo.primaryLanguage
+    ? inlinePair("language", repo.primaryLanguage)
+    : undefined,
+  license: repo.license ? inlinePair("license", repo.license) : undefined,
+  /** the names of every list curating it, for the result card's byline */
+  lists: inlinePair("lists", appearances.map((a) => a.name).join(" · ")),
+};
+
+const primary =
+  appearances.find((a) => a.sections.length > 0) ?? appearances[0];
 const primarySection = primary?.sections[0];
 const listCount = appearances.length;
 
@@ -355,8 +392,8 @@ const jsonLd = [
 ---
 
 <Base title={title} description={description} jsonLd={jsonLd}>
-  <div class="max-w-3xl">
-    <nav aria-label="Breadcrumb" class="text-sm text-mute">
+  <div class="max-w-3xl" data-pagefind-body>
+    <nav aria-label="Breadcrumb" class="text-sm text-mute" data-pagefind-ignore>
       <ol class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         {
           crumbs.slice(0, -1).map((crumb) => (
@@ -375,25 +412,47 @@ const jsonLd = [
     <div data-pulse={pulse} class="mt-6 pl-4 sm:pl-5">
       <h1
         class="font-mono text-2xl leading-tight font-medium break-words sm:text-3xl"
+        data-pagefind-sort={searchMeta.nameSort}
       >
         <span class="text-mute">{repo.ownerLogin}/</span><span>{name}</span>
       </h1>
 
       {
         summary && (
-          <p class="mt-4 max-w-prose text-lg text-ink-soft">{summary}</p>
+          <p
+            class="mt-4 max-w-prose text-lg text-ink-soft"
+            data-pagefind-meta="blurb"
+          >
+            {summary}
+          </p>
         )
       }
 
-      <p class="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
-        {/* the stripe is never the only carrier: the state is written out too */}
-        <span class="font-medium" style="color: var(--pulse)">
+      <p
+        class="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm"
+        data-pagefind-filter={searchMeta.archived}
+        data-pagefind-meta={searchMeta.archived}
+      >
+        {
+          /* the stripe is never the only carrier: the state is written out too */
+        }
+        <span
+          class="font-medium"
+          style="color: var(--pulse)"
+          data-pagefind-filter={searchMeta.pulse}
+          data-pagefind-meta={searchMeta.pulse}
+        >
           {LIVENESS_LABEL[pulse]}
         </span>
         <span aria-hidden="true" class="text-mute">·</span>
         <span class="text-ink-soft">{LIVENESS_SENTENCE[pulse]}</span>
         <span aria-hidden="true" class="text-mute">·</span>
-        <time class="text-ink-soft" datetime={repo.pushedAt.toISOString()}>
+        <time
+          class="text-ink-soft"
+          datetime={repo.pushedAt.toISOString()}
+          data-pagefind-sort={searchMeta.pushed}
+          data-pagefind-meta={searchMeta.pushed}
+        >
           last push {pushedAgo}
         </time>
         {
@@ -413,7 +472,11 @@ const jsonLd = [
         <dt class="font-mono text-xs tracking-widest text-mute uppercase">
           Stars
         </dt>
-        <dd class="mt-0.5 font-mono text-sm tabular-nums">
+        <dd
+          class="mt-0.5 font-mono text-sm tabular-nums"
+          data-pagefind-sort={searchMeta.starsSort}
+          data-pagefind-meta={searchMeta.stars}
+        >
           {fullNumber(repo.stars)}
         </dd>
       </div>
@@ -429,7 +492,11 @@ const jsonLd = [
         <dt class="font-mono text-xs tracking-widest text-mute uppercase">
           Language
         </dt>
-        <dd class="mt-0.5 text-sm text-ink-soft">
+        <dd
+          class="mt-0.5 text-sm text-ink-soft"
+          data-pagefind-filter={searchMeta.language}
+          data-pagefind-meta={searchMeta.language}
+        >
           {repo.primaryLanguage || "not detected"}
         </dd>
       </div>
@@ -437,7 +504,11 @@ const jsonLd = [
         <dt class="font-mono text-xs tracking-widest text-mute uppercase">
           License
         </dt>
-        <dd class="mt-0.5 text-sm text-ink-soft">
+        <dd
+          class="mt-0.5 text-sm text-ink-soft"
+          data-pagefind-filter={searchMeta.license}
+          data-pagefind-meta={searchMeta.license}
+        >
           {repo.license || "none declared"}
         </dd>
       </div>
@@ -478,10 +549,14 @@ const jsonLd = [
     }
 
     <section class="mt-12">
-      <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
+      <h2
+        class="font-mono text-xs tracking-widest text-mute uppercase"
+        data-pagefind-meta={searchMeta.lists}
+      >
         Appears in{" "}
         <span class="tabular-nums">
-          {listCount} {listCount === 1 ? "list" : "lists"}
+          {listCount}
+          {listCount === 1 ? "list" : "lists"}
         </span>
       </h2>
 
@@ -493,9 +568,14 @@ const jsonLd = [
                 {appearance.icon && (
                   <span aria-hidden="true">{appearance.icon}</span>
                 )}
+                {/* one tagged element per appearance: Pagefind collects a
+                    filter value per element, so this is what makes `list` a
+                    genuinely multi-valued filter instead of one value that
+                    silently wins over the others */}
                 <a
                   href={listPath(appearance.slug)}
                   class="font-display text-xl font-semibold tracking-tight text-ink decoration-accent underline-offset-4 hover:underline"
+                  data-pagefind-filter={inlinePair("list", appearance.slug)}
                 >
                   {appearance.name}
                 </a>
@@ -531,7 +611,9 @@ const jsonLd = [
 
     {
       related.length > 0 && (
-        <section class="mt-12">
+        /* six other repositories by name; indexing them here would make this
+           page a hit for all of them */
+        <section class="mt-12" data-pagefind-ignore>
           <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
               Alongside it in {relatedLabel}
