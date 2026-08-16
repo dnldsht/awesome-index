@@ -1,7 +1,12 @@
 @import "tailwindcss";
 @import "@fontsource-variable/bricolage-grotesque/index.css";
 
-@theme {
+/**
+ * Utilities point at the raw variables rather than copying their values, so a
+ * single redefinition below re-themes every `text-ink` and `border-rule` on the
+ * page. `inline` is what keeps Tailwind from snapshotting the light values.
+ */
+@theme inline {
   /* Bricolage carries the personality and is used only at display sizes; the
      body face is the system stack so the page paints before the woff2 lands.
      Repository ids are set in mono because that is the form you actually type
@@ -12,19 +17,103 @@
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 
-  --color-ink: #191d28;
-  --color-ink-soft: #4c5462;
-  --color-mute: #7b818d;
-  --color-paper: #ffffff;
-  --color-sunk: #f1f3f6;
-  --color-rule: #e2e6ec;
-  --color-accent: #4a3dd0;
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-mute: var(--mute);
+  --color-paper: var(--paper);
+  --color-sunk: var(--sunk);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+
+  --color-active: var(--pulse-active);
+  --color-steady: var(--pulse-steady);
+  --color-slowing: var(--pulse-slowing);
+  --color-dormant: var(--pulse-dormant);
+}
+
+/**
+ * Three states, not two: an explicit choice stamps `data-theme` on the root,
+ * and the absence of one means "follow the system". So every colour is defined
+ * once on bare `:root`, then overridden by the media query *unless* the reader
+ * has explicitly asked for light, then again by `[data-theme="dark"]` so the
+ * toggle wins in both directions.
+ */
+:root {
+  color-scheme: light;
+
+  --ink: #191d28;
+  --ink-soft: #4c5462;
+  --mute: #6f7683;
+  --paper: #ffffff;
+  --sunk: #f1f3f6;
+  --rule: #e2e6ec;
+  --accent: #4a3dd0;
 
   /* the pulse scale: how recently anyone touched the project */
-  --color-active: #0e7c6b;
-  --color-steady: #4a3dd0;
-  --color-slowing: #9a6b18;
-  --color-dormant: #9aa1ad;
+  --pulse-active: #0e7c6b;
+  --pulse-steady: #4a3dd0;
+  --pulse-slowing: #8a5f16;
+  --pulse-dormant: #767d8a;
+}
+
+/**
+ * The dark palette is not the light one inverted. The ground keeps the blue
+ * cast of `--ink` so the two themes are recognisably the same design, and the
+ * pulse hues are lifted rather than flipped: on a dark ground the deep teal and
+ * amber lose contrast long before they lose hue, and the stripe has to stay
+ * readable as *meaning*, not merely as decoration.
+ *
+ * The values live here once. CSS has no way to apply one block from two
+ * different conditions, so only the wiring below is written twice — change a
+ * colour here and both paths follow.
+ */
+:root {
+  --d-ink: #e9ebef;
+  --d-ink-soft: #a9b1be;
+  --d-mute: #838b99;
+  --d-paper: #12151c;
+  --d-sunk: #1b1f28;
+  --d-rule: #2a3039;
+  --d-accent: #a49bff;
+
+  --d-pulse-active: #2ec4a6;
+  --d-pulse-steady: #a49bff;
+  --d-pulse-slowing: #d8a13f;
+  --d-pulse-dormant: #7d8593;
+}
+
+/* system says dark, and the reader has not explicitly asked for light */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink: var(--d-ink);
+    --ink-soft: var(--d-ink-soft);
+    --mute: var(--d-mute);
+    --paper: var(--d-paper);
+    --sunk: var(--d-sunk);
+    --rule: var(--d-rule);
+    --accent: var(--d-accent);
+    --pulse-active: var(--d-pulse-active);
+    --pulse-steady: var(--d-pulse-steady);
+    --pulse-slowing: var(--d-pulse-slowing);
+    --pulse-dormant: var(--d-pulse-dormant);
+  }
+}
+
+/* the reader explicitly asked for dark, whatever the system says */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: var(--d-ink);
+  --ink-soft: var(--d-ink-soft);
+  --mute: var(--d-mute);
+  --paper: var(--d-paper);
+  --sunk: var(--d-sunk);
+  --rule: var(--d-rule);
+  --accent: var(--d-accent);
+  --pulse-active: var(--d-pulse-active);
+  --pulse-steady: var(--d-pulse-steady);
+  --pulse-slowing: var(--d-pulse-slowing);
+  --pulse-dormant: var(--d-pulse-dormant);
 }
 
 @layer base {
@@ -33,14 +122,14 @@
   }
 
   body {
-    background: var(--color-paper);
-    color: var(--color-ink);
+    background: var(--paper);
+    color: var(--ink);
     font-family: var(--font-sans);
     line-height: 1.55;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
     border-radius: 2px;
   }
@@ -69,18 +158,18 @@
  */
 @layer components {
   [data-pulse] {
-    border-left: 2px solid var(--pulse, var(--color-rule));
+    border-left: 2px solid var(--pulse, var(--rule));
   }
   [data-pulse="active"] {
-    --pulse: var(--color-active);
+    --pulse: var(--pulse-active);
   }
   [data-pulse="steady"] {
-    --pulse: var(--color-steady);
+    --pulse: var(--pulse-steady);
   }
   [data-pulse="slowing"] {
-    --pulse: var(--color-slowing);
+    --pulse: var(--pulse-slowing);
   }
   [data-pulse="dormant"] {
-    --pulse: var(--color-dormant);
+    --pulse: var(--pulse-dormant);
   }
 }

@@ -52,6 +52,30 @@ const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
     <meta name="twitter:card" content="summary_large_image" />
 
     <meta name="generator" content={Astro.generator} />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#12151c"
+      media="(prefers-color-scheme: dark)"
+    />
+
+    {/*
+      Runs before the first paint so an explicit choice never flashes the other
+      theme. It is deliberately tiny and inline: pulling it into a module would
+      cost a round trip, and the round trip is the flash. Absence of the key
+      means "follow the system", which the stylesheet already handles.
+    */}
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
 
     {
       jsonLd.map((item) => (
@@ -85,6 +109,16 @@ const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
         <span class="hidden text-sm text-mute sm:inline">
           curated lists, with the parts that went quiet marked
         </span>
+
+        <button
+          id="theme-toggle"
+          type="button"
+          class="ml-auto shrink-0 cursor-pointer border border-rule px-2.5 py-1 font-mono text-xs text-ink-soft hover:bg-sunk"
+          aria-pressed="false"
+        >
+          <span aria-hidden="true">◑</span>
+          <span class="sr-only">Switch to dark theme</span>
+        </button>
       </div>
     </header>
 
@@ -102,5 +136,44 @@ const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
         <a class="text-accent hover:underline" href="/">All lists</a>
       </div>
     </footer>
+
+    {/*
+      The button is the only stateful control on a content page, so it gets a
+      dozen lines of inline script rather than an island: hydrating a component
+      to toggle one attribute would ship a framework to every page on the site.
+      The label always names the theme the click will switch *to*.
+    */}
+    <script is:inline>
+      (() => {
+        const button = document.getElementById("theme-toggle");
+        if (!button) return;
+        const root = document.documentElement;
+        const media = matchMedia("(prefers-color-scheme: dark)");
+        const label = button.querySelector(".sr-only");
+
+        const isDark = () =>
+          root.dataset.theme ? root.dataset.theme === "dark" : media.matches;
+
+        const sync = () => {
+          const dark = isDark();
+          button.setAttribute("aria-pressed", String(dark));
+          if (label)
+            label.textContent = `Switch to ${dark ? "light" : "dark"} theme`;
+        };
+
+        button.addEventListener("click", () => {
+          const next = isDark() ? "light" : "dark";
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem("theme", next);
+          } catch {}
+          sync();
+        });
+
+        // someone flipping their OS theme with no explicit choice stored
+        media.addEventListener("change", sync);
+        sync();
+      })();
+    </script>
   </body>
 </html>
