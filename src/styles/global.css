@@ -1,1 +1,86 @@
 @import "tailwindcss";
+@import "@fontsource-variable/bricolage-grotesque/index.css";
+
+@theme {
+  /* Bricolage carries the personality and is used only at display sizes; the
+     body face is the system stack so the page paints before the woff2 lands.
+     Repository ids are set in mono because that is the form you actually type
+     into a package manager. */
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+  --color-ink: #191d28;
+  --color-ink-soft: #4c5462;
+  --color-mute: #7b818d;
+  --color-paper: #ffffff;
+  --color-sunk: #f1f3f6;
+  --color-rule: #e2e6ec;
+  --color-accent: #4a3dd0;
+
+  /* the pulse scale: how recently anyone touched the project */
+  --color-active: #0e7c6b;
+  --color-steady: #4a3dd0;
+  --color-slowing: #9a6b18;
+  --color-dormant: #9aa1ad;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/**
+ * The signature.
+ *
+ * An awesome list README can tell you a project exists. It cannot tell you
+ * nobody has touched it since 2019. Every entry carries its pulse in the left
+ * margin, so scanning a column of two hundred libraries shows you the live ones
+ * as a pattern before you read a single word.
+ *
+ * The stripe is never the only carrier: each entry also states its status in
+ * words, so the encoding survives colour blindness and a monochrome print.
+ */
+@layer components {
+  [data-pulse] {
+    border-left: 2px solid var(--pulse, var(--color-rule));
+  }
+  [data-pulse="active"] {
+    --pulse: var(--color-active);
+  }
+  [data-pulse="steady"] {
+    --pulse: var(--color-steady);
+  }
+  [data-pulse="slowing"] {
+    --pulse: var(--color-slowing);
+  }
+  [data-pulse="dormant"] {
+    --pulse: var(--color-dormant);
+  }
+}

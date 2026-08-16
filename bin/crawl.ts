@@ -36,7 +36,8 @@ const { values: flags } = parseArgs({
   options: {
     only: { type: "string" },
     "batch-size": { type: "string", default: "50" },
-    concurrency: { type: "string", default: "8" },
+    // 8 reliably trips the GraphQL secondary limit on a warm cache
+    concurrency: { type: "string", default: "4" },
     "stale-days": { type: "string" },
     "max-repos": { type: "string" },
     "skip-readme": { type: "boolean", default: false },
@@ -52,7 +53,7 @@ if (flags.help) {
   --stale-days=N       skip repositories refreshed less than N days ago
   --max-repos=N        stop after N repositories (the stalest ones first)
   --batch-size=N       repositories per GraphQL request (default 50, max 100)
-  --concurrency=N      parallel requests (default 8, stay well under 100)
+  --concurrency=N      parallel requests (default 4, higher trips secondary limits)
   --skip-readme        reuse the list contents already in the database
   --dry-run            fetch everything but write nothing
 `);
@@ -104,6 +105,16 @@ async function withRetry<T>(
       if (status === 404 || status === 451) return undefined;
 
       if (status === 403 || status === 429) {
+        // Secondary limits fire on burst rate, not on budget: they arrive with
+        // points still on the clock and a retry-after telling us exactly how
+        // long to back off. Rotating tokens does not help, the limit is on us.
+        const retryAfter = Number(error?.response?.headers?.["retry-after"]);
+        if (Number.isFinite(retryAfter) && retryAfter > 0) {
+          console.warn(`[secondary limit] ${label}: waiting ${retryAfter}s`);
+          await sleep(retryAfter * 1000 + 1_000);
+          continue;
+        }
+
         if (rotateOctokit()) continue;
         const reset = Number(error?.response?.headers?.["x-ratelimit-reset"]);
         const waitMs = Number.isFinite(reset)

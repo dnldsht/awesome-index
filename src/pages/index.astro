@@ -1,12 +1,66 @@
 ---
-import Counter from "../components/Counter.tsx";
-import Layout from "../layouts/Layout.astro";
+import Base from "../layouts/Base.astro";
+import { compactNumber, relativeTime } from "../lib/format.ts";
+import { listSummaries } from "../lib/queries.ts";
+import { absolute, listPath } from "../lib/urls.ts";
+
+const summaries = await listSummaries();
+const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
+
+const title = "Awesome Index — GitHub's awesome lists, with the dead entries marked";
+const description = `${compactNumber(total)} projects from ${summaries.length} curated awesome lists, each showing how recently anyone actually worked on it.`;
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Awesome Index",
+    url: absolute("/"),
+    description,
+  },
+];
 ---
 
-<Layout>
-	<main class="mx-auto max-w-2xl p-8 font-sans">
-		<h1 class="text-2xl font-bold tracking-tight">Awesome Index</h1>
-		<p class="mt-2 text-slate-600">Toolchain smoke test.</p>
-		<div class="mt-4"><Counter client:load /></div>
-	</main>
-</Layout>
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <h1 class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
+    Every awesome list<br />tells you what exists.
+    <span class="text-mute">None of them tell you what still works.</span>
+  </h1>
+
+  <p class="mt-6 max-w-xl text-lg text-ink-soft">
+    {compactNumber(total)} projects from {summaries.length} curated lists, each carrying
+    the one thing a README cannot: how long it has been since anyone touched it.
+  </p>
+
+  <h2 class="mt-14 font-mono text-xs tracking-widest text-mute uppercase">
+    Lists
+  </h2>
+
+  <ul class="mt-4 border-t border-rule">
+    {
+      summaries.map((summary) => (
+        <li class="border-b border-rule">
+          <a
+            href={listPath(summary.entry.slug)}
+            class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-4 hover:bg-sunk"
+          >
+            {summary.entry.icon && (
+              <span aria-hidden="true">{summary.entry.icon}</span>
+            )}
+            <span class="font-display text-xl font-semibold tracking-tight">
+              {summary.entry.name}
+            </span>
+            <span class="font-mono text-sm text-ink-soft tabular-nums">
+              {compactNumber(summary.repoCount)} projects
+            </span>
+            {summary.lastActivity && (
+              <span class="ml-auto text-sm text-mute">
+                newest change {relativeTime(summary.lastActivity)}
+              </span>
+            )}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

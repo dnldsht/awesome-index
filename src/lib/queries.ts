@@ -1,5 +1,5 @@
 import * as D from "drizzle-orm";
-import type { ConfigEntry } from "./config.ts";
+import { loadConfig, type ConfigEntry } from "./config.ts";
 import { db } from "./db/client.ts";
 import {
   awesomeItemTable,
@@ -154,6 +154,52 @@ export async function repoDetail(id: string) {
     .where(D.eq(awesomeItemTable.repoId, id));
 
   return { repo, appearances };
+}
+
+export type ListSummary = {
+  entry: ConfigEntry;
+  repoCount: number;
+  /** most recent push across the list, i.e. how fresh the niche itself is */
+  lastActivity: Date | undefined;
+};
+
+/**
+ * Config entries that actually have crawled data, with their size.
+ *
+ * A list declared in config.yaml but never crawled has no rows, and every route
+ * builds off this: emitting a page for an empty list would ship thin content
+ * and put a dead link in the sitemap.
+ */
+export async function listSummaries(): Promise<ListSummary[]> {
+  const entries = await loadConfig();
+  const summaries: ListSummary[] = [];
+
+  for (const entry of entries) {
+    const [row] = await db
+      .select({
+        repoCount: D.sql<number>`count(distinct ${awesomeItemTable.repoId})`,
+        lastActivity: D.sql<
+          number | null
+        >`max(${githubRepoTable.pushedAt})`,
+      })
+      .from(awesomeItemTable)
+      .innerJoin(
+        githubRepoTable,
+        D.eq(githubRepoTable.id, awesomeItemTable.repoId),
+      )
+      .where(D.inArray(awesomeItemTable.listId, entry.sourceIds));
+
+    if (!row || row.repoCount === 0) continue;
+    summaries.push({
+      entry,
+      repoCount: row.repoCount,
+      lastActivity: row.lastActivity
+        ? new Date(row.lastActivity * 1000)
+        : undefined,
+    });
+  }
+
+  return summaries.sort((a, b) => b.repoCount - a.repoCount);
 }
 
 /** ids of every repository that at least one list links, for getStaticPaths */

@@ -1,0 +1,71 @@
+---
+import {
+  compactNumber,
+  LIVENESS_LABEL,
+  liveness,
+  relativeTime,
+} from "../lib/format.ts";
+import type { GithubRepo } from "../lib/db/schema.ts";
+import { repoPath } from "../lib/urls.ts";
+
+export type Props = {
+  repo: GithubRepo;
+  /** the prose the list author wrote next to the link */
+  note?: string | null;
+  /** h2 inside a section listing, h3 when nested under a category heading */
+  headingLevel?: 2 | 3;
+};
+
+const { repo, note = null, headingLevel = 2 } = Astro.props;
+
+const pulse = liveness(repo.pushedAt);
+const Heading = `h${headingLevel}` as "h2" | "h3";
+---
+
+<article data-pulse={pulse} class="py-3 pl-4 transition-colors hover:bg-sunk">
+  <div class="flex items-baseline justify-between gap-4">
+    <Heading class="min-w-0 font-mono text-[0.95rem] leading-tight">
+      <a
+        href={repoPath(repo.id)}
+        class="text-ink decoration-accent underline-offset-4 hover:underline"
+      >
+        <span class="text-mute">{repo.ownerLogin}/</span><span
+          class="font-medium">{repo.id.split("/")[1]}</span
+        >
+      </a>
+    </Heading>
+
+    <span class="shrink-0 font-mono text-sm text-ink-soft tabular-nums">
+      {compactNumber(repo.stars)}
+      <span class="text-mute">★</span>
+    </span>
+  </div>
+
+  {
+    note && (
+      <p class="mt-1 max-w-prose text-[0.925rem] text-ink-soft">{note}</p>
+    )
+  }
+
+  <p class="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-mute">
+    {repo.primaryLanguage && <span>{repo.primaryLanguage}</span>}
+    {repo.primaryLanguage && repo.license && <span aria-hidden="true">·</span>}
+    {repo.license && <span>{repo.license}</span>}
+    {(repo.primaryLanguage || repo.license) && <span aria-hidden="true">·</span>}
+
+    {/* the status is stated in words, never by the stripe colour alone */}
+    <span style="color: var(--pulse)">{LIVENESS_LABEL[pulse]}</span>
+    <span aria-hidden="true">·</span>
+    <time datetime={repo.pushedAt.toISOString()}>
+      {relativeTime(repo.pushedAt)}
+    </time>
+
+    {
+      repo.archived && (
+        <span class="ml-1 border border-rule px-1.5 py-0.5 font-medium text-ink-soft uppercase">
+          archived
+        </span>
+      )
+    }
+  </p>
+</article>

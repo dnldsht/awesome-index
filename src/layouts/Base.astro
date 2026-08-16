@@ -1,0 +1,99 @@
+---
+import "../styles/global.css";
+
+export type Props = {
+  title: string;
+  description: string;
+  /** defaults to the current route; pass one only to override a canonical */
+  canonicalPath?: string;
+  noindex?: boolean;
+  /** JSON-LD objects, serialised into ld+json script tags */
+  jsonLd?: unknown[];
+};
+
+const {
+  title,
+  description,
+  canonicalPath = Astro.url.pathname,
+  noindex = false,
+  jsonLd = [],
+} = Astro.props;
+
+const canonical = new URL(canonicalPath, Astro.site).href;
+const ogImage = new URL("/og-default.png", Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content="Awesome Index" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <meta name="generator" content={Astro.generator} />
+
+    {
+      jsonLd.map((item) => (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify(item)}
+          is:inline
+        />
+      ))
+    }
+  </head>
+
+  <body>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-paper focus:px-3 focus:py-2"
+    >
+      Skip to content
+    </a>
+
+    <header class="border-b border-rule">
+      <div
+        class="mx-auto flex max-w-6xl items-baseline gap-4 px-5 py-4 sm:px-8"
+      >
+        <a
+          href="/"
+          class="font-display text-lg font-semibold tracking-tight text-ink"
+        >
+          Awesome Index
+        </a>
+        <span class="hidden text-sm text-mute sm:inline">
+          curated lists, with the parts that went quiet marked
+        </span>
+      </div>
+    </header>
+
+    <main id="main" class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+      <slot />
+    </main>
+
+    <footer class="mt-16 border-t border-rule">
+      <div
+        class="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-5 py-8 text-sm text-mute sm:px-8"
+      >
+        <span>
+          Figures are a snapshot from the last crawl, not live from GitHub.
+        </span>
+        <a class="text-accent hover:underline" href="/">All lists</a>
+      </div>
+    </footer>
+  </body>
+</html>
