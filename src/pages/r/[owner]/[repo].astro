@@ -1,0 +1,558 @@
+---
+import * as D from "drizzle-orm";
+import RepoCard from "../../../components/RepoCard.astro";
+import Base from "../../../layouts/Base.astro";
+import { loadConfig } from "../../../lib/config.ts";
+import { db } from "../../../lib/db/client.ts";
+import {
+  awesomeItemTable,
+  githubRepoTable,
+  type GithubRepo,
+} from "../../../lib/db/schema.ts";
+import {
+  compactNumber,
+  fullNumber,
+  isoDate,
+  LIVENESS_LABEL,
+  liveness,
+  relativeTime,
+  type Liveness,
+} from "../../../lib/format.ts";
+import { allRepoIds, sectionOf } from "../../../lib/queries.ts";
+import {
+  absolute,
+  categoryPath,
+  githubUrl,
+  listPath,
+  ownerUrl,
+  repoPath,
+} from "../../../lib/urls.ts";
+
+/**
+ * The long tail: one page per repository, thousands of them today and ~20k once
+ * every list is crawled. Everything a page needs is read in two bulk queries in
+ * getStaticPaths and handed over as props — repoDetail() is the right shape but
+ * the wrong number of round trips here, 2 statements per page is 40k statements
+ * at full size.
+ *
+ * The reason this page exists is "Appears in": it is the only place where the
+ * same project is shown across every list and section that curates it, and it
+ * is the internal-linking backbone that gets category pages crawled.
+ */
+
+/** repos travel through props with epoch timestamps, not Date instances, so the
+ * payload stays plain-JSON and survives any serialisation Astro does on the way
+ * to the component */
+type WireRepo = Omit<GithubRepo, "pushedAt" | "createdAt" | "refreshedAt"> & {
+  pushedAt: number;
+  createdAt: number;
+  refreshedAt: number;
+};
+
+/** one config entry that features this repo, with every section it files it
+ * under and every distinct note its curators wrote about it */
+type Appearance = {
+  slug: string;
+  name: string;
+  icon: string | undefined;
+  /** `label` is "Packages › HTTP", built here because getStaticPaths runs in
+   * its own scope and cannot borrow a helper from the component */
+  sections: { slug: string; path: string[]; label: string }[];
+  notes: string[];
+};
+
+export type Props = {
+  repo: WireRepo;
+  appearances: Appearance[];
+  /** neighbours from the narrowest listing this repo belongs to */
+  related: WireRepo[];
+  relatedLabel: string;
+  relatedHref: string;
+};
+
+function hydrate(row: WireRepo): GithubRepo {
+  return {
+    ...row,
+    pushedAt: new Date(row.pushedAt),
+    createdAt: new Date(row.createdAt),
+    refreshedAt: new Date(row.refreshedAt),
+  };
+}
+
+/** the stripe says it in colour, this says it in words */
+const LIVENESS_SENTENCE: Record<Liveness, string> = {
+  active: "pushed within the last three months",
+  steady: "pushed within the last year",
+  slowing: "no push in over a year",
+  dormant: "no push in over three years",
+};
+
+export async function getStaticPaths() {
+  // Astro lifts getStaticPaths into its own module scope, so everything it uses
+  // lives here or is an import
+  const RELATED_LIMIT = 6;
+  const sectionLabel = (path: string[]) => path.join(" › ");
+
+  const [entries, ids] = await Promise.all([loadConfig(), allRepoIds()]);
+
+  // two statements for the whole route, not two per page
+  const [repoRows, itemRows] = await Promise.all([
+    db.select().from(githubRepoTable),
+    db
+      .select({
+        listId: awesomeItemTable.listId,
+        repoId: awesomeItemTable.repoId,
+        section: awesomeItemTable.section,
+        sectionSlug: awesomeItemTable.sectionSlug,
+        note: awesomeItemTable.note,
+      })
+      .from(awesomeItemTable)
+      .orderBy(
+        D.asc(awesomeItemTable.listId),
+        D.asc(awesomeItemTable.position),
+      ),
+  ]);
+
+  // allRepoIds() already drops repos no list links; everything downstream is
+  // keyed off this map, so a row missing from it is a row we never emit
+  const eligible = new Set(ids);
+  const wire = new Map<string, WireRepo>();
+  for (const row of repoRows) {
+    if (!eligible.has(row.id)) continue;
+    wire.set(row.id, {
+      ...row,
+      pushedAt: row.pushedAt.getTime(),
+      createdAt: row.createdAt.getTime(),
+      refreshedAt: row.refreshedAt.getTime(),
+    });
+  }
+
+  // awesome_item is keyed by the source list id ("rust-unofficial/awesome-rust")
+  // while the site is routed by config slug, and one entry can merge several
+  // source lists (JavaScript is sorrycc + uhub), so several list ids collapse
+  // onto one appearance
+  const entryOfList = new Map<string, (typeof entries)[number]>();
+  const entryOrder = new Map<string, number>();
+  entries.forEach((entry, i) => {
+    entryOrder.set(entry.slug, i);
+    for (const sourceId of entry.sourceIds) entryOfList.set(sourceId, entry);
+  });
+
+  const appearancesOf = new Map<string, Map<string, Appearance>>();
+  /** "<entrySlug> <sectionSlug>" -> repo ids, for the related rail */
+  const sectionMembers = new Map<string, string[]>();
+  const listMembers = new Map<string, string[]>();
+
+  for (const item of itemRows) {
+    if (!wire.has(item.repoId)) continue;
+    const entry = entryOfList.get(item.listId);
+    // a list that was crawled once and has since left config.yaml
+    if (!entry) continue;
+
+    let byEntry = appearancesOf.get(item.repoId);
+    if (!byEntry) {
+      byEntry = new Map();
+      appearancesOf.set(item.repoId, byEntry);
+    }
+
+    let appearance = byEntry.get(entry.slug);
+    if (!appearance) {
+      appearance = {
+        slug: entry.slug,
+        name: entry.name,
+        icon: entry.icon,
+        sections: [],
+        notes: [],
+      };
+      byEntry.set(entry.slug, appearance);
+      // first time this repo hits this entry, so this is also the dedupe point
+      // for the list rail
+      const members = listMembers.get(entry.slug);
+      if (members) members.push(item.repoId);
+      else listMembers.set(entry.slug, [item.repoId]);
+    }
+
+    // An item can sit outside every heading. Those used to be dropped here for
+    // want of a page to point at; `sectionOf` now files them under the
+    // synthetic bucket, which is a category page like any other, so a
+    // uhub/awesome-javascript entry gets the same chip and the same related
+    // rail as a repo somebody filed properly.
+    const section = sectionOf(item.sectionSlug, item.section);
+    if (!appearance.sections.some((s) => s.slug === section.slug)) {
+      appearance.sections.push({
+        slug: section.slug,
+        path: section.path,
+        label: sectionLabel(section.path),
+      });
+      const key = `${entry.slug} ${section.slug}`;
+      const members = sectionMembers.get(key);
+      if (members) members.push(item.repoId);
+      else sectionMembers.set(key, [item.repoId]);
+    }
+
+    const note = item.note?.trim();
+    if (note && !appearance.notes.includes(note)) appearance.notes.push(note);
+  }
+
+  const starsOf = (id: string) => wire.get(id)?.stars ?? 0;
+  const byStars = (a: string, b: string) => starsOf(b) - starsOf(a);
+  for (const members of sectionMembers.values()) members.sort(byStars);
+  for (const members of listMembers.values()) members.sort(byStars);
+
+  const paths = [];
+  for (const id of ids) {
+    const repo = wire.get(id);
+    const byEntry = appearancesOf.get(id);
+    if (!repo || !byEntry) continue;
+
+    const appearances = [...byEntry.values()].sort(
+      (a, b) => (entryOrder.get(a.slug) ?? 0) - (entryOrder.get(b.slug) ?? 0),
+    );
+    const primary =
+      appearances.find((a) => a.sections.length > 0) ?? appearances[0];
+    if (!primary) continue;
+
+    // neighbours from the narrowest listing that has enough of them to be worth
+    // reading, otherwise the top of the list itself
+    const section = primary.sections[0];
+    const sectionPool = section
+      ? (sectionMembers.get(`${primary.slug} ${section.slug}`) ?? [])
+      : [];
+    const useSection = section !== undefined && sectionPool.length >= 4;
+    const pool = useSection
+      ? sectionPool
+      : (listMembers.get(primary.slug) ?? []);
+
+    const related: WireRepo[] = [];
+    for (const otherId of pool) {
+      if (otherId === id) continue;
+      const other = wire.get(otherId);
+      if (!other) continue;
+      related.push(other);
+      if (related.length === RELATED_LIMIT) break;
+    }
+
+    const [owner = "", name = ""] = id.split("/");
+    paths.push({
+      // Astro rejects non-string params, and these are strings by construction
+      params: { owner, repo: name },
+      props: {
+        repo,
+        appearances,
+        related,
+        relatedLabel: useSection && section ? section.label : primary.name,
+        relatedHref:
+          useSection && section
+            ? categoryPath(primary.slug, section.slug)
+            : listPath(primary.slug),
+      } satisfies Props,
+    });
+  }
+
+  return paths;
+}
+
+const {
+  repo: wireRepo,
+  appearances,
+  related: relatedWire,
+  relatedLabel,
+  relatedHref,
+} = Astro.props;
+
+const repo = hydrate(wireRepo);
+const related = relatedWire.map(hydrate);
+const name = repo.id.slice(repo.ownerLogin.length + 1);
+
+const pulse = liveness(repo.pushedAt);
+const pushedAgo = relativeTime(repo.pushedAt);
+
+const primary = appearances.find((a) => a.sections.length > 0) ?? appearances[0];
+const primarySection = primary?.sections[0];
+const listCount = appearances.length;
+
+const path = repoPath(repo.id);
+
+const title = repo.primaryLanguage
+  ? `${repo.id} — ${repo.primaryLanguage}, ${compactNumber(repo.stars)} stars`
+  : `${repo.id} — ${compactNumber(repo.stars)} stars`;
+
+const summary = repo.description.trim();
+// GitHub blurbs rarely end in punctuation, and the meta description runs three
+// clauses together
+const lede = summary
+  ? /[.!?]$/.test(summary)
+    ? summary
+    : `${summary}.`
+  : `${repo.id} on GitHub.`;
+const description = [
+  lede,
+  `Featured in ${listCount} awesome ${listCount === 1 ? "list" : "lists"}.`,
+  `${fullNumber(repo.stars)} stars, last pushed ${pushedAgo}.`,
+].join(" ");
+
+const crumbs = [
+  { name: "Awesome Index", path: "/" },
+  ...(primary ? [{ name: primary.name, path: listPath(primary.slug) }] : []),
+  ...(primary && primarySection
+    ? [
+        {
+          name: primarySection.label,
+          path: categoryPath(primary.slug, primarySection.slug),
+        },
+      ]
+    : []),
+  { name: repo.id, path },
+];
+
+/**
+ * SoftwareSourceCode, not SoftwareApplication: every one of these pages
+ * describes a source repository, and the fields that carry the weight here —
+ * codeRepository, programmingLanguage, license, dateModified — belong to
+ * SoftwareSourceCode. SoftwareApplication would assert something we cannot back
+ * up for most rows (an installable, runnable application with an
+ * operatingSystem and an applicationCategory) when the bulk of the dataset is
+ * libraries, bindings and documentation.
+ */
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    name,
+    alternateName: repo.id,
+    url: absolute(path),
+    codeRepository: githubUrl(repo.id),
+    description: summary || undefined,
+    programmingLanguage: repo.primaryLanguage || undefined,
+    license: repo.license
+      ? { "@type": "CreativeWork", name: repo.license }
+      : undefined,
+    keywords: repo.topics.length > 0 ? repo.topics.join(", ") : undefined,
+    author: {
+      "@type": "Organization",
+      name: repo.ownerLogin,
+      url: ownerUrl(repo.ownerLogin),
+    },
+    dateCreated: isoDate(repo.createdAt),
+    dateModified: isoDate(repo.pushedAt),
+    interactionStatistic: {
+      "@type": "InteractionCounter",
+      interactionType: "https://schema.org/LikeAction",
+      userInteractionCount: repo.stars,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: crumb.name,
+      item: absolute(crumb.path),
+    })),
+  },
+];
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <div class="max-w-3xl">
+    <nav aria-label="Breadcrumb" class="text-sm text-mute">
+      <ol class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        {
+          crumbs.slice(0, -1).map((crumb) => (
+            <li class="flex items-baseline gap-x-2">
+              <a class="hover:text-ink hover:underline" href={crumb.path}>
+                {crumb.name}
+              </a>
+              <span aria-hidden="true">/</span>
+            </li>
+          ))
+        }
+        <li class="font-mono text-ink-soft" aria-current="page">{name}</li>
+      </ol>
+    </nav>
+
+    <div data-pulse={pulse} class="mt-6 pl-4 sm:pl-5">
+      <h1
+        class="font-mono text-2xl leading-tight font-medium break-words sm:text-3xl"
+      >
+        <span class="text-mute">{repo.ownerLogin}/</span><span>{name}</span>
+      </h1>
+
+      {
+        summary && (
+          <p class="mt-4 max-w-prose text-lg text-ink-soft">{summary}</p>
+        )
+      }
+
+      <p class="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
+        {/* the stripe is never the only carrier: the state is written out too */}
+        <span class="font-medium" style="color: var(--pulse)">
+          {LIVENESS_LABEL[pulse]}
+        </span>
+        <span aria-hidden="true" class="text-mute">·</span>
+        <span class="text-ink-soft">{LIVENESS_SENTENCE[pulse]}</span>
+        <span aria-hidden="true" class="text-mute">·</span>
+        <time class="text-ink-soft" datetime={repo.pushedAt.toISOString()}>
+          last push {pushedAgo}
+        </time>
+        {
+          repo.archived && (
+            <span class="border border-rule px-1.5 py-0.5 text-xs font-medium text-ink-soft uppercase">
+              archived
+            </span>
+          )
+        }
+      </p>
+    </div>
+
+    <dl
+      class="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-y border-rule py-4 sm:grid-cols-4"
+    >
+      <div>
+        <dt class="font-mono text-xs tracking-widest text-mute uppercase">
+          Stars
+        </dt>
+        <dd class="mt-0.5 font-mono text-sm tabular-nums">
+          {fullNumber(repo.stars)}
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-xs tracking-widest text-mute uppercase">
+          Forks
+        </dt>
+        <dd class="mt-0.5 font-mono text-sm tabular-nums">
+          {fullNumber(repo.forks)}
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-xs tracking-widest text-mute uppercase">
+          Language
+        </dt>
+        <dd class="mt-0.5 text-sm text-ink-soft">
+          {repo.primaryLanguage || "not detected"}
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-xs tracking-widest text-mute uppercase">
+          License
+        </dt>
+        <dd class="mt-0.5 text-sm text-ink-soft">
+          {repo.license || "none declared"}
+        </dd>
+      </div>
+    </dl>
+
+    <p class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+      <a
+        class="text-accent decoration-accent underline-offset-4 hover:underline"
+        href={githubUrl(repo.id)}
+        rel="noopener"
+      >
+        Open on github.com ↗
+      </a>
+      <a
+        class="text-ink-soft underline-offset-4 hover:underline"
+        href={ownerUrl(repo.ownerLogin)}
+        rel="noopener"
+      >
+        More from {repo.ownerLogin} ↗
+      </a>
+    </p>
+
+    {
+      repo.topics.length > 0 && (
+        <section class="mt-10">
+          <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
+            Topics
+          </h2>
+          <ul class="mt-3 flex flex-wrap gap-2">
+            {repo.topics.map((topic) => (
+              <li class="border border-rule px-2 py-0.5 font-mono text-xs text-ink-soft">
+                {topic}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="mt-12">
+      <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
+        Appears in{" "}
+        <span class="tabular-nums">
+          {listCount} {listCount === 1 ? "list" : "lists"}
+        </span>
+      </h2>
+
+      <ul class="mt-4 border-t border-rule">
+        {
+          appearances.map((appearance) => (
+            <li class="border-b border-rule py-4">
+              <div class="flex flex-wrap items-baseline gap-x-3">
+                {appearance.icon && (
+                  <span aria-hidden="true">{appearance.icon}</span>
+                )}
+                <a
+                  href={listPath(appearance.slug)}
+                  class="font-display text-xl font-semibold tracking-tight text-ink decoration-accent underline-offset-4 hover:underline"
+                >
+                  {appearance.name}
+                </a>
+              </div>
+
+              {appearance.sections.length > 0 && (
+                <ul class="mt-2 flex flex-wrap gap-2">
+                  {appearance.sections.map((section) => (
+                    <li>
+                      <a
+                        href={categoryPath(appearance.slug, section.slug)}
+                        class="inline-block border border-rule px-2 py-0.5 text-sm text-ink-soft hover:border-accent hover:text-accent"
+                      >
+                        {section.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* the curator's prose: written by hand, different in every list,
+                  and the only thing on this page GitHub's API cannot give you */}
+              {appearance.notes.map((note) => (
+                <blockquote class="mt-2 max-w-prose border-l-2 border-rule pl-3 text-[0.925rem] text-ink-soft">
+                  {note}
+                </blockquote>
+              ))}
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    {
+      related.length > 0 && (
+        <section class="mt-12">
+          <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
+              Alongside it in {relatedLabel}
+            </h2>
+            <a
+              href={relatedHref}
+              class="text-sm text-accent underline-offset-4 hover:underline"
+            >
+              See all →
+            </a>
+          </div>
+
+          <ul class="mt-4 border-t border-rule">
+            {related.map((other) => (
+              <li class="border-b border-rule">
+                <RepoCard repo={other} headingLevel={3} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</Base>

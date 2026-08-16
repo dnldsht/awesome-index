@@ -24,7 +24,7 @@ export const LIVENESS_LABEL: Record<Liveness, string> = {
   dormant: "dormant",
 };
 
-/** 58210 -> "58.2k", so counts stay one glanceable token wide */
+/** 58210 -> "58.2K", so counts stay one glanceable token wide */
 export function compactNumber(value: number): string {
   return new Intl.NumberFormat("en", {
     notation: "compact",

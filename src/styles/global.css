@@ -6,10 +6,10 @@
      body face is the system stack so the page paints before the woff2 lands.
      Repository ids are set in mono because that is the form you actually type
      into a package manager. */
-  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui,
-    sans-serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    sans-serif;
+  --font-display:
+    "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 
   --color-ink: #191d28;

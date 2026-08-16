@@ -1,5 +1,7 @@
 # build output
 dist/
+dist-seo/
+dist-*/
 
 # crawled dataset, restored from the release asset in CI
 data/

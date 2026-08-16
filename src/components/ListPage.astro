@@ -1,0 +1,197 @@
+---
+import CategoryNav from "./CategoryNav.astro";
+import Pagination from "./Pagination.astro";
+import RepoCard from "./RepoCard.astro";
+import Base from "../layouts/Base.astro";
+import { fullNumber, relativeTime } from "../lib/format.ts";
+import type {
+  Category,
+  ListSummary,
+  RepoWithSections,
+} from "../lib/queries.ts";
+import { firstOnPage } from "../lib/pagination.ts";
+import { ogListPath } from "../lib/og.ts";
+import { absolute, githubUrl, listPagePath, repoPath } from "../lib/urls.ts";
+
+/**
+ * One page of a list, page 1 included.
+ *
+ * `/[list]/index.astro` and `/[list]/page/[page].astro` are two routes because
+ * page 1 has to keep the URL it already has, but they are one page: everything
+ * that differs between them is a number, so the markup lives here rather than
+ * being copied and left to drift.
+ */
+export type Props = {
+  summary: ListSummary;
+  categories: Category[];
+  /** this page's slice, not the whole list */
+  repos: RepoWithSections[];
+  /** 1-based */
+  page: number;
+  totalPages: number;
+};
+
+const { summary, categories, repos, page, totalPages } = Astro.props;
+const { entry } = summary;
+
+const from = firstOnPage(page);
+const to = from + repos.length - 1;
+const range = `${fullNumber(from)}–${fullNumber(to)}`;
+
+/**
+ * A page 2 carrying page 1's title is a duplicate-content signal, so the range
+ * is in both the title and the description and neither is a suffix bolted onto
+ * the other. Page 1 keeps the copy it was already indexed with.
+ */
+const title =
+  page === 1
+    ? `Awesome ${entry.name} — ${fullNumber(summary.repoCount)} projects, ranked and dated`
+    : `Awesome ${entry.name} — projects ${range} by stars, page ${page} of ${totalPages}`;
+
+const description =
+  page === 1
+    ? `Every project on the awesome-${entry.slug} list, most starred first, across ${fullNumber(categories.length)} categories, each showing how long it has been since anyone touched it.`
+    : `Projects ${range} of ${fullNumber(summary.repoCount)} on the awesome-${entry.slug} list, most starred first, each showing how long it has been since anyone touched it.`;
+
+const path = listPagePath(entry.slug, page);
+
+/** enough to describe the page to a crawler without restating the whole table */
+const featured = repos.slice(0, 25);
+
+const crumbs = [
+  { name: "Awesome Index", path: "/" },
+  { name: entry.name, path: listPagePath(entry.slug, 1) },
+  ...(page > 1 ? [{ name: `Page ${page}`, path }] : []),
+];
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name:
+      page === 1
+        ? `Awesome ${entry.name}`
+        : `Awesome ${entry.name} — page ${page}`,
+    description,
+    url: absolute(path),
+    // the list is the whole list on every page; what changes is the window of
+    // it this page shows, and the positions below stay absolute across pages
+    numberOfItems: summary.repoCount,
+    itemListOrder: "https://schema.org/ItemListOrderDescending",
+    itemListElement: featured.map((repo, index) => ({
+      "@type": "ListItem",
+      position: from + index,
+      name: repo.id,
+      url: absolute(repoPath(repo.id)),
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: absolute(crumb.path),
+    })),
+  },
+];
+---
+
+<Base
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  ogImage={ogListPath(entry.slug)}
+>
+  <header>
+    <h1
+      class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl"
+    >
+      {entry.icon && <span aria-hidden="true">{entry.icon}</span>}
+      {" "}
+      Awesome {entry.name}
+    </h1>
+
+    <p class="mt-5 max-w-xl text-lg text-ink-soft">
+      {fullNumber(summary.repoCount)} projects in {
+        fullNumber(categories.length)
+      } categories.{" "}
+      {
+        page > 1 && (
+          <span>
+            Showing {range}, page {page} of {totalPages}.{" "}
+          </span>
+        )
+      }
+      {
+        summary.lastActivity && (
+          <span class="text-mute">
+            The newest change anywhere in the list landed{" "}
+            {relativeTime(summary.lastActivity)}.
+          </span>
+        )
+      }
+    </p>
+
+    <p class="mt-4 flex flex-wrap items-baseline gap-x-2 text-sm text-mute">
+      <span>
+        {entry.sourceIds.length > 1 ? "Merged from" : "Sourced from"}
+      </span>
+      {
+        entry.sourceIds.map((sourceId, index) => (
+          <Fragment>
+            {index > 0 && <span aria-hidden="true">·</span>}
+            <a
+              href={githubUrl(sourceId)}
+              class="font-mono text-ink-soft decoration-accent underline-offset-4 hover:text-accent hover:underline"
+            >
+              {sourceId}
+            </a>
+          </Fragment>
+        ))
+      }
+    </p>
+  </header>
+
+  <div class="mt-12 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12">
+    <aside
+      class="max-h-80 overflow-y-auto border-b border-rule pb-4 lg:sticky lg:top-8 lg:max-h-[calc(100vh-5rem)] lg:self-start lg:border-b-0 lg:pb-0"
+    >
+      <CategoryNav listSlug={entry.slug} categories={categories} />
+    </aside>
+
+    <section class="mt-10 lg:mt-0">
+      <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
+        {
+          totalPages > 1
+            ? `Projects ${range} of ${fullNumber(summary.repoCount)}, most starred first`
+            : "All projects, most starred first"
+        }
+      </h2>
+
+      <ul class="mt-4 border-t border-rule">
+        {
+          repos.map((repo) => (
+            <li class="border-b border-rule">
+              <RepoCard repo={repo} note={repo.note} headingLevel={3} />
+            </li>
+          ))
+        }
+      </ul>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        href={(n) => listPagePath(entry.slug, n)}
+        label={`Awesome ${entry.name} pages`}
+      />
+    </section>
+  </div>
+
+  <p class="mt-10 text-sm">
+    <a class="text-accent hover:underline" href="/">
+      Every list on Awesome Index
+    </a>
+  </p>
+</Base>

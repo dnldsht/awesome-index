@@ -1,0 +1,90 @@
+---
+import { pageWindow } from "../lib/pagination.ts";
+
+export type Props = {
+  /** 1-based */
+  page: number;
+  totalPages: number;
+  /** page number -> site-root path; page 1 must return the unsuffixed URL */
+  href: (page: number) => string;
+  /** what is being paged through, for the accessible name */
+  label?: string;
+};
+
+const { page, totalPages, href, label = "Pagination" } = Astro.props;
+
+/**
+ * Real anchors, every one of them. Nothing here is JavaScript and nothing is
+ * `rel="nofollow"`: the whole point of paginating instead of capping is that a
+ * crawler can walk from page 1 to page 43 on its own, so prev/next is the
+ * unbroken chain and the numbers are the shortcuts across it.
+ */
+const links = pageWindow(page, totalPages);
+const previous = page > 1 ? page - 1 : undefined;
+const next = page < totalPages ? page + 1 : undefined;
+---
+
+{
+  totalPages > 1 && (
+    <nav
+      aria-label={label}
+      class="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-3 border-t border-rule pt-4 text-sm"
+    >
+      {previous ? (
+        <a
+          rel="prev"
+          href={href(previous)}
+          class="text-accent underline-offset-4 hover:underline"
+        >
+          ← Previous
+        </a>
+      ) : (
+        <span class="text-mute">← Previous</span>
+      )}
+
+      <ol class="flex flex-wrap items-baseline gap-x-1 font-mono tabular-nums">
+        {links.map((link) =>
+          link === "gap" ? (
+            <li class="px-1 text-mute" aria-hidden="true">
+              …
+            </li>
+          ) : link === page ? (
+            <li>
+              <span
+                aria-current="page"
+                class="inline-block border border-accent px-2 py-0.5 font-medium text-accent"
+              >
+                {link}
+              </span>
+            </li>
+          ) : (
+            <li>
+              <a
+                href={href(link)}
+                class="inline-block border border-rule px-2 py-0.5 text-ink-soft hover:border-accent hover:text-accent"
+              >
+                {link}
+              </a>
+            </li>
+          ),
+        )}
+      </ol>
+
+      {next ? (
+        <a
+          rel="next"
+          href={href(next)}
+          class="text-accent underline-offset-4 hover:underline"
+        >
+          Next →
+        </a>
+      ) : (
+        <span class="text-mute">Next →</span>
+      )}
+
+      <span class="ml-auto font-mono text-xs text-mute tabular-nums">
+        Page {page} of {totalPages}
+      </span>
+    </nav>
+  )
+}

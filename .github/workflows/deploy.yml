@@ -1,0 +1,93 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # nightly, a bit after the hour so it does not pile onto GitHub's own peak
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      crawl:
+        description: "Refresh the dataset before building"
+        type: boolean
+        default: true
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: write # the dataset lives as a release asset
+  pages: write
+  id-token: write
+
+env:
+  # the crawled dataset is too big and too churny for git, so it is carried
+  # between runs as a release asset under this tag
+  DATASET_TAG: dataset
+  DATASET_FILE: awesome.db
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          # 22.18+ runs the crawler's TypeScript without a build step
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Restore the dataset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data
+          if gh release download "$DATASET_TAG" --pattern "$DATASET_FILE" --output "data/$DATASET_FILE" 2>/dev/null; then
+            echo "restored $(du -h "data/$DATASET_FILE" | cut -f1) dataset"
+          else
+            echo "no dataset published yet, starting from an empty one"
+          fi
+
+      - run: pnpm db:migrate
+
+      - name: Refresh the dataset
+        if: github.event_name != 'push' && inputs.crawl != false
+        env:
+          # the built-in token allows 1000 requests/hour; set CRAWL_GITHUB_TOKEN
+          # to a PAT (or several comma separated, on different accounts) for more
+          GITHUB_TOKEN: ${{ secrets.CRAWL_GITHUB_TOKEN || github.token }}
+        run: pnpm crawl --stale-days=1
+
+      - name: Publish the dataset
+        if: github.event_name != 'push' && inputs.crawl != false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # checkpoint the WAL so the uploaded file is self-contained
+          node -e "const d=require('better-sqlite3')('data/$DATASET_FILE');d.pragma('wal_checkpoint(TRUNCATE)');d.close()"
+          gh release view "$DATASET_TAG" >/dev/null 2>&1 \
+            || gh release create "$DATASET_TAG" --title "Dataset" --notes "Crawled dataset, replaced on every refresh."
+          gh release upload "$DATASET_TAG" "data/$DATASET_FILE" --clobber
+
+      - run: pnpm build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

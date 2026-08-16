@@ -1,5 +1,7 @@
 ---
 import "../styles/global.css";
+import { OG_DEFAULT_PATH } from "../lib/og.ts";
+import { absolute } from "../lib/urls.ts";
 
 export type Props = {
   title: string;
@@ -9,6 +11,8 @@ export type Props = {
   noindex?: boolean;
   /** JSON-LD objects, serialised into ld+json script tags */
   jsonLd?: unknown[];
+  /** site-root path of a build-time card, e.g. ogListPath(slug); see src/lib/og.ts */
+  ogImage?: string;
 };
 
 const {
@@ -19,8 +23,11 @@ const {
   jsonLd = [],
 } = Astro.props;
 
-const canonical = new URL(canonicalPath, Astro.site).href;
-const ogImage = new URL("/og-default.png", Astro.site).href;
+// both go through absolute() so the canonical and the sitemap can only ever
+// derive from one place; Astro.site is additionally illegal inside
+// getStaticPaths, so the helper is the form that works everywhere
+const canonical = absolute(canonicalPath);
+const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
 ---
 
 <!doctype html>

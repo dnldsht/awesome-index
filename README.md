@@ -24,21 +24,42 @@ at runtime.
 
 ### Why the heading path matters
 
-The dataset does not just record *that* `hyperium/hyper` is in awesome-rust, but
+The dataset does not just record _that_ `hyperium/hyper` is in awesome-rust, but
 that it sits under `Network programming › HTTP`. That hierarchy is what category
 pages are built from, and it is the difference between a few dozen indexable
 pages and a few thousand.
 
+## URLs
+
+| Shape | Example |
+| :---- | :------ |
+| list | `/rust/` |
+| list, page 2+ | `/rust/page/2/` |
+| category | `/rust/libraries/artificial-intelligence/` |
+| category, page 2+ | `/rust/libraries/artificial-intelligence/page/2/` |
+| entries filed under no heading | `/javascript/uncategorized/` |
+| repository | `/r/tokio-rs/tokio/` |
+
+Page 1 never carries a `page/1` suffix, so no URL moves when a listing grows
+past one page. Paginated pages self-canonical rather than pointing back at page
+one — canonicalising them away would ask Google to drop the very content the
+pagination exists to expose.
+
+A heading whose slug collided with this scheme (`…/page/2`, or `uncategorized`
+in a list that also has headingless entries) would silently produce two pages
+fighting over one file, so the build asserts against both on every run rather
+than trusting a snapshot of today's READMEs.
+
 ## Commands
 
-| Command | Action |
-| :------ | :----- |
-| `pnpm dev` | dev server on localhost:4321 |
-| `pnpm build` | static build to `dist/`, then the pagefind index |
-| `pnpm check` | Astro + TypeScript diagnostics |
-| `pnpm db:generate` | write a migration from `src/lib/db/schema.ts` |
-| `pnpm db:migrate` | apply migrations to `data/awesome.db` |
-| `pnpm crawl` | refresh the dataset (`--help` for options) |
+| Command            | Action                                           |
+| :----------------- | :----------------------------------------------- |
+| `pnpm dev`         | dev server on localhost:4321                     |
+| `pnpm build`       | static build to `dist/`, then the pagefind index |
+| `pnpm check`       | Astro + TypeScript diagnostics                   |
+| `pnpm db:generate` | write a migration from `src/lib/db/schema.ts`    |
+| `pnpm db:migrate`  | apply migrations to `data/awesome.db`            |
+| `pnpm crawl`       | refresh the dataset (`--help` for options)       |
 
 ## Refreshing the dataset
 
@@ -54,7 +75,7 @@ pnpm build
 inside the hourly quota.
 
 `GITHUB_TOKEN` accepts several comma separated tokens, but they only add budget
-if they belong to *different* accounts — the 5000 requests/hour limit is per
+if they belong to _different_ accounts — the 5000 requests/hour limit is per
 account, not per token.
 
 Unchanged lists are detected by their README blob sha and skipped, and
