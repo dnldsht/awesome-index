@@ -7,11 +7,40 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
+    "check": "astro check",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "format": "prettier --write .",
+    "crawl": "node --env-file-if-exists=.env bin/crawl.ts",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.2.2"
+    "@astrojs/preact": "^6.0.2",
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^7.2.2",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.2",
+    "preact": "^10.29.8",
+    "satori": "^0.29.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.2.0",
+    "drizzle-kit": "^0.31.10",
+    "octokit": "^5.0.5",
+    "p-queue": "^9.3.3",
+    "pagefind": "^1.5.2",
+    "prettier": "^3.9.6",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "yaml": "^2.9.0"
   }
 }

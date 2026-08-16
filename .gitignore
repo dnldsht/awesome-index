@@ -1,6 +1,9 @@
 # build output
 dist/
 
+# crawled dataset, restored from the release asset in CI
+data/
+
 # generated types
 .astro/
 

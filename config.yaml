@@ -1,0 +1,89 @@
+repos:
+  - name: Rust
+    url: https://github.com/rust-unofficial/awesome-rust
+    icon: 🦀
+  - name: Golang
+    url: https://github.com/avelino/awesome-go
+    icon: 🐹
+  - name: JavaScript
+    url:
+      - https://github.com/sorrycc/awesome-javascript
+      - https://github.com/uhub/awesome-javascript
+    icon: 🟨
+  - name: NodeJS
+    url: https://github.com/sindresorhus/awesome-nodejs
+    icon: 🟩
+  - name: iOS
+    url: https://github.com/vsouza/awesome-ios
+    icon: 🍏
+  - name: Xamarin
+    url: https://github.com/XamSome/awesome-xamarin
+    icon: 📱
+  - name: Python
+    url: https://github.com/vinta/awesome-python
+    icon: 🐍
+  - name: Vue
+    url: https://github.com/vuejs/awesome-vue
+    icon: 🖖
+  - name: Flutter
+    url: https://github.com/Solido/awesome-flutter
+    icon: 🐦
+  - name: CPP
+    url: https://github.com/fffaraz/awesome-cpp
+    icon: ➕
+  - name: Java
+    url: https://github.com/akullpp/awesome-java
+    icon: ☕
+  - name: Swift
+    url: https://github.com/matteocrippa/awesome-swift
+    icon: 🐦
+  - name: dotNET
+    url: https://github.com/quozd/awesome-dotnet
+    icon: 🎯
+  - name: Ruby
+    url: https://github.com/markets/awesome-ruby
+    icon: 💎
+  - name: TensorFlow
+    url: https://github.com/jtoy/awesome-tensorflow
+    icon: 🤖
+  - name: NeoVim
+    url: https://github.com/rockerBOO/awesome-neovim
+    icon: 📝
+  - name: TailwindCSS
+    url: https://github.com/aniftyco/awesome-tailwindcss
+    icon: 🌬️
+  - name: Elixir
+    url: https://github.com/h4cc/awesome-elixir
+    icon: ⚗️
+  - name: Laravel
+    url: https://github.com/chiraggude/awesome-laravel
+    icon: 🛠️
+  - name: Kotlin
+    url: https://github.com/KotlinBy/awesome-kotlin
+    icon: 🅺
+  - name: Scala
+    url: https://github.com/lauris/awesome-scala
+    icon: ⚙️
+  - name: Selfhosted
+    url: https://github.com/awesome-selfhosted/awesome-selfhosted
+    icon: 🖥️
+  - name: Shell
+    url: https://github.com/alebcay/awesome-shell
+    icon: 🐚
+  - name: MacOS
+    url:
+      - https://github.com/serhii-londar/open-source-mac-os-apps
+      - https://github.com/jaywcjlove/awesome-mac
+    icon: 🍏
+  - name: Zig
+    url: https://github.com/zigcc/awesome-zig
+    icon: 🧩
+  - name: TinyJS
+    url: https://github.com/thoughtspile/awesome-tiny-js
+    icon: 🌟
+  - name: MachineLearning
+    url: https://github.com/josephmisiti/awesome-machine-learning
+    icon: 🤖
+  - name: Awesome
+    url: https://github.com/sindresorhus/awesome
+    icon: 🆒

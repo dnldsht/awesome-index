@@ -1,2 +1,4 @@
 allowBuilds:
   esbuild: true
+  # native addon, compiled on install
+  better-sqlite3: true

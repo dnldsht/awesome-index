@@ -1,11 +1,12 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Counter from "../components/Counter.tsx";
+import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout>
-	<Welcome />
+	<main class="mx-auto max-w-2xl p-8 font-sans">
+		<h1 class="text-2xl font-bold tracking-tight">Awesome Index</h1>
+		<p class="mt-2 text-slate-600">Toolchain smoke test.</p>
+		<div class="mt-4"><Counter client:load /></div>
+	</main>
 </Layout>
