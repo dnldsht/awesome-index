@@ -38,7 +38,9 @@ repos:
     url: https://github.com/matteocrippa/awesome-swift
     icon: 🐦
   - name: dotNET
-    url: https://github.com/quozd/awesome-dotnet
+    url:
+      - https://github.com/quozd/awesome-dotnet
+      - https://github.com/thangchung/awesome-dotnet-core
     icon: 🎯
   - name: Ruby
     url: https://github.com/markets/awesome-ruby
@@ -59,16 +61,20 @@ repos:
     url: https://github.com/chiraggude/awesome-laravel
     icon: 🛠️
   - name: Kotlin
-    url: https://github.com/KotlinBy/awesome-kotlin
+    url: https://github.com/mcxiaoke/awesome-kotlin
     icon: 🅺
   - name: Scala
-    url: https://github.com/lauris/awesome-scala
+    url:
+      - https://github.com/lauris/awesome-scala
+      - https://github.com/uhub/awesome-scala
     icon: ⚙️
   - name: Selfhosted
     url: https://github.com/awesome-selfhosted/awesome-selfhosted
     icon: 🖥️
   - name: Shell
-    url: https://github.com/alebcay/awesome-shell
+    url:
+      - https://github.com/alebcay/awesome-shell
+      - https://github.com/awesome-lists/awesome-bash
     icon: 🐚
   - name: MacOS
     url:
@@ -84,6 +90,168 @@ repos:
   - name: MachineLearning
     url: https://github.com/josephmisiti/awesome-machine-learning
     icon: 🤖
+  - name: PHP
+    url: https://github.com/ziadoz/awesome-php
+    icon: 🐘
+  - name: Django
+    url: https://github.com/wsvincent/awesome-django
+    icon: 🎸
+  - name: Flask
+    url: https://github.com/humiaozuzu/awesome-flask
+    icon: 🍶
+  - name: FastAPI
+    url: https://github.com/mjhea0/awesome-fastapi
+    icon: ⚡
+  - name: React
+    url: https://github.com/enaqx/awesome-react
+    icon: ⚛️
+  - name: ReactNative
+    url: https://github.com/jondot/awesome-react-native
+    icon: 📲
+  - name: Angular
+    url: https://github.com/PatrickJS/awesome-angular
+    icon: 🅰️
+  - name: Svelte
+    url: https://github.com/TheComputerM/awesome-svelte
+    icon: 🧡
+  - name: NextJS
+    url: https://github.com/unicodeveloper/awesome-nextjs
+    icon: ▲
+  - name: TypeScript
+    url: https://github.com/semlinker/awesome-typescript
+    icon: 🔷
+  - name: Deno
+    url: https://github.com/denolib/awesome-deno
+    icon: 🦕
+  - name: Rails
+    url: https://github.com/gramantin/awesome-rails
+    icon: 🚂
+  - name: Haskell
+    url:
+      - https://github.com/krispo/awesome-haskell
+      - https://github.com/uhub/awesome-haskell
+    icon: λ
+  - name: Clojure
+    url: https://github.com/razum2um/awesome-clojure
+    icon: 🌀
+  - name: Elm
+    url: https://github.com/sporto/awesome-elm
+    icon: 🌳
+  - name: C
+    url: https://github.com/oz123/awesome-c
+    icon: 🔩
+  - name: Lua
+    url: https://github.com/LewisJEllis/awesome-lua
+    icon: 🌙
+  - name: Perl
+    url:
+      - https://github.com/hachiojipm/awesome-perl
+      - https://github.com/uhub/awesome-perl
+    icon: 🐪
+  - name: PowerShell
+    url: https://github.com/janikvonrotz/awesome-powershell
+    icon: 🪟
+  - name: RStats
+    url: https://github.com/qinwf/awesome-R
+    icon: 📈
+  - name: Godot
+    url: https://github.com/godotengine/awesome-godot
+    icon: 👾
+  - name: Unity
+    url: https://github.com/insthync/awesome-unity3d
+    icon: 🎮
+  - name: GameDev
+    url: https://github.com/ellisonleao/magictools
+    icon: 🕹️
+  - name: Blender
+    url: https://github.com/agmmnn/awesome-blender
+    icon: 🧊
+  - name: DevOps
+    url: https://github.com/wmariuss/awesome-devops
+    icon: ♾️
+  - name: Kubernetes
+    url:
+      - https://github.com/ramitsurana/awesome-kubernetes
+      - https://github.com/tomhuang12/awesome-k8s-resources
+    icon: ☸️
+  - name: Docker
+    url: https://github.com/veggiemonk/awesome-docker
+    icon: 🐳
+  - name: Terraform
+    url: https://github.com/shuaibiyy/awesome-tf
+    icon: 🏗️
+  - name: Ansible
+    url: https://github.com/ansible-community/awesome-ansible
+    icon: 📕
+  - name: Nix
+    url: https://github.com/nix-community/awesome-nix
+    icon: ❄️
+  - name: SysAdmin
+    url: https://github.com/awesome-foss/awesome-sysadmin
+    icon: 🧰
+  - name: CLI
+    url: https://github.com/agarrharr/awesome-cli-apps
+    icon: 📟
+  - name: Emacs
+    url: https://github.com/emacs-tw/awesome-emacs
+    icon: 🦬
+  - name: Vim
+    url: https://github.com/akrawchyk/awesome-vim
+    icon: ⌨️
+  - name: RaspberryPi
+    url: https://github.com/thibmaek/awesome-raspberry-pi
+    icon: 🍓
+  - name: Arduino
+    url: https://github.com/Lembed/Awesome-arduino
+    icon: 🔌
+  - name: HomeAssistant
+    url: https://github.com/frenck/awesome-home-assistant
+    icon: 🏠
+  - name: Android
+    url: https://github.com/JStumpp/awesome-android
+    icon: 🤖
+  - name: Electron
+    url: https://github.com/sindresorhus/awesome-electron
+    icon: 💠
+  - name: WebAssembly
+    url: https://github.com/mbasso/awesome-wasm
+    icon: 🕸️
+  - name: CSS
+    url: https://github.com/awesome-css-group/awesome-css
+    icon: 🎨
+  - name: GraphQL
+    url: https://github.com/chentsulin/awesome-graphql
+    icon: 🔺
+  - name: Postgres
+    url: https://github.com/dhamaniasad/awesome-postgres
+    icon: 🗄️
+  - name: DataScience
+    url: https://github.com/academic/awesome-datascience
+    icon: 📊
+  - name: DataEngineering
+    url: https://github.com/igorbarinov/awesome-data-engineering
+    icon: 🛢️
+  - name: LLM
+    url: https://github.com/Hannibal046/Awesome-LLM
+    icon: 🧠
+  - name: Bioinformatics
+    url: https://github.com/danielecook/Awesome-Bioinformatics
+    icon: 🧬
+  - name: Solidity
+    url: https://github.com/bkrem/awesome-solidity
+    icon: ⛓️
+  - name: Security
+    url: https://github.com/sbilly/awesome-security
+    icon: 🛡️
+  - name: Pentest
+    url: https://github.com/enaqx/awesome-pentest
+    icon: 🕵️
+  - name: Privacy
+    url: https://github.com/pluja/awesome-privacy
+    icon: 🔒
+  - name: Beginners
+    url: https://github.com/MunGell/awesome-for-beginners
+    icon: 🌱
   - name: Awesome
     url: https://github.com/sindresorhus/awesome
     icon: 🆒

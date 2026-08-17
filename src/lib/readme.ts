@@ -55,6 +55,8 @@ type Node = {
   value?: string;
   url?: string;
   depth?: number;
+  /** set on `linkReference` and `definition`, ties "[name][1]" to "[1]: url" */
+  identifier?: string;
   children?: Node[];
 };
 
@@ -93,8 +95,13 @@ function toText(node: Node): string {
   return "";
 }
 
+/**
+ * A link, or a reference to one: awesome-c and awesome-scala write their
+ * entries as "[zlib-ng][1]" and collect every url in a block of definitions at
+ * the end of the file, which remark keeps as `linkReference` nodes.
+ */
 function findFirstLink(node: Node): Node | undefined {
-  if (node.type === "link") return node;
+  if (node.type === "link" || node.type === "linkReference") return node;
   for (const child of node.children ?? []) {
     const found = findFirstLink(child);
     if (found) return found;
@@ -102,13 +109,27 @@ function findFirstLink(node: Node): Node | undefined {
   return undefined;
 }
 
+/** "[1]: https://github.com/Dead2/zlib-ng" -> {"1" => "https://…"} */
+function collectDefinitions(tree: Node): Map<string, string> {
+  const definitions = new Map<string, string>();
+  visit(tree, (node: Node) => {
+    if (node.type !== "definition" || !node.identifier || !node.url) return;
+    definitions.set(node.identifier, node.url);
+  });
+  return definitions;
+}
+
 /**
  * Extracts the repositories linked from an awesome list README, together with
  * the heading path each one sits under.
  *
- * Only the paragraph directly owned by a list item is inspected, never its
- * nested lists: otherwise an item with sub-items would also claim every
- * repository linked by its children.
+ * Only the paragraph directly owned by an entry is inspected, never its nested
+ * lists: otherwise an item with sub-items would also claim every repository
+ * linked by its children.
+ *
+ * An entry is usually a list item, but awesome-java gives each project its own
+ * blockquote ("> **[ArchUnit](url)** <kbd>★ 3.8k</kbd><br>Test library…"), so
+ * blockquotes owning a paragraph count too.
  */
 export function parseAwesomeReadme(
   markdown: string,
@@ -119,6 +140,7 @@ export function parseAwesomeReadme(
     .use(remarkGfm)
     .parse(markdown) as Node;
 
+  const definitions = collectDefinitions(tree);
   /** current heading text by depth, e.g. {2: "Applications", 3: "Audio"} */
   const headings = new Map<number, string>();
   const items: ParsedItem[] = [];
@@ -137,15 +159,20 @@ export function parseAwesomeReadme(
       return;
     }
 
-    if (node.type !== "listItem") return;
+    if (node.type !== "listItem" && node.type !== "blockquote") return;
 
     const paragraph = node.children?.find((c) => c.type === "paragraph");
     if (!paragraph) return;
 
     const link = findFirstLink(paragraph);
-    if (!link?.url) return;
+    if (!link) return;
 
-    const repoId = normalizeRepoId(link.url);
+    const url =
+      link.url ??
+      (link.identifier ? definitions.get(link.identifier) : undefined);
+    if (!url) return;
+
+    const repoId = normalizeRepoId(url);
     if (!repoId || repoId === options.exclude) return;
 
     // depth 1 is the list's own title ("# Awesome Rust"), it would prefix
@@ -154,6 +181,11 @@ export function parseAwesomeReadme(
       .filter(([depth]) => depth > 1)
       .sort(([a], [b]) => a - b)
       .map(([, text]) => text);
+
+    // a blockquote is only an entry where entries live; the one a list opens
+    // with ("> A curated list of awesome Go frameworks…") sits under no
+    // heading at all and would otherwise be filed as an uncategorized entry
+    if (node.type === "blockquote" && section.length === 0) return;
 
     const sectionSlug = slugifyPath(section);
     const key = `${repoId} ${sectionSlug}`;

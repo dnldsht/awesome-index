@@ -2,6 +2,7 @@
 import { defineConfig } from "astro/config";
 import preact from "@astrojs/preact";
 import tailwindcss from "@tailwindcss/vite";
+import { pagefindDev } from "./src/lib/pagefind-dev.ts";
 
 // https://astro.build/config
 export default defineConfig({
@@ -14,6 +15,7 @@ export default defineConfig({
   trailingSlash: "always",
   integrations: [preact()],
   vite: {
-    plugins: [tailwindcss()],
+    // pagefindDev only applies to `astro dev`; the build emits the real index
+    plugins: [tailwindcss(), pagefindDev()],
   },
 });
