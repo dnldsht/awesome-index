@@ -96,17 +96,60 @@ function toText(node: Node): string {
 }
 
 /**
- * A link, or a reference to one: awesome-c and awesome-scala write their
- * entries as "[zlib-ng][1]" and collect every url in a block of definitions at
- * the end of the file, which remark keeps as `linkReference` nodes.
+ * Every link, or reference to one, in order: awesome-c and awesome-scala write
+ * their entries as "[zlib-ng][1]" and collect every url in a block of
+ * definitions at the end of the file, which remark keeps as `linkReference`
+ * nodes.
  */
-function findFirstLink(node: Node): Node | undefined {
-  if (node.type === "link" || node.type === "linkReference") return node;
-  for (const child of node.children ?? []) {
-    const found = findFirstLink(child);
-    if (found) return found;
-  }
-  return undefined;
+function collectLinks(node: Node, out: Node[] = []): Node[] {
+  if (node.type === "link" || node.type === "linkReference") out.push(node);
+  for (const child of node.children ?? []) collectLinks(child, out);
+  return out;
+}
+
+/**
+ * Link text that means "the code lives here" rather than naming a project.
+ * A badge has no text at all once its image is dropped, which counts too.
+ */
+const SOURCE_LINK_TEXT =
+  /^(source(\s*code)?|code|git|repo(sitory)?|github(\s+repo(sitory)?)?|open[-\s]?source)$/i;
+
+/**
+ * The repository an entry is about, plus the link that names it.
+ *
+ * Most lists lead with the repository ("[serde](github.com/serde-rs/serde) —"),
+ * but awesome-selfhosted, awesome-mac and awesome-blender lead with the
+ * project's own website and hang the repository off a trailing
+ * "([Source Code](…))" or a bare badge — which is why immich, listed as
+ * "[Immich](https://immich.app/) … ([Source Code](github.com/immich-app/immich))",
+ * used to drop out entirely.
+ *
+ * The fallback only accepts a link that announces itself as the source, never
+ * an arbitrary repository mentioned in the prose: those are almost always a
+ * *different* project ("a rewrite of [MB-Lab](…)").
+ */
+function resolveEntry(
+  paragraph: Node,
+  definitions: Map<string, string>,
+): { display: Node; repoId: string } | undefined {
+  const links = collectLinks(paragraph).map((node) => {
+    const url =
+      node.url ??
+      (node.identifier ? definitions.get(node.identifier) : undefined);
+    return { node, repoId: url ? normalizeRepoId(url) : undefined };
+  });
+
+  const display = links[0];
+  if (!display) return undefined;
+  if (display.repoId) return { display: display.node, repoId: display.repoId };
+
+  const source = links.slice(1).find(({ node, repoId }) => {
+    if (!repoId) return false;
+    const text = toText(node).trim();
+    return text === "" || SOURCE_LINK_TEXT.test(text);
+  });
+  if (!source?.repoId) return undefined;
+  return { display: display.node, repoId: source.repoId };
 }
 
 /** "[1]: https://github.com/Dead2/zlib-ng" -> {"1" => "https://…"} */
@@ -164,16 +207,9 @@ export function parseAwesomeReadme(
     const paragraph = node.children?.find((c) => c.type === "paragraph");
     if (!paragraph) return;
 
-    const link = findFirstLink(paragraph);
-    if (!link) return;
-
-    const url =
-      link.url ??
-      (link.identifier ? definitions.get(link.identifier) : undefined);
-    if (!url) return;
-
-    const repoId = normalizeRepoId(url);
-    if (!repoId || repoId === options.exclude) return;
+    const entry = resolveEntry(paragraph, definitions);
+    if (!entry || entry.repoId === options.exclude) return;
+    const { repoId } = entry;
 
     // depth 1 is the list's own title ("# Awesome Rust"), it would prefix
     // every single path without telling the reader anything
@@ -196,7 +232,7 @@ export function parseAwesomeReadme(
       repoId,
       section,
       sectionSlug,
-      note: extractNote(paragraph, link),
+      note: extractNote(paragraph, entry.display),
       position: position++,
     });
   });
