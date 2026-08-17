@@ -1,7 +1,7 @@
 /**
  * Builds the Pagefind index straight from the dataset.
  *
- * This used to be one line in `package.json` — `pagefind --site dist` — and the
+ * This used to be one line in `package.json` (`pagefind --site dist`) and the
  * index was a by-product of 30,464 repository pages, each carrying
  * `data-pagefind-body`. Those pages are gone: everything they showed beyond the
  * curator's note was a copy of what github.com already says better, and they
@@ -9,7 +9,7 @@
  *
  * The search did not have to go with them. Pagefind's node API indexes records
  * that were never HTML, so one record per project is written here from the same
- * sqlite rows the listing pages render, and its `url` points at github.com —
+ * sqlite rows the listing pages render, and its `url` points at github.com,
  * which is where a reader clicking a result was headed anyway.
  *
  * Three things this does better than parsing pages did:
@@ -29,7 +29,7 @@
  *
  * Neither is the file count, which is worth knowing before choosing a host.
  * Pagefind writes one fragment per record either way, so the bundle is ~30,700
- * files — 17MB of actual bytes, but nearer 125MB on disk once a 4KB block per
+ * files: 17MB of actual bytes, but nearer 125MB on disk once a 4KB block per
  * file is counted. This directory, not the pages, is what a file-count cap
  * would run into.
  *
@@ -143,8 +143,8 @@ for (const item of itemRows) {
  * What a query is actually matched against.
  *
  * The id leads, because "tokio" is how somebody looks for tokio. Then the
- * project's own description, then the curators' prose — the one part of this
- * that exists nowhere else, and the reason the dataset is worth searching. Then
+ * project's own description, then the curators' prose, the one part of this
+ * that exists nowhere else and the reason the dataset is worth searching. Then
  * the headings it was filed under and the lists that curate it, so "http
  * client" reaches a library whose description says neither word but whose
  * curator filed it under "HTTP".

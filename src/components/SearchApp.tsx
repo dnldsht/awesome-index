@@ -33,8 +33,8 @@ import {
  *
  * It talks to the Pagefind JS API rather than dropping in `pagefind-ui.js`:
  * the stock widget brings its own markup and its own stylesheet, and this site
- * has a visual language — the pulse stripe, the mono repository ids, the rules
- * instead of cards — that a widget cannot be talked into. Everything here is
+ * has a visual language (the pulse stripe, the mono repository ids, the rules
+ * instead of cards) that a widget cannot be talked into. Everything here is
  * built from the same design tokens as the static pages, so it inherits the
  * theme rather than fighting it.
  *
@@ -152,8 +152,8 @@ function toCard(data: PagefindData): Card {
 
 /**
  * A stable string for the whole search, so the effects can depend on it. It is
- * the shareable URL, which means a change that does not alter the URL — typing
- * a trailing space — does not re-run the search either.
+ * the shareable URL, which means a change that does not alter the URL, such as
+ * typing a trailing space, does not re-run the search either.
  */
 const stateKey = (state: SearchState) => searchUrl(state);
 
@@ -201,7 +201,7 @@ export default function SearchApp({ lists }: Props) {
       }
 
       // "Best match" means relevance, and relevance is meaningless without a
-      // term to be relevant to — so an empty query falls back to the star
+      // term to be relevant to, so an empty query falls back to the star
       // order, which is the order every other page on this site uses
       const sort =
         state.sort === "relevance" && !term
@@ -545,7 +545,7 @@ type FacetModel = { key: FilterKey; values: FacetValue[] };
  *
  * `counts` is what Pagefind reports for the search as it currently stands, so
  * the numbers describe what clicking would actually give you. The two closed
- * facets — pulse and archived — additionally list every value they have, even
+ * facets (pulse and archived) additionally list every value they have, even
  * at zero, because a scale with a rung missing reads as a bug; the open-ended
  * ones (language, licence) list only what the current results contain.
  */

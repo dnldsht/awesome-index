@@ -64,7 +64,7 @@
  * readable as *meaning*, not merely as decoration.
  *
  * The values live here once. CSS has no way to apply one block from two
- * different conditions, so only the wiring below is written twice — change a
+ * different conditions, so only the wiring below is written twice: change a
  * colour here and both paths follow.
  */
 :root {

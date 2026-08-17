@@ -49,8 +49,8 @@ const range = `${fullNumber(from)}–${fullNumber(to)}`;
  */
 const title =
   page === 1
-    ? `Awesome ${entry.name} — ${fullNumber(summary.repoCount)} projects, ranked and dated`
-    : `Awesome ${entry.name} — projects ${range} by stars, page ${page} of ${totalPages}`;
+    ? `Awesome ${entry.name}: ${fullNumber(summary.repoCount)} projects, ranked and dated`
+    : `Awesome ${entry.name}: projects ${range} by stars, page ${page} of ${totalPages}`;
 
 const description =
   page === 1
@@ -75,7 +75,7 @@ const jsonLd = [
     name:
       page === 1
         ? `Awesome ${entry.name}`
-        : `Awesome ${entry.name} — page ${page}`,
+        : `Awesome ${entry.name}, page ${page}`,
     description,
     url: absolute(path),
     // the list is the whole list on every page; what changes is the window of
@@ -83,7 +83,7 @@ const jsonLd = [
     numberOfItems: summary.repoCount,
     itemListOrder: "https://schema.org/ItemListOrderDescending",
     // the items are repositories on github.com, so that is what the list points
-    // at — the same URL the rows themselves link, since nothing on this site
+    // at: the same URL the rows themselves link, since nothing on this site
     // stands between a reader and the code any more
     itemListElement: featured.map((repo, index) => ({
       "@type": "ListItem",
@@ -115,7 +115,7 @@ const jsonLd = [
     /*
     The header states the list rather than describing it. The paragraph that
     used to sit here spent four lines saying what the numbers below say in one,
-    and the pulse split — the one fact no README carries — was a clause at the
+    and the pulse split, the one fact no README carries, was a clause at the
     end of it. A reader landing from a search result should be able to tell in
     one glance how big this list is and how much of it is still alive.
   */
@@ -155,7 +155,7 @@ const jsonLd = [
       {
         /* "newest push" is deliberately absent: on a list of any size some
           repository was always pushed minutes ago, so it read "just now" on
-          nearly every page — a metric that never varies is decoration. The bar
+          nearly every page, and a metric that never varies is decoration. The bar
           below carries freshness in a form that actually differs per list. */
       }
       {

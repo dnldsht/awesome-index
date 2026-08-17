@@ -12,8 +12,8 @@ import {
  * Page 1 of every *crawled* list. `listSummaries()` is the gate: a config entry
  * with no rows yet would otherwise get an empty page in the sitemap.
  *
- * Page 2 and beyond live in `page/[page].astro`, so this URL — the one that is
- * already indexed and linked from everywhere — does not move. Both routes
+ * Page 2 and beyond live in `page/[page].astro`, so this URL, the one that is
+ * already indexed and linked from everywhere, does not move. Both routes
  * render `ListPage` and both cut the list with the same `pageSlice`, so the
  * only thing that differs between them is which slice they ask for.
  *

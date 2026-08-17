@@ -15,7 +15,7 @@ const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
 
 /**
  * Every row used to end in "newest change just now", which is what a list of
- * any size always says — 80 rows of identical text carrying nothing. The share
+ * any size always says: 80 rows of identical text carrying nothing. The share
  * that is still moving differs per list, which is the whole reason to look at
  * this page rather than at GitHub's topic search.
  */
@@ -38,7 +38,7 @@ const rows = summaries.map((summary) => {
 });
 
 const title =
-  "Awesome Index — GitHub's awesome lists, with the dead entries marked";
+  "Awesome Index: GitHub's awesome lists, with the dead entries marked";
 const description = `${compactNumber(total)} projects from ${summaries.length} curated awesome lists, each showing how recently anyone actually worked on it.`;
 
 const jsonLd = [
@@ -94,7 +94,7 @@ const jsonLd = [
     /*
     Finding one of 80 lists is a different job from finding one of 32,000
     projects, and the box above does the second one: it leaves the page. This
-    one never does — it filters the rows already on screen, which for a set this
+    one never does: it filters the rows already on screen, which for a set this
     small is instant and needs no index. Both controls are revealed by the
     script that powers them, so a reader without JavaScript is not handed a
     filter that does nothing; the rows below are already in the order the

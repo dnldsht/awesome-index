@@ -1,7 +1,7 @@
 /**
  * Build-time OG cards: satori lays the card out as SVG, resvg rasterises it.
  *
- * Imported only by the two endpoints under `src/pages/og*`, never by a page —
+ * Imported only by the two endpoints under `src/pages/og*`, never by a page;
  * see `og.ts` for the paths.
  */
 
@@ -19,13 +19,13 @@ import { OG_HEIGHT, OG_WIDTH } from "./og.ts";
 /**
  * satori parses fonts with a fork of opentype.js that accepts neither format
  * the site already ships: woff2 is rejected outright ("Unsupported OpenType
- * signature wOF2" — it has no decompressor), and the variable TTF crashes it
+ * signature wOF2", since it has no decompressor), and the variable TTF crashes it
  * while reading `fvar` axis names. Static TTF instances of the brand face are
  * vendored under `src/assets/fonts` for exactly this reason; see the README
  * there for provenance and licence.
  *
  * Reading a host font instead would set the cards in DejaVu on CI and Arial on
- * a Mac — a different typeface from the site, and a different one per machine.
+ * a Mac: a different typeface from the site, and a different one per machine.
  */
 // resolved from the working directory, not from import.meta.url: this module is
 // bundled into dist/.prerender before it runs, and the fonts do not follow it
@@ -102,8 +102,8 @@ export type OgCard = {
   /** one line of figures under the headline */
   detail: string;
   /**
-   * Colours the left stripe. The stripe is the site's signature — every entry
-   * carries its pulse in the left margin — so the card says "still moving" or
+   * Colours the left stripe. The stripe is the site's signature (every entry
+   * carries its pulse in the left margin) so the card says "still moving" or
    * "gone quiet" before a word of it is read. Undefined for the default card,
    * which is about no single thing.
    */

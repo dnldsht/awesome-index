@@ -10,9 +10,9 @@
 /**
  * Rows per page.
  *
- * Measured, not guessed. A rendered `RepoCard` row costs ~1.0KB of HTML — the
+ * Measured, not guessed. A rendered `RepoCard` row costs ~1.0KB of HTML (the
  * golang list page was 1,111,530 bytes heavier than the rust one for 1,089
- * more rows — and the frame around a listing (shell, category nav, JSON-LD) is
+ * more rows) and the frame around a listing (shell, category nav, JSON-LD) is
  * a fixed ~45KB on the widest list, almost all of it the 129-entry nav.
  *
  * That puts a 60-row page at ~105KB raw, comfortably inside the 150KB budget
@@ -45,8 +45,8 @@ export type PageLink = number | "gap";
  *
  * First and last are always present, so the two ends of a 43-page list are one
  * click from anywhere; the rest is a window. A crawler still reaches every
- * page — the prev/next chain is unbroken and the sitemap lists all of them —
- * but 43 numbers in a row is not a navigation bar anyone reads.
+ * page, since the prev/next chain is unbroken and the sitemap lists all of
+ * them, but 43 numbers in a row is not a navigation bar anyone reads.
  */
 export function pageWindow(
   current: number,

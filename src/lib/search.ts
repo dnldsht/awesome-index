@@ -4,11 +4,11 @@
  *
  * `bin/index-search.ts` builds a Pagefind record per project after the site is
  * built, and the island then asks for those exact keys and values at runtime.
- * The two live in different halves of the app — a node script, a `.tsx` island
- * that only ever runs in the browser — so every key, every value and every URL
- * parameter name is named once, here, and imported by both. A typo that would
- * otherwise show up as a filter that silently matches nothing becomes a type
- * error instead.
+ * The two live in different halves of the app (a node script, and a `.tsx`
+ * island that only ever runs in the browser) so every key, every value and
+ * every URL parameter name is named once, here, and imported by both. A typo
+ * that would otherwise show up as a filter that silently matches nothing
+ * becomes a type error instead.
  */
 
 import { LIVENESS_ORDER } from "./format.ts";
@@ -66,7 +66,7 @@ export const SORT_LABEL: Record<SortKey, string> = {
 };
 
 /**
- * What each option asks Pagefind for. `relevance` is the absence of a sort —
+ * What each option asks Pagefind for. `relevance` is the absence of a sort:
  * Pagefind then orders by score, which is only meaningful when there is a term
  * to score against, so the island substitutes the star sort for an empty query.
  */
@@ -95,7 +95,7 @@ export function starsSortValue(stars: number): string {
 }
 
 /**
- * Dates sort as `YYYY-MM-DD`, which is already lexicographically ordered — the
+ * Dates sort as `YYYY-MM-DD`, which is already lexicographically ordered, the
  * one date format that needs no padding. A date and not a full timestamp because
  * the same value is the one the result card renders as "3 months ago", and the
  * hours never showed there.
@@ -121,7 +121,7 @@ export function emptyFilters(): Record<FilterKey, string[]> {
 
 /**
  * A search as a URL. Every state the island can be in is expressible here, so a
- * filtered search can be linked to — which is what the list and category pages
+ * filtered search can be linked to, which is what the list and category pages
  * do to reach a pre-filtered search without shipping any JavaScript of their
  * own.
  */

@@ -84,8 +84,8 @@ fragment repoFields on Repository {
  * full url, but "tokio.rs" and "  " are both common, and plenty of projects
  * point it back at their own repository, which the card already links. A
  * scheme-less value is read as https rather than dropped, since that is what
- * the owner meant, and anything that is not http(s) — `javascript:`, a mailto,
- * a typo that does not parse — becomes null instead of reaching the page.
+ * the owner meant, and anything that is not http(s) (a `javascript:` url, a
+ * mailto, a typo that does not parse) becomes null instead of reaching the page.
  */
 export function normalizeHomepage(
   raw: string | null | undefined,

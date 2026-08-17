@@ -31,19 +31,19 @@ import {
 /**
  * One page per heading of every crawled list, plus the pages that heading
  * spills onto. The `category` param is a rest param because a section slug is a
- * heading *path* — "web-frameworks/middlewares/actual-middlewares" — and the
+ * heading *path* ("web-frameworks/middlewares/actual-middlewares") and the
  * URL keeps that nesting so the hierarchy the list author wrote survives into
  * the site's shape.
  *
  * Pagination rides on the same rest param: page 2 of "utilities" is the param
  * "utilities/page/2", rendered at /golang/utilities/page/2/. That is the one
  * scheme this route could collide with itself, so `categoriesForList()` refuses
- * to build if a real heading ever slugifies into `…/page/<n>`.
+ * to build if a real heading ever slugifies into `.../page/<n>`.
  *
  * Headings are not the only thing on the route. Entries a list files above
  * every heading get the synthetic `UNCATEGORIZED_SLUG` category, which is how
- * 1,123 rows that used to be reachable only from the list page — 1,094 of them
- * from uhub/awesome-javascript, which writes no headings at all — get a page of
+ * 1,123 rows that used to be reachable only from the list page, 1,094 of them
+ * from uhub/awesome-javascript which writes no headings at all, get a page of
  * their own, and survive the list page no longer showing everything at once.
  */
 export async function getStaticPaths() {
@@ -63,7 +63,7 @@ export async function getStaticPaths() {
       // The sitemap paginates from `category.count` and this route from the
       // rows it actually got. They are the same count(distinct repo_id) over
       // the same join, and the day they stop being so the symptom is a sitemap
-      // advertising a page nobody wrote — so it fails here, loudly, rather than
+      // advertising a page nobody wrote, so it fails here, loudly, rather than
       // there, silently.
       if (all.length !== category.count) {
         throw new Error(
@@ -141,8 +141,8 @@ const range = `${fullNumber(from)}–${fullNumber(to)}`;
 
 /**
  * A heading can nest under a parent that holds no links of its own, and such a
- * parent has no page. Ancestors are therefore only linked — and only enter the
- * breadcrumb JSON-LD — when a page for them actually exists.
+ * parent has no page. Ancestors are therefore only linked, and only enter the
+ * breadcrumb JSON-LD, when a page for them actually exists.
  */
 const emitted = new Set(categories.map((c) => c.slug));
 const segments = category.slug.split("/");
@@ -163,8 +163,8 @@ const ancestors = segments.slice(0, -1).map((_, index) => {
  */
 const title =
   page === 1
-    ? `${name} · Awesome ${entry.name} — ${fullNumber(totalRepos)} projects`
-    : `${name} · Awesome ${entry.name} — projects ${range}, page ${page} of ${totalPages}`;
+    ? `${name} · Awesome ${entry.name}: ${fullNumber(totalRepos)} projects`
+    : `${name} · Awesome ${entry.name}: projects ${range}, page ${page} of ${totalPages}`;
 
 const where = bucket
   ? `listed before any heading on the awesome-${entry.slug} list`
@@ -207,7 +207,7 @@ const jsonLd = [
     name:
       page === 1
         ? `${entry.name} · ${name}`
-        : `${entry.name} · ${name} — page ${page}`,
+        : `${entry.name} · ${name}, page ${page}`,
     description,
     url: absolute(path),
     // the whole category on every page; the window below is what changes, and
@@ -358,7 +358,7 @@ const jsonLd = [
       <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
         {
           totalPages > 1
-            ? `${name} — ${range} of ${fullNumber(totalRepos)}`
+            ? `${name} · ${range} of ${fullNumber(totalRepos)}`
             : name
         }
       </h2>

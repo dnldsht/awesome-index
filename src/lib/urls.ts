@@ -8,14 +8,14 @@ export const listPath = (slug: string) => `/${slug}/`;
 
 export function categoryPath(slug: string, sectionSlug: string): string {
   // 1123 awesome_item rows sit above any heading and carry an empty
-  // sectionSlug. Building a URL from one here would emit "/javascript//" — a
+  // sectionSlug. Building a URL from one here would emit "/javascript//", a
   // path that 404s and that the sitemap would happily list. They are not
   // orphaned any more: `categoriesForList()` files them under a synthetic
   // heading whose slug is UNCATEGORIZED_SLUG, and every caller should be
   // holding that slug rather than the raw "" by the time it gets here.
   if (!sectionSlug) {
     throw new Error(
-      `categoryPath("${slug}", "") — entries with no heading carry an empty ` +
+      `categoryPath("${slug}", ""): entries with no heading carry an empty ` +
         `section slug; map them through queries.ts' sectionOf() first`,
     );
   }
@@ -38,9 +38,9 @@ const PAGINATED = new RegExp(`(?:^|/)${PAGE_SEGMENT}/[0-9]+$`);
  *
  * `/[list]/[...category]` swallows arbitrary depth, so a README with headings
  * "Page" › "2" would produce `/golang/page/2/` from the category route as well
- * as from the pagination one. No section slug in the dataset does — all 423
- * were checked, and none contains a `page` segment at any depth — but the
- * crawler re-reads those READMEs every night, so `categoriesForList()` asserts
+ * as from the pagination one. No section slug in the dataset does; all 423 were
+ * checked, and none contains a `page` segment at any depth. But the crawler
+ * re-reads those READMEs every night, so `categoriesForList()` asserts
  * this on every build rather than trusting a snapshot.
  */
 export const collidesWithPagination = (sectionSlug: string) =>
@@ -63,7 +63,7 @@ export const categoryPagePath = (
 /**
  * A repository has no page on this site, by decision: 93% of them are curated
  * by a single list and 91% carry one note of ~73 characters, so the page was
- * github.com's own metadata plus a sentence — 30,464 URLs competing with
+ * github.com's own metadata plus a sentence: 30,464 URLs competing with
  * github.com for the queries it was always going to win. Every row, every
  * `ItemList` entry and every search result links straight here instead, and the
  * curators' prose lives on the listing pages, which show 60 notes at a time.

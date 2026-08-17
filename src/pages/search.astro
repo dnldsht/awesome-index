@@ -9,15 +9,15 @@ import { listPath } from "../lib/urls.ts";
 /**
  * The one page on the site that runs JavaScript.
  *
- * `noindex, follow` on purpose: a search page holds no content of its own — it
- * is a view onto an index whose results live on github.com — and letting a
+ * `noindex, follow` on purpose: a search page holds no content of its own, it
+ * is a view onto an index whose results live on github.com, and letting a
  * crawler in would put thousands of near-identical parameterised URLs into the
  * index. `follow` still lets the links out of the noscript fallback be crawled.
  *
  * The island is `client:only` because there is nothing here to pre-render: the
  * markup is a function of the Pagefind index, which does not exist until after
  * `astro build` has finished. Readers without JavaScript get the noscript
- * below, which is a real answer rather than an apology — the whole dataset is
+ * below, which is a real answer rather than an apology: the whole dataset is
  * browsable through the lists.
  */
 const summaries = await listSummaries();
@@ -29,7 +29,7 @@ const lists = summaries.map((summary) => ({
   icon: summary.entry.icon,
 }));
 
-const title = `Search ${compactNumber(total)} projects — Awesome Index`;
+const title = `Search ${compactNumber(total)} projects · Awesome Index`;
 const description = `Search every project on Awesome Index by name and description, filtered by list, language, licence and how recently anyone touched it.`;
 ---
 
@@ -56,8 +56,7 @@ const description = `Search every project on Awesome Index by name and descripti
       <p class="text-ink-soft">
         Search needs JavaScript. The index is a set of static files that the
         browser fetches and queries as you type, so with scripting turned off
-        there is nothing to run the query — no query box, no filters, no
-        sorting.
+        there is nothing to run the query: no query box, no filters, no sorting.
       </p>
       <p class="mt-3 text-ink-soft">
         Everything it would find is browsable instead: every list below is

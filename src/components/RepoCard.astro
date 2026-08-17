@@ -24,21 +24,21 @@ const name = repo.id.split("/")[1];
 
 /**
  * The two places a reader wants to go from a row: the code, and whatever the
- * project calls its front door. `homepageUrl` is null for most repositories —
- * either the owner never filled the field in, or it pointed back at the
- * repository and the crawler dropped it — so the second link is genuinely
+ * project calls its front door. `homepageUrl` is null for most repositories,
+ * either because the owner never filled the field in or because it pointed back
+ * at the repository and the crawler dropped it, so the second link is genuinely
  * optional rather than a slot that renders empty.
  *
  * The first one is the heading itself. There is no page on this site to send a
  * row to any more (see `githubUrl` in urls.ts), and a row that carried the same
- * github.com link twice — once on the name, once on an icon — would just read it
- * out twice to a screen reader.
+ * github.com link twice, once on the name and once on an icon, would just read
+ * it out twice to a screen reader.
  *
  * Both leave the site, so both open in a new tab: a reader working down sixty
  * rows of a category is comparing them, and sending the list itself away on the
  * first click makes them walk back for the second. `target="_blank"` needs the
  * `rel` to stop the opened page reaching back through `window.opener`, and it
- * needs saying out loud — hence the `sr-only` tail, since a new tab appearing is
+ * needs saying out loud, hence the `sr-only` tail, since a new tab appearing is
  * the one thing a screen reader cannot infer from the link text.
  */
 const homepage = repo.homepageUrl;

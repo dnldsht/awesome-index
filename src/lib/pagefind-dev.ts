@@ -7,7 +7,7 @@ import type { Plugin } from "vite";
  *
  * Pagefind runs *after* `astro build`, so `/pagefind/` is a directory that only
  * exists inside `dist/`. On `astro dev` nothing serves it and the search island
- * can only ever show its "index is missing" fallback — which is honest, but it
+ * can only ever show its "index is missing" fallback, which is honest, but it
  * means the one page on the site that runs JavaScript is also the one page that
  * cannot be developed.
  *
@@ -42,7 +42,7 @@ export function pagefindDev(outDir = "dist"): Plugin {
           if (!warned) {
             warned = true;
             server.config.logger.warn(
-              `[pagefind-dev] no index at ${path.relative(process.cwd(), root)} — ` +
+              `[pagefind-dev] no index at ${path.relative(process.cwd(), root)}; ` +
                 `run \`pnpm build\` once to make search work in dev`,
             );
           }

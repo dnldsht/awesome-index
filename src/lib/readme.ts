@@ -44,7 +44,7 @@ const RESERVED_OWNERS = new Set([
 /**
  * Bumped whenever a change here makes the parser return something different for
  * the same README. The crawler folds it into the stored digest, so a list whose
- * README has not moved since the last crawl is still re-parsed and rewritten —
+ * README has not moved since the last crawl is still re-parsed and rewritten;
  * otherwise an improvement to this file would only reach a list on the day its
  * author happens to edit it.
  */
@@ -129,13 +129,13 @@ const SOURCE_LINK_TEXT =
  * Most lists lead with the repository ("[serde](github.com/serde-rs/serde) —"),
  * but awesome-selfhosted, awesome-mac and awesome-blender lead with the
  * project's own website and hang the repository off a trailing
- * "([Source Code](…))" or a bare badge — which is why immich, listed as
- * "[Immich](https://immich.app/) … ([Source Code](github.com/immich-app/immich))",
+ * "([Source Code](...))" or a bare badge, which is why immich, listed as
+ * "[Immich](https://immich.app/) ... ([Source Code](github.com/immich-app/immich))",
  * used to drop out entirely.
  *
  * The fallback only accepts a link that announces itself as the source, never
  * an arbitrary repository mentioned in the prose: those are almost always a
- * *different* project ("a rewrite of [MB-Lab](…)").
+ * *different* project ("a rewrite of [MB-Lab](...)").
  */
 function resolveEntry(
   paragraph: Node,
@@ -161,7 +161,7 @@ function resolveEntry(
   return { display: display.node, repoId: source.repoId };
 }
 
-/** "[1]: https://github.com/Dead2/zlib-ng" -> {"1" => "https://…"} */
+/** "[1]: https://github.com/Dead2/zlib-ng" -> {"1" => "https://..."} */
 function collectDefinitions(tree: Node): Map<string, string> {
   const definitions = new Map<string, string>();
   visit(tree, (node: Node) => {
@@ -180,7 +180,7 @@ function collectDefinitions(tree: Node): Map<string, string> {
  * linked by its children.
  *
  * An entry is usually a list item, but awesome-java gives each project its own
- * blockquote ("> **[ArchUnit](url)** <kbd>★ 3.8k</kbd><br>Test library…"), so
+ * blockquote ("> **[ArchUnit](url)** <kbd>★ 3.8k</kbd><br>Test library..."), so
  * blockquotes owning a paragraph count too.
  */
 export function parseAwesomeReadme(
@@ -228,7 +228,7 @@ export function parseAwesomeReadme(
       .map(([, text]) => text);
 
     // a blockquote is only an entry where entries live; the one a list opens
-    // with ("> A curated list of awesome Go frameworks…") sits under no
+    // with ("> A curated list of awesome Go frameworks...") sits under no
     // heading at all and would otherwise be filed as an uncategorized entry
     if (node.type === "blockquote" && section.length === 0) return;
 
@@ -255,7 +255,7 @@ export function parseAwesomeReadme(
  *
  * Inline code is dropped only where it reads as a tag block and not as prose,
  * which is why the text before it has to end a sentence or close a bracket:
- * "…as a data source. `GPL-3.0`" loses its tags, "…until you set `RUST_LOG`"
+ * "...as a data source. `GPL-3.0`" loses its tags, "...until you set `RUST_LOG`"
  * keeps its last word.
  */
 function dropTrailingTags(children: Node[]): Node[] {
@@ -278,11 +278,11 @@ function dropTrailingTags(children: Node[]): Node[] {
 }
 
 /**
- * The trailing bundle of side links: "([Demo](…), [Source Code](…))" flattens
+ * The trailing bundle of side links: "([Demo](...), [Source Code](...))" flattens
  * to "(Demo, Source Code)", which awesome-selfhosted hangs off every entry.
  *
  * Only a parenthesis whose every comma separated part is the text of a link in
- * the same paragraph is dropped, so prose keeps its own asides — immich's note
+ * the same paragraph is dropped, so prose keeps its own asides; immich's note
  * ends at "(alternative to Google Photos)".
  */
 function dropTrailingLinkRefs(note: string, linkTexts: Set<string>): string {

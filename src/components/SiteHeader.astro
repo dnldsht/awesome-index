@@ -9,12 +9,12 @@ import { githubUrl, listPath, SOURCE_REPO } from "../lib/urls.ts";
  *
  * It used to hold a wordmark, a tagline nobody needed twice, and the theme
  * toggle. Now it carries the two things a reader actually wants from any page
- * of a 4,000 page site: a way to search it, and a way to get to another list —
+ * of a 4,000 page site: a way to search it, and a way to get to another list,
  * plus the source repository, since a site whose whole claim is "these dates
  * are real" should say where the dates come from.
  *
  * Both stay free of JavaScript. The search box is a plain GET form pointed at
- * the search page, which already reads its whole state — query, filters, sort —
+ * the search page, which already reads its whole state (query, filters, sort)
  * out of the query string, so submitting here lands on exactly the URL the
  * island would have produced. The list menu is a `<details>`: it does not close
  * on an outside click, which is the one behaviour a script would buy, and that
@@ -28,7 +28,7 @@ const featured = summaries.slice(0, 8);
 
 /**
  * The three controls on the right are one row of equal boxes, so their size is
- * stated once here rather than three times in three slightly different ways —
+ * stated once here rather than three times in three slightly different ways,
  * which is how the theme toggle ended up a couple of pixels shorter than the
  * list menu. `h-8` and not padding alone: an icon-only button and a text button
  * only agree on height if the height is the thing that is set.

@@ -1,13 +1,13 @@
 # Awesome Index
 
-**[awesome.donld.me](https://awesome.donld.me)** — GitHub's awesome lists, with the
-dead entries marked.
+**[awesome.donld.me](https://awesome.donld.me)**: GitHub's awesome lists, with
+the dead entries marked.
 
 A static, search-engine-first explorer for awesome lists. Every list is crawled
 into a local sqlite dataset, and the site is rendered from it ahead of time, so
 the content is in the HTML rather than behind a client-side fetch. Every entry
-carries stars, forks and — the point of the whole thing — how long it has been
-since anyone pushed to it.
+carries stars and forks, and above all how long it has been since anyone pushed
+to it.
 
 Inspired by [AweXplor](https://github.com/AweXplor/awexplor.github.io), which
 browses the same lists as a client-side app.
@@ -26,9 +26,9 @@ config.yaml  ──►  bin/crawl.ts  ──►  data/awesome.db  ──►  ast
    metadata of those repositories through batched GraphQL.
 3. Routes query sqlite directly at build time and emit static HTML.
 
-Every figure on the site — stars, forks, and especially last activity
-(`pushedAt`) — is a snapshot from the last crawl. Nothing is fetched from GitHub
-at runtime.
+Every figure on the site (stars, forks, and especially last activity
+`pushedAt`) is a snapshot from the last crawl. Nothing is fetched from GitHub at
+runtime.
 
 ### Why the heading path matters
 
@@ -47,8 +47,8 @@ pages and a few thousand.
 | category, page 2+              | `/rust/libraries/artificial-intelligence/page/2/` |
 | entries filed under no heading | `/javascript/uncategorized/`                      |
 
-**A repository has no URL here.** It used to — `/r/tokio-rs/tokio/`, 30,464 of
-them, 88% of the site's URLs — but 93% of the dataset is curated by a single list
+**A repository has no URL here.** It used to: `/r/tokio-rs/tokio/`, 30,464 of
+them, 88% of the site's URLs. But 93% of the dataset is curated by a single list
 and 91% carries one note of about 73 characters, so the page was github.com's own
 metadata plus a sentence, competing with github.com for the one query it was
 always going to lose. Rows, `ItemList` entries and search results all link
@@ -61,10 +61,10 @@ project while the site itself is only listings.
 
 **Pagination.** Page 1 never carries a `page/1` suffix, so no URL moves when a
 listing grows past one page. Paginated pages self-canonical rather than pointing
-back at page one — canonicalising them away would ask Google to drop the very
+back at page one; canonicalising them away would ask Google to drop the very
 content the pagination exists to expose.
 
-A heading whose slug collided with this scheme (`…/page/2`, or `uncategorized` in
+A heading whose slug collided with this scheme (`.../page/2`, or `uncategorized` in
 a list that also has headingless entries) would silently produce two pages
 fighting over one file, so the build asserts against both on every run rather
 than trusting a snapshot of today's READMEs.
@@ -85,16 +85,16 @@ than trusting a snapshot of today's READMEs.
 ```bash
 pnpm install
 pnpm db:migrate                 # create/upgrade data/awesome.db
-GITHUB_TOKEN=… pnpm crawl       # refresh
+GITHUB_TOKEN=ghp_xxx pnpm crawl # refresh
 pnpm build
 ```
 
-`pnpm crawl --help` lists the options (`--only`, `--stale-days`, `--max-repos`,
-…). A full refresh covers ~20k repositories in ~250 GraphQL requests, well inside
-the hourly quota.
+`pnpm crawl --help` lists the options (`--only`, `--stale-days`, `--max-repos`
+and more). A full refresh covers ~20k repositories in ~250 GraphQL requests, well
+inside the hourly quota.
 
 `GITHUB_TOKEN` accepts several comma separated tokens, but they only add budget
-if they belong to _different_ accounts — the 5000 requests/hour limit is per
+if they belong to _different_ accounts: the 5000 requests/hour limit is per
 account, not per token.
 
 Unchanged lists are detected by their README blob sha and skipped, and
@@ -102,7 +102,7 @@ Unchanged lists are detected by their README blob sha and skipped, and
 
 ## Adding a list
 
-Append it to `config.yaml` and rebuild — `name` becomes the page title and its
+Append it to `config.yaml` and rebuild. `name` becomes the page title and its
 slug becomes the URL:
 
 ```yaml
@@ -118,7 +118,7 @@ repos:
 ```
 
 ```bash
-GITHUB_TOKEN=… pnpm crawl --only=dotnet
+GITHUB_TOKEN=ghp_xxx pnpm crawl --only=dotnet
 pnpm build
 ```
 

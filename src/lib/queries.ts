@@ -26,7 +26,7 @@ export type RepoWithSections = GithubRepo & {
 /**
  * The synthetic heading that entries above every real heading are filed under.
  *
- * 1,123 awesome_item rows carry an empty `section_slug` — 1,094 of them are
+ * 1,123 awesome_item rows carry an empty `section_slug`, and 1,094 of them are
  * `uhub/awesome-javascript`, which lists all of its links in the README preamble
  * and never writes a heading at all. Without a home those rows exist only on the
  * list page itself, which is exactly the thing that made capping the list page
@@ -107,7 +107,7 @@ export type Category = {
   /** the URL segment path, i.e. what `categoryPath()` takes */
   slug: string;
   /**
-   * What `awesome_item.section_slug` actually holds — the empty string for the
+   * What `awesome_item.section_slug` actually holds: the empty string for the
    * headingless bucket, identical to `slug` otherwise. Kept separate so
    * `reposForCategory` can be handed the storage key without having to guess
    * whether "uncategorized" means the bucket or a heading someone really wrote.
@@ -125,7 +125,7 @@ export type Category = {
  * get a github_repo row. Counting them would inflate every category and, for a
  * section whose repos are all gone, emit a category page with nothing on it.
  *
- * Rows with no heading are not dropped any more — they become the synthetic
+ * Rows with no heading are not dropped any more; they become the synthetic
  * `UNCATEGORIZED_SLUG` category, which is what makes them crawlable.
  */
 export async function categoriesForList(
@@ -149,7 +149,7 @@ export async function categoriesForList(
 
   // Two ways a README could take a URL this site has already spoken for, both
   // of which the nightly crawl could introduce without anyone editing code, and
-  // both of which fail silently — a duplicate getStaticPaths entry, or a
+  // both of which fail silently: a duplicate getStaticPaths entry, or a
   // category page and a pagination page fighting over the same file.
   const written = new Set(rows.map((row) => row.slug));
   if (written.has("") && written.has(UNCATEGORIZED_SLUG)) {
@@ -233,7 +233,7 @@ let summariesCache: ListSummary[] | undefined;
  * Memoised because the site header renders it on every page: one query per
  * config entry is nothing once, and 80 of them across 34,000 pages is a build
  * that never finishes. The database is a file we regenerate wholesale between
- * builds, so there is no window in which the cache could go stale mid-run —
+ * builds, so there is no window in which the cache could go stale mid-run.
  * `astro dev` picks up a fresh crawl on restart, exactly like `loadConfig`.
  */
 export async function listSummaries(): Promise<ListSummary[]> {
@@ -275,7 +275,7 @@ let crawledAtCache: Date | null | undefined;
  * When the dataset was last refreshed: the most recent `refreshedAt` across
  * every repository, which is the moment the crawl actually ran.
  *
- * `awesome_list.updatedAt` is the more obvious source and the wrong one — it
+ * `awesome_list.updatedAt` is the more obvious source and the wrong one: it
  * only moves when a README changed, so a footer built on it would tell a reader
  * the figures were months old on a site crawled last night.
  *
@@ -298,9 +298,9 @@ export async function lastCrawledAt(): Promise<Date | undefined> {
  * One pass over the whole join rather than a query per list: the home page
  * needs all 80 of them at once, and the bucketing happens in JavaScript so the
  * thresholds stay defined exactly once, in `liveness()`. A merged entry is
- * deduplicated across its source lists first — a repository both awesome-mac
- * and open-source-mac-os-apps link is one project on the MacOS page, and it
- * would otherwise be counted twice here.
+ * deduplicated across its source lists first, since a repository both
+ * awesome-mac and open-source-mac-os-apps link is one project on the MacOS
+ * page, and it would otherwise be counted twice here.
  */
 export async function listPulses(): Promise<Map<string, PulseBreakdown>> {
   const entries = await loadConfig();

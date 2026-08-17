@@ -4,7 +4,7 @@ import { ogResponse, pulseFor, renderOgImage } from "../../lib/og-image.ts";
 import { listSummaries } from "../../lib/queries.ts";
 
 /**
- * One card per crawled list, at `/og/<slug>.png` — the path `ogListPath()`
+ * One card per crawled list, at `/og/<slug>.png`, the path `ogListPath()`
  * returns. Built off `listSummaries()`, the same gate the list pages use, so
  * there is never a card for a list with no page or a page with no card.
  *

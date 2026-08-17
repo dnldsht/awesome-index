@@ -9,11 +9,11 @@ import {
 } from "../../../lib/queries.ts";
 
 /**
- * Page 2 and beyond of a list: `/golang/page/2/` … `/golang/page/43/`.
+ * Page 2 and beyond of a list: `/golang/page/2/` to `/golang/page/43/`.
  *
  * This route exists rather than being folded into `[...category]` because the
  * `page` segment is static, and Astro ranks a static segment above a rest
- * param — so `/golang/page/2/` can only ever be matched here, never as a
+ * param, so `/golang/page/2/` can only ever be matched here, never as a
  * category called "page/2". `categoriesForList()` additionally refuses to build
  * if a real heading ever slugifies into that shape, so the two route families
  * cannot both claim a path even by accident.

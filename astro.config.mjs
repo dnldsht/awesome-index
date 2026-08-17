@@ -17,8 +17,8 @@ export default defineConfig({
    * copies of theirs.
    *
    * It is a temporary address. Moving off it later needs a 301 from every old
-   * URL, which GitHub Pages cannot do — but the domain is on Cloudflare, where a
-   * single redirect rule on awesome.donld.me/* covers all 3,976 of them. Keep
+   * URL, which GitHub Pages cannot do. The domain is on Cloudflare, though,
+   * where a single redirect rule on awesome.donld.me/* covers all 3,976. Keep
    * `public/CNAME` in step with whatever this says.
    */
   site: "https://awesome.donld.me",

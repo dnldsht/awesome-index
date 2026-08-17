@@ -2,14 +2,14 @@
  * The URL set, derived once and shared by the index and every shard.
  *
  * Everything here comes out of the same query helpers the routes themselves
- * build from — `listSummaries`, `categoriesForList` — so a page that stops being
+ * build from (`listSummaries`, `categoriesForList`) so a page that stops being
  * generated stops being listed in the same build, rather than leaving a 404 in
  * the sitemap for a crawler to find.
  *
  * Every URL in here is a listing: the home page, 80 lists, ~3,400 categories and
  * the pages they spill onto. Repositories are not listed because they no longer
- * have pages — a row links github.com directly — which took the set from 34,440
- * URLs to a tenth of that, and left it made entirely of pages that say something
+ * have pages, since a row links github.com directly, which took the set from
+ * 34,440 URLs to a tenth of that and left it made entirely of pages that say
  * github.com does not.
  *
  * Pagination is on the same footing: page counts come from `pageCount()`, the
@@ -29,7 +29,7 @@ import { absolute, categoryPagePath, listPagePath } from "./urls.ts";
  * listings fit inside one shard today. Sharding is kept anyway: it costs one
  * extra fetch, the cap is the kind of limit you notice by silently losing the
  * tail of a file, and a dozen more lists in config.yaml would walk us back
- * towards it. 5,000 URLs is roughly 400KB of XML — small enough that a shard
+ * towards it. 5,000 URLs is roughly 400KB of XML, small enough that a shard
  * re-fetch after a nightly crawl is cheap for the crawler too.
  */
 export const SHARD_SIZE = 5_000;
