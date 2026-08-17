@@ -30,10 +30,10 @@ const summaries = await listSummaries();
 /**
  * Distinct projects, not list entries.
  *
- * The header counts entries (32.6K), which is the right number for "how much
- * have these lists curated". This page is a view onto the index, and the index
- * holds one record per project, so it counts projects (30.5K) — otherwise the
- * heading promises 2,132 rows that no search can ever return.
+ * This page is a view onto the index, and the index holds one record per
+ * project; summing the lists' own counts would promise 2,132 rows that no
+ * search can ever return. The front page and the footer count the same way, so
+ * the number a reader arrives here with is the number they leave with.
  */
 const total = (await overallPulse()).total;
 

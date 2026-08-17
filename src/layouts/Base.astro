@@ -1,9 +1,9 @@
 ---
 import "../styles/global.css";
 import SiteHeader from "../components/SiteHeader.astro";
-import { longDate } from "../lib/format.ts";
+import { fullNumber, longDate } from "../lib/format.ts";
 import { OG_DEFAULT_PATH } from "../lib/og.ts";
-import { lastCrawledAt } from "../lib/queries.ts";
+import { lastCrawledAt, listSummaries, overallPulse } from "../lib/queries.ts";
 import { absolute } from "../lib/urls.ts";
 
 export type Props = {
@@ -32,7 +32,22 @@ const {
 const canonical = absolute(canonicalPath);
 const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
 
-const crawledAt = await lastCrawledAt();
+/**
+ * What the site is, in three numbers, at the bottom of every page.
+ *
+ * The counts used to live in the placeholders of the search box and the list
+ * filter, where they sat in front of a reader who was about to type over them
+ * and said the same thing on all 3,977 pages. They belong with the crawl date:
+ * all three are facts about the dataset rather than labels on a control, and
+ * this is the line that already carries one of them. Every query behind them is
+ * memoised and shared with the pages that already ask, so the footer costs the
+ * build nothing.
+ */
+const [crawledAt, total, summaries] = await Promise.all([
+  lastCrawledAt(),
+  overallPulse().then((pulse) => pulse.total),
+  listSummaries(),
+]);
 ---
 
 <!doctype html>
@@ -108,9 +123,18 @@ const crawledAt = await lastCrawledAt();
       <slot />
     </main>
 
+    {
+      /*
+      Two lines stacked on a phone, one line with the dataset pushed right from
+      `sm` up. `ml-auto` inside a wrapping row was doing neither: once the two
+      spans no longer fitted side by side, the second wrapped onto its own line
+      and `auto` still shoved it against the right edge, leaving the footer
+      ragged on exactly the widths where it wraps.
+    */
+    }
     <footer class="mt-16 border-t border-rule">
       <div
-        class="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-5 py-8 text-sm text-mute sm:px-8"
+        class="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-8 text-sm text-mute sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-6 sm:px-8"
       >
         <span>
           Made with ♥ by{" "}
@@ -120,16 +144,18 @@ const crawledAt = await lastCrawledAt();
             rel="noopener">Donald</a
           >{" "}and{" Claude Code"}
         </span>
-        {
-          crawledAt && (
-            <span class="ml-auto">
-              Last update{" "}
-              <time datetime={crawledAt.toISOString()}>
-                {longDate(crawledAt)}
-              </time>
-            </span>
-          )
-        }
+        <span class="sm:ml-auto">
+          {fullNumber(total)} projects in {summaries.length} lists{
+            crawledAt && (
+              <Fragment>
+                , updated{" "}
+                <time datetime={crawledAt.toISOString()}>
+                  {longDate(crawledAt)}
+                </time>
+              </Fragment>
+            )
+          }
+        </span>
       </div>
     </footer>
   </body>

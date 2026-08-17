@@ -511,7 +511,17 @@ export default function SearchApp({ lists, featured, total }: Props) {
           value={state.q}
           autocomplete="off"
           spellcheck={false}
-          placeholder="http client, orm, terminal…"
+          // Examples, and marked as examples: the field is monospace, so a bare
+          // list of lowercase fragments read as a query somebody had already
+          // typed.
+          //
+          // Three unlike each other on purpose — a platform, a kind of
+          // software, a format. The old set (http client, orm, terminal) was
+          // three shades of backend tooling, which suggests the index is a
+          // backend tooling index; these say the range is the whole of it. All
+          // three return hundreds of projects, which is the other half of the
+          // job: an example that comes back empty teaches the wrong lesson.
+          placeholder="e.g. kubernetes, game engine, markdown"
           // intent, and the earliest signal of it there is
           onFocus={() => void loadPagefind().catch(() => {})}
           onInput={(event) => {

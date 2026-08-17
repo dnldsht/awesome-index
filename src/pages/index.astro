@@ -12,7 +12,17 @@ import { SEARCH_PATH } from "../lib/search.ts";
 import { absolute, listPath } from "../lib/urls.ts";
 
 const summaries = await listSummaries();
-const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
+
+const pulse = await overallPulse();
+
+/**
+ * Distinct projects, not the sum of the lists' own counts: the two differ by
+ * every repository more than one curator picked, some two thousand of them, and
+ * this page now states the number twice — here and in the footer — where two
+ * readings of "projects" a screen apart read as an error rather than as a
+ * definition. This is also the one the search box can deliver.
+ */
+const total = pulse.total;
 
 /**
  * The share that has gone three years without a commit, which is the claim the
@@ -20,7 +30,7 @@ const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
  * Read from the data rather than written into the copy: it is a nightly crawl,
  * and a hardcoded "a third" would quietly drift away from the rows below it.
  */
-const dormant = (await overallPulse()).percentages.dormant;
+const dormant = pulse.percentages.dormant;
 
 const lucky = await luckyFallback();
 
