@@ -9,8 +9,9 @@ import {
 
 /**
  * One row per awesome list we crawl, keyed by "<owner>/<repo>". `readmeDigest`
- * is the blob sha GitHub returns for the README, so an unchanged list is
- * detected without re-parsing it.
+ * pairs the blob sha GitHub returns for the README with the version of the
+ * parser that read it, so an unchanged list is left alone but a smarter parser
+ * still reaches it.
  */
 export const awesomeListTable = sqliteTable("awesome_list", {
   id: text("id").primaryKey().notNull(),

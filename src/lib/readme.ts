@@ -41,6 +41,15 @@ const RESERVED_OWNERS = new Set([
   "watching",
 ]);
 
+/**
+ * Bumped whenever a change here makes the parser return something different for
+ * the same README. The crawler folds it into the stored digest, so a list whose
+ * README has not moved since the last crawl is still re-parsed and rewritten —
+ * otherwise an improvement to this file would only reach a list on the day its
+ * author happens to edit it.
+ */
+export const PARSER_VERSION = 2;
+
 export type ParsedItem = {
   repoId: string;
   section: string[];
@@ -240,9 +249,57 @@ export function parseAwesomeReadme(
   return items;
 }
 
+/**
+ * The tag block a list appends to every entry: awesome-selfhosted closes each
+ * one with "`AGPL-3.0` `Docker`", awesome-blender with "`GPL-3.0`".
+ *
+ * Inline code is dropped only where it reads as a tag block and not as prose,
+ * which is why the text before it has to end a sentence or close a bracket:
+ * "…as a data source. `GPL-3.0`" loses its tags, "…until you set `RUST_LOG`"
+ * keeps its last word.
+ */
+function dropTrailingTags(children: Node[]): Node[] {
+  let end = children.length;
+  let sawTag = false;
+  while (end > 0) {
+    const node = children[end - 1]!;
+    if (node.type === "inlineCode") {
+      sawTag = true;
+      end--;
+    } else if (toText(node).trim() === "") {
+      end--;
+    } else break;
+  }
+  if (!sawTag) return children;
+
+  const before = children.slice(0, end).map(toText).join("").trimEnd();
+  if (before && !/[.)!?:\]]$/.test(before)) return children;
+  return children.slice(0, end);
+}
+
+/**
+ * The trailing bundle of side links: "([Demo](…), [Source Code](…))" flattens
+ * to "(Demo, Source Code)", which awesome-selfhosted hangs off every entry.
+ *
+ * Only a parenthesis whose every comma separated part is the text of a link in
+ * the same paragraph is dropped, so prose keeps its own asides — immich's note
+ * ends at "(alternative to Google Photos)".
+ */
+function dropTrailingLinkRefs(note: string, linkTexts: Set<string>): string {
+  let out = note;
+  for (;;) {
+    const match = out.match(/\s*\(([^()]*)\)$/);
+    if (!match) return out;
+    const parts = match[1]!.split(",").map((p) => p.trim().toLowerCase());
+    if (!parts.every((p) => p && linkTexts.has(p))) return out;
+    out = out.slice(0, match.index).trimEnd();
+  }
+}
+
 /** the prose the author wrote after the link, minus the link text and separators */
 function extractNote(paragraph: Node, link: Node): string | null {
-  const full = toText(paragraph).replace(/\s+/g, " ").trim();
+  const kept = dropTrailingTags(paragraph.children ?? []);
+  const full = kept.map(toText).join("").replace(/\s+/g, " ").trim();
   const linkText = toText(link).replace(/\s+/g, " ").trim();
 
   let note = full;
@@ -260,5 +317,10 @@ function extractNote(paragraph: Node, link: Node): string | null {
     note = note.replace(/^\[[^\]]*\]/, "");
   } while (note !== previous);
 
-  return note.trim() || null;
+  const linkTexts = new Set(
+    collectLinks(paragraph)
+      .map((node) => toText(node).replace(/\s+/g, " ").trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return dropTrailingLinkRefs(note.trim(), linkTexts).trim() || null;
 }

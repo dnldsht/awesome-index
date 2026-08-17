@@ -1,5 +1,9 @@
 import { Octokit } from "octokit";
-import { parseAwesomeReadme, type ParsedItem } from "./readme.ts";
+import {
+  PARSER_VERSION,
+  parseAwesomeReadme,
+  type ParsedItem,
+} from "./readme.ts";
 
 /**
  * The 5000 req/hour budget is per *account*, so several tokens only add up when
@@ -201,7 +205,9 @@ export async function fetchAwesomeList(id: string): Promise<FetchedList> {
 
   const markdown = Buffer.from(data.content, "base64").toString("utf-8");
   return {
-    readmeDigest: data.sha,
+    // the blob sha alone would keep an unchanged README on a stale parse, see
+    // PARSER_VERSION
+    readmeDigest: `v${PARSER_VERSION}:${data.sha}`,
     items: parseAwesomeReadme(markdown, { exclude: id }),
   };
 }
