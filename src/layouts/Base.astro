@@ -1,7 +1,9 @@
 ---
 import "../styles/global.css";
 import SiteHeader from "../components/SiteHeader.astro";
+import { longDate } from "../lib/format.ts";
 import { OG_DEFAULT_PATH } from "../lib/og.ts";
+import { lastCrawledAt } from "../lib/queries.ts";
 import { absolute } from "../lib/urls.ts";
 
 export type Props = {
@@ -29,6 +31,8 @@ const {
 // getStaticPaths, so the helper is the form that works everywhere
 const canonical = absolute(canonicalPath);
 const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
+
+const crawledAt = await lastCrawledAt();
 ---
 
 <!doctype html>
@@ -111,6 +115,16 @@ const ogImage = absolute(Astro.props.ogImage ?? OG_DEFAULT_PATH);
         <span>
           Figures are a snapshot from the last crawl, not live from GitHub.
         </span>
+        {
+          crawledAt && (
+            <span>
+              Updated{" "}
+              <time datetime={crawledAt.toISOString()}>
+                {longDate(crawledAt)}
+              </time>
+            </span>
+          )
+        }
         <a class="text-accent hover:underline" href="/">All lists</a>
       </div>
     </footer>

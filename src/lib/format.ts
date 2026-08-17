@@ -123,3 +123,19 @@ export function relativeTime(date: Date, now = Date.now()): string {
 export function isoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
+
+/**
+ * "17 August 2026", the stamp the footer carries.
+ *
+ * Pinned to UTC because the same dataset is rendered by a runner in UTC and by
+ * `astro dev` in whatever the developer's timezone is, and a crawl that ends
+ * just after midnight would otherwise be dated a day apart by the two.
+ */
+export function longDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}

@@ -268,6 +268,30 @@ export async function listSummaries(): Promise<ListSummary[]> {
   return summariesCache;
 }
 
+/** null once resolved and found empty, so an empty database is not re-queried */
+let crawledAtCache: Date | null | undefined;
+
+/**
+ * When the dataset was last refreshed: the most recent `refreshedAt` across
+ * every repository, which is the moment the crawl actually ran.
+ *
+ * `awesome_list.updatedAt` is the more obvious source and the wrong one — it
+ * only moves when a README changed, so a footer built on it would tell a reader
+ * the figures were months old on a site crawled last night.
+ *
+ * Memoised for the same reason as `listSummaries`: the footer is on every one
+ * of the ~34,000 pages.
+ */
+export async function lastCrawledAt(): Promise<Date | undefined> {
+  if (crawledAtCache === undefined) {
+    const [row] = await db
+      .select({ at: D.sql<number | null>`max(${githubRepoTable.refreshedAt})` })
+      .from(githubRepoTable);
+    crawledAtCache = row?.at ? new Date(row.at * 1000) : null;
+  }
+  return crawledAtCache ?? undefined;
+}
+
 /**
  * The pulse split of every config entry, keyed by slug.
  *
