@@ -38,15 +38,29 @@ const emptyPulse = pulseBreakdown([]);
  * filter-and-sort script sorts by resolved up front. The pulse lookup used to
  * happen inside the markup, which meant the numbers the script needs as
  * attributes were not available where the attributes are written.
+ *
+ * Ordered by the share still moving, not by size. Size is the ordering every
+ * other index of awesome lists already has, and it puts the same four
+ * enormous, half-abandoned lists on top of all of them; this is the one number
+ * that needed a crawler to produce, so it is the one the page leads with. Ties
+ * go to the bigger list, because 100% of nine projects is a smaller claim than
+ * 100% of nine hundred. `listSummaries()` is memoised and shared, hence the
+ * copy before sorting.
  */
-const rows = summaries.map((summary) => {
-  const pulse = pulses.get(summary.entry.slug) ?? emptyPulse;
-  return {
-    summary,
-    pulse,
-    segments: LIVENESS_ORDER.filter((key) => pulse.counts[key] > 0),
-  };
-});
+const rows = [...summaries]
+  .map((summary) => {
+    const pulse = pulses.get(summary.entry.slug) ?? emptyPulse;
+    return {
+      summary,
+      pulse,
+      segments: LIVENESS_ORDER.filter((key) => pulse.counts[key] > 0),
+    };
+  })
+  .sort(
+    (a, b) =>
+      b.pulse.percentages.active - a.pulse.percentages.active ||
+      b.summary.repoCount - a.summary.repoCount,
+  );
 
 const title =
   "Awesome Index: GitHub's awesome lists, with the dead entries marked";
@@ -121,7 +135,7 @@ const jsonLd = [
       <input
         id="list-filter"
         type="search"
-        placeholder={`Filter ${summaries.length} lists`}
+        placeholder="Filter lists"
         autocomplete="off"
         class="h-8 w-40 border border-rule bg-paper px-2.5 text-sm text-ink placeholder:text-mute hover:border-mute focus:border-accent focus:outline-none sm:w-48"
       />
@@ -131,8 +145,8 @@ const jsonLd = [
         id="list-sort"
         class="h-8 cursor-pointer border border-rule bg-paper px-2 text-sm text-ink-soft hover:border-mute focus:border-accent focus:outline-none"
       >
-        <option value="projects">Most projects</option>
         <option value="active">Most active</option>
+        <option value="projects">Most projects</option>
         <option value="name">Name A–Z</option>
       </select>
     </div>
@@ -252,8 +266,12 @@ const jsonLd = [
     const rows = [...list.children];
     const number = (row, key) => Number(row.dataset[key] || 0);
     const compare = {
+      // the same tie-break the build sorted by, so re-picking the default
+      // ordering puts the rows back in exactly the order they arrived in
+      active: (a, b) =>
+        number(b, "active") - number(a, "active") ||
+        number(b, "projects") - number(a, "projects"),
       projects: (a, b) => number(b, "projects") - number(a, "projects"),
-      active: (a, b) => number(b, "active") - number(a, "active"),
       name: (a, b) => a.dataset.name.localeCompare(b.dataset.name),
     };
 
@@ -268,7 +286,7 @@ const jsonLd = [
 
       // one reflow rather than 80: every row moves inside a fragment, and the
       // hidden ones ride along so they are still in the DOM for the next term
-      const ordered = [...rows].sort(compare[sort.value] ?? compare.projects);
+      const ordered = [...rows].sort(compare[sort.value] ?? compare.active);
       const fragment = document.createDocumentFragment();
       for (const row of ordered) fragment.append(row);
       list.append(fragment);

@@ -1,5 +1,10 @@
 import type { APIRoute } from "astro";
-import { categoriesForList, listSummaries } from "../lib/queries.ts";
+import { pulseBreakdown } from "../lib/format.ts";
+import {
+  categoriesForList,
+  listPulses,
+  listSummaries,
+} from "../lib/queries.ts";
 import { categoryPath, listPath } from "../lib/urls.ts";
 
 /**
@@ -15,18 +20,24 @@ import { categoryPath, listPath } from "../lib/urls.ts";
  *
  * Tuples rather than objects, because 3,400 rows of `{"title": …, "url": …}`
  * is a third again as many bytes for no more information: `[title, url,
- * context, count]`, where context is the list a category belongs to. Fetched
- * on the first focus of the box and never again, so a reader who does not
- * search never asks for it.
+ * context, count]`, where context is the list a category belongs to. Lists
+ * carry a fifth field, the share of them still moving, because that is what
+ * the box offers before a word is typed — the liveliest lists, not the
+ * biggest, which is the ordering this whole site exists to make possible.
+ * Fetched on the first focus of the box and never again, so a reader who does
+ * not search never asks for it.
  */
 export const GET: APIRoute = async () => {
   const summaries = await listSummaries();
+  const pulses = await listPulses();
+  const emptyPulse = pulseBreakdown([]);
 
   const lists = summaries.map((summary) => [
     summary.entry.name,
     listPath(summary.entry.slug),
     summary.entry.icon ?? "",
     summary.repoCount,
+    (pulses.get(summary.entry.slug) ?? emptyPulse).percentages.active,
   ]);
 
   const categories: (string | number)[][] = [];

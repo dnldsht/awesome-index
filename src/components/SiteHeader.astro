@@ -17,14 +17,18 @@ import { githubUrl, SOURCE_REPO } from "../lib/urls.ts";
  * pointed at the search page, which reads its whole state (query, filters,
  * sort) out of the query string, so submitting it lands on exactly the URL the
  * island would have produced. Everything below is an enhancement on top.
- */
-/**
- * Distinct projects, not list entries.
  *
- * The two numbers differ by 2,132 — the repositories more than one list
- * curates — and this one is on a search box, which can only ever return
- * projects. Promising 32.6K of them and then showing 30.5K is a promise the
- * search page has to break.
+ * The placeholder used to carry the project count. It is a number that does not
+ * change between one page and the next, printed inside the one control that is
+ * on every page of the site, and it made a plain box read like an
+ * advertisement; the footer states it once instead. The count survives here as
+ * `data-total`, because the panel's last row ("Search “x” in 32K projects") is
+ * the one place it answers a question the reader is actually asking.
+ *
+ * It counts distinct projects, not list entries: the two differ by the
+ * repositories more than one list curates, and this is a search box, which can
+ * only ever return projects. Promising the larger number is a promise the
+ * search page then has to break.
  */
 const total = (await overallPulse()).total;
 
@@ -77,7 +81,7 @@ const ICON_CONTROL =
           id="site-search"
           type="search"
           name={QUERY_PARAM}
-          placeholder={`Search ${compactNumber(total)} projects`}
+          placeholder="Search"
           autocomplete="off"
           role="combobox"
           aria-expanded="false"
@@ -194,7 +198,8 @@ const ICON_CONTROL =
     const MAX_BROWSE = 6;
     const RECENT_KEY = "recent-searches";
 
-    type Tuple = [string, string, string, number];
+    /** `[title, url, context, count]`, plus the active share on a list */
+    type Tuple = [string, string, string, number, number?];
     type Row = {
       element: HTMLAnchorElement;
       onFollow?: (event: Event) => void;
@@ -304,6 +309,8 @@ const ICON_CONTROL =
         note?: string;
         icon?: string;
         count?: number;
+        /** right-aligned prose where a count would go, e.g. "61% active" */
+        tail?: string;
         onFollow?: (event: Event) => void;
       },
     ) {
@@ -336,12 +343,13 @@ const ICON_CONTROL =
         option.append(note);
       }
 
-      if (options.count !== undefined) {
+      if (options.count !== undefined || options.tail) {
         const count = document.createElement("span");
         count.className =
           "ml-auto shrink-0 font-mono text-xs text-mute tabular-nums";
         // grouped like every other count on the site; 2,564 not 2564
-        count.textContent = Number(options.count).toLocaleString("en");
+        count.textContent =
+          options.tail ?? Number(options.count).toLocaleString("en");
         option.append(count);
       }
 
@@ -387,11 +395,13 @@ const ICON_CONTROL =
 
       if (tokens.length === 0) {
         /*
-         * An empty box opens on the site itself: the biggest lists, which is
-         * what the "Lists" menu next to it used to hold, and which is the
-         * answer to "what is even in here" that a blinking cursor is not. The
-         * lists come out of the same file the matching does, so they appear as
-         * soon as it lands — a fraction of a second on the first focus of a
+         * An empty box opens on the site itself, and on the part of it worth
+         * opening on: the lists with the largest share of projects still being
+         * touched. The "Lists" menu this replaced ranked by size, which ranks
+         * awesome-go first forever and says nothing a README could not; the
+         * pulse is the one ordering that needs this dataset to exist. The rows
+         * come out of the same file the matching does, so they appear as soon
+         * as it lands — a fraction of a second on the first focus of a
          * session, instantly on every one after.
          */
         const recent = readRecent();
@@ -406,11 +416,24 @@ const ICON_CONTROL =
           }
         }
 
-        const browse = index ? index.lists.slice(0, MAX_BROWSE) : [];
+        const browse = index
+          ? [...index.lists]
+              .sort(
+                (a, b) =>
+                  (b[4] ?? 0) - (a[4] ?? 0) || Number(b[3]) - Number(a[3]),
+              )
+              .slice(0, MAX_BROWSE)
+          : [];
+
         if (browse.length > 0) {
-          list.append(group("Biggest lists"));
-          for (const [name, href, icon, count] of browse) {
-            row(list, { label: name, href, icon, count });
+          list.append(group("Liveliest lists"));
+          for (const [name, href, icon, , active] of browse) {
+            row(list, {
+              label: name,
+              href,
+              icon,
+              tail: `${active ?? 0}% active`,
+            });
           }
         }
 
