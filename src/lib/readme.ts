@@ -49,7 +49,7 @@ const RESERVED_OWNERS = new Set([
  * otherwise an improvement to this file would only reach a list on the day its
  * author happens to edit it.
  */
-export const PARSER_VERSION = 3;
+export const PARSER_VERSION = 4;
 
 export type ParsedItem = {
   repoId: string;
