@@ -6,7 +6,7 @@ import {
   relativeTime,
 } from "../lib/format.ts";
 import type { GithubRepo } from "../lib/db/schema.ts";
-import { repoPath } from "../lib/urls.ts";
+import { githubUrl, repoPath } from "../lib/urls.ts";
 
 export type Props = {
   repo: GithubRepo;
@@ -20,25 +20,89 @@ const { repo, note = null, headingLevel = 2 } = Astro.props;
 
 const pulse = liveness(repo.pushedAt);
 const Heading = `h${headingLevel}` as "h2" | "h3";
+const name = repo.id.split("/")[1];
+
+/**
+ * The two places a reader wants to go from a row: the code, and whatever the
+ * project calls its front door. `homepageUrl` is null for most repositories —
+ * either the owner never filled the field in, or it pointed back at the
+ * repository and the crawler dropped it — so the second link is genuinely
+ * optional rather than a slot that renders empty.
+ */
+const homepage = repo.homepageUrl;
 ---
 
-<article data-pulse={pulse} class="py-3 pl-4 transition-colors hover:bg-sunk">
-  <div class="flex items-baseline justify-between gap-4">
+{
+  /* p-4, not pl-4: the hover fill spans the whole row, and text sitting flush
+     against the edge of a filled surface reads as a rendering bug */
+}
+<article data-pulse={pulse} class="p-4 transition-colors hover:bg-sunk">
+  <div class="flex items-baseline justify-between gap-3">
     <Heading class="min-w-0 font-mono text-[0.95rem] leading-tight">
       <a
         href={repoPath(repo.id)}
         class="text-ink decoration-accent underline-offset-4 hover:underline"
       >
         <span class="text-mute">{repo.ownerLogin}/</span><span
-          class="font-medium">{repo.id.split("/")[1]}</span
+          class="font-medium">{name}</span
         >
       </a>
     </Heading>
 
-    <span class="shrink-0 font-mono text-sm text-ink-soft tabular-nums">
-      {compactNumber(repo.stars)}
-      <span class="text-mute">★</span>
-    </span>
+    <div class="flex shrink-0 items-center gap-3">
+      <span
+        class="flex items-center gap-1 font-mono text-sm font-medium text-ink-soft tabular-nums"
+      >
+        <svg
+          class="size-4 shrink-0 fill-current text-mute"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.94L12 2.5z"
+          ></path>
+        </svg>
+        {compactNumber(repo.stars)}
+        <span class="sr-only">stars</span>
+      </span>
+
+      <a
+        href={githubUrl(repo.id)}
+        rel="noopener"
+        aria-label={`${repo.id} on GitHub`}
+        class="text-mute transition-colors hover:text-accent"
+      >
+        <svg class="size-4 fill-current" viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+          ></path>
+        </svg>
+      </a>
+
+      {
+        homepage && (
+          <a
+            href={homepage}
+            rel="noopener nofollow"
+            aria-label={`Website for ${repo.id}`}
+            class="text-mute transition-colors hover:text-accent"
+          >
+            <svg
+              class="size-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9.25" />
+              <path d="M2.75 12h18.5" />
+              <path d="M12 2.75c2.4 2.5 3.6 5.6 3.6 9.25s-1.2 6.75-3.6 9.25c-2.4-2.5-3.6-5.6-3.6-9.25S9.6 5.25 12 2.75z" />
+            </svg>
+          </a>
+        )
+      }
+    </div>
   </div>
 
   {note && <p class="mt-1 max-w-prose text-[0.925rem] text-ink-soft">{note}</p>}

@@ -281,6 +281,7 @@ function persistProjects(projects: Map<string, GithubProject>) {
         target: githubRepoTable.id,
         set: {
           description: D.sql`excluded.description`,
+          homepageUrl: D.sql`excluded.homepage_url`,
           topics: D.sql`excluded.topics`,
           ownerLogin: D.sql`excluded.owner_login`,
           ownerAvatarUrl: D.sql`excluded.owner_avatar_url`,

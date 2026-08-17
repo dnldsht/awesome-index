@@ -1,11 +1,41 @@
 ---
 import Base from "../layouts/Base.astro";
-import { compactNumber, relativeTime } from "../lib/format.ts";
-import { listSummaries } from "../lib/queries.ts";
+import {
+  compactNumber,
+  fullNumber,
+  LIVENESS_ORDER,
+  pulseBreakdown,
+} from "../lib/format.ts";
+import { listPulses, listSummaries } from "../lib/queries.ts";
+import { QUERY_PARAM, SEARCH_PATH } from "../lib/search.ts";
 import { absolute, listPath } from "../lib/urls.ts";
 
 const summaries = await listSummaries();
 const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
+
+/**
+ * Every row used to end in "newest change just now", which is what a list of
+ * any size always says — 80 rows of identical text carrying nothing. The share
+ * that is still moving differs per list, which is the whole reason to look at
+ * this page rather than at GitHub's topic search.
+ */
+const pulses = await listPulses();
+const emptyPulse = pulseBreakdown([]);
+
+/**
+ * One row per list, with everything the row renders *and* everything the
+ * filter-and-sort script sorts by resolved up front. The pulse lookup used to
+ * happen inside the markup, which meant the numbers the script needs as
+ * attributes were not available where the attributes are written.
+ */
+const rows = summaries.map((summary) => {
+  const pulse = pulses.get(summary.entry.slug) ?? emptyPulse;
+  return {
+    summary,
+    pulse,
+    segments: LIVENESS_ORDER.filter((key) => pulse.counts[key] > 0),
+  };
+});
 
 const title =
   "Awesome Index — GitHub's awesome lists, with the dead entries marked";
@@ -26,26 +56,89 @@ const jsonLd = [
   <h1
     class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl"
   >
-    Every awesome list<br />tells you what exists.
-    <span class="text-mute">None of them tell you what still works.</span>
+    The awesome lists,<br />
+    <span class="text-mute">kept honest.</span>
   </h1>
 
   <p class="mt-6 max-w-xl text-lg text-ink-soft">
-    {compactNumber(total)} projects from {summaries.length} curated lists, each carrying
-    the one thing a README cannot: how long it has been since anyone touched it.
+    {compactNumber(total)} projects from {summaries.length} lists, each carrying what
+    a README leaves out: how long since anyone touched it.
   </p>
 
-  <h2 class="mt-14 font-mono text-xs tracking-widest text-mute uppercase">
-    Lists
-  </h2>
+  {
+    /* The same GET form as the header, given the room it deserves on the one
+      page a first-time reader lands on. No JavaScript here either: it submits
+      to the search page, which builds its state from the query string. */
+  }
+  <form role="search" method="get" action={SEARCH_PATH} class="mt-8 max-w-xl">
+    <label for="home-search" class="sr-only">Search projects</label>
+    <div class="flex gap-2">
+      <input
+        id="home-search"
+        type="search"
+        name={QUERY_PARAM}
+        placeholder={`Search ${fullNumber(total)} projects`}
+        autocomplete="off"
+        class="w-full border border-rule bg-paper px-4 py-2.5 text-ink placeholder:text-mute hover:border-mute focus:border-accent focus:outline-none"
+      />
+      <button
+        type="submit"
+        class="shrink-0 cursor-pointer bg-accent px-4 py-2.5 text-sm font-medium text-paper hover:opacity-90"
+      >
+        Search
+      </button>
+    </div>
+  </form>
 
-  <ul class="mt-4 border-t border-rule">
+  {
+    /*
+    Finding one of 80 lists is a different job from finding one of 32,000
+    projects, and the box above does the second one: it leaves the page. This
+    one never does — it filters the rows already on screen, which for a set this
+    small is instant and needs no index. Both controls are revealed by the
+    script that powers them, so a reader without JavaScript is not handed a
+    filter that does nothing; the rows below are already in the order the
+    default sort would put them in.
+  */
+  }
+  <div class="mt-14 flex flex-wrap items-center gap-x-4 gap-y-3">
+    <h2 class="font-mono text-xs tracking-widest text-mute uppercase">Lists</h2>
+
+    <div id="list-controls" class="ml-auto hidden items-center gap-2">
+      <label for="list-filter" class="sr-only">Filter lists</label>
+      <input
+        id="list-filter"
+        type="search"
+        placeholder={`Filter ${summaries.length} lists`}
+        autocomplete="off"
+        class="h-8 w-40 border border-rule bg-paper px-2.5 text-sm text-ink placeholder:text-mute hover:border-mute focus:border-accent focus:outline-none sm:w-48"
+      />
+
+      <label for="list-sort" class="sr-only">Sort lists</label>
+      <select
+        id="list-sort"
+        class="h-8 cursor-pointer border border-rule bg-paper px-2 text-sm text-ink-soft hover:border-mute focus:border-accent focus:outline-none"
+      >
+        <option value="projects">Most projects</option>
+        <option value="active">Most active</option>
+        <option value="name">Name A–Z</option>
+      </select>
+    </div>
+  </div>
+
+  <ul id="list-index" class="mt-4 -mx-4 border-t border-rule">
     {
-      summaries.map((summary) => (
-        <li class="border-b border-rule">
+      rows.map(({ summary, pulse, segments }) => (
+        <li
+          class="border-b border-rule"
+          data-search={`${summary.entry.name} ${summary.entry.slug}`.toLowerCase()}
+          data-projects={summary.repoCount}
+          data-active={pulse.percentages.active}
+          data-name={summary.entry.name.toLowerCase()}
+        >
           <a
             href={listPath(summary.entry.slug)}
-            class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-4 hover:bg-sunk"
+            class="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-4 hover:bg-sunk"
           >
             {summary.entry.icon && (
               <span aria-hidden="true">{summary.entry.icon}</span>
@@ -56,14 +149,73 @@ const jsonLd = [
             <span class="font-mono text-sm text-ink-soft tabular-nums">
               {compactNumber(summary.repoCount)} projects
             </span>
-            {summary.lastActivity && (
-              <span class="ml-auto text-sm text-mute">
-                newest change {relativeTime(summary.lastActivity)}
+            <span class="ml-auto flex items-center gap-3">
+              {/* a sparkline of the same scale the list page charts in full;
+                  the number beside it is what carries the meaning */}
+              <span
+                class="hidden h-1.5 w-24 overflow-hidden rounded-full bg-sunk sm:flex"
+                aria-hidden="true"
+              >
+                {segments.map((key) => (
+                  <span
+                    style={`width: ${(pulse.counts[key] / pulse.total) * 100}%; background: var(--pulse-${key})`}
+                  />
+                ))}
               </span>
-            )}
+              <span class="w-20 text-right text-sm text-mute tabular-nums">
+                {pulse.percentages.active}% active
+              </span>
+            </span>
           </a>
         </li>
       ))
     }
   </ul>
+
+  <p id="list-empty" hidden class="mt-4 text-sm text-mute">
+    No list matches that. <a class="text-accent hover:underline" href={SEARCH_PATH}
+      >Search the projects instead →</a
+    >
+  </p>
 </Base>
+
+<script is:inline>
+  (() => {
+    const controls = document.getElementById("list-controls");
+    const list = document.getElementById("list-index");
+    const filter = document.getElementById("list-filter");
+    const sort = document.getElementById("list-sort");
+    const empty = document.getElementById("list-empty");
+    if (!controls || !list || !filter || !sort || !empty) return;
+
+    const rows = [...list.children];
+    const number = (row, key) => Number(row.dataset[key] || 0);
+    const compare = {
+      projects: (a, b) => number(b, "projects") - number(a, "projects"),
+      active: (a, b) => number(b, "active") - number(a, "active"),
+      name: (a, b) => a.dataset.name.localeCompare(b.dataset.name),
+    };
+
+    const apply = () => {
+      const term = filter.value.trim().toLowerCase();
+      const shown = new Set(
+        rows.filter((row) => !term || row.dataset.search.includes(term)),
+      );
+
+      for (const row of rows) row.hidden = !shown.has(row);
+      empty.hidden = shown.size > 0;
+
+      // one reflow rather than 80: every row moves inside a fragment, and the
+      // hidden ones ride along so they are still in the DOM for the next term
+      const ordered = [...rows].sort(compare[sort.value] ?? compare.projects);
+      const fragment = document.createDocumentFragment();
+      for (const row of ordered) fragment.append(row);
+      list.append(fragment);
+    };
+
+    controls.classList.remove("hidden");
+    controls.classList.add("flex");
+    filter.addEventListener("input", apply);
+    sort.addEventListener("change", apply);
+  })();
+</script>

@@ -44,6 +44,7 @@ export function resetOctokitRotation(): void {
 export type GithubProject = {
   id: string;
   description: string;
+  homepageUrl: string | null;
   topics: string[];
   ownerLogin: string;
   ownerAvatarUrl: string;
@@ -60,6 +61,7 @@ const REPO_FIELDS = `
 fragment repoFields on Repository {
   nameWithOwner
   description
+  homepageUrl
   isArchived
   stargazerCount
   forkCount
@@ -70,6 +72,43 @@ fragment repoFields on Repository {
   repositoryTopics(first: 10) { nodes { topic { name } } }
   owner { login avatarUrl }
 }`;
+
+/**
+ * The homepage field as something safe to put in an `href`.
+ *
+ * GitHub takes whatever the owner typed into the Website box: it is usually a
+ * full url, but "tokio.rs" and "  " are both common, and plenty of projects
+ * point it back at their own repository, which the card already links. A
+ * scheme-less value is read as https rather than dropped, since that is what
+ * the owner meant, and anything that is not http(s) — `javascript:`, a mailto,
+ * a typo that does not parse — becomes null instead of reaching the page.
+ */
+export function normalizeHomepage(
+  raw: string | null | undefined,
+  repoId: string,
+): string | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+
+  let url: URL;
+  try {
+    url = new URL(
+      /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`,
+    );
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+
+  // "the website is the repo" carries nothing the GitHub link does not
+  const host = url.hostname.replace(/^www\./, "").toLowerCase();
+  if (host === "github.com") {
+    const path = url.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+    if (path === repoId.toLowerCase()) return null;
+  }
+
+  return url.href;
+}
 
 /**
  * Refreshes a whole batch of repositories with a single request.
@@ -121,6 +160,7 @@ export async function fetchGithubProjects(ids: string[]) {
     projects.set(id, {
       id: node.nameWithOwner,
       description: node.description ?? "",
+      homepageUrl: normalizeHomepage(node.homepageUrl, node.nameWithOwner),
       topics: (node.repositoryTopics?.nodes ?? []).map(
         (x: any) => x.topic.name,
       ),

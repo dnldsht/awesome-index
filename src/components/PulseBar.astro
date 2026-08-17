@@ -1,0 +1,65 @@
+---
+import {
+  fullNumber,
+  LIVENESS_LABEL,
+  LIVENESS_ORDER,
+  type PulseBreakdown,
+} from "../lib/format.ts";
+
+/**
+ * How a listing is spread across the pulse scale, as one bar.
+ *
+ * This is the site's whole claim in a single glance: a README can tell you a
+ * list has 1,500 projects, only the dataset can tell you that a third of them
+ * have not moved in three years. It replaces the paragraph of prose the header
+ * used to carry, so it has to be denser than that prose *and* say more.
+ *
+ * The bar is decoration — `aria-hidden` — because the legend under it states
+ * every share in words. Same rule as the entry stripe: colour is never the only
+ * carrier of the meaning.
+ */
+export type Props = {
+  breakdown: PulseBreakdown;
+  /** the legend counts projects too, which is noise where the total is stated */
+  showCounts?: boolean;
+};
+
+const { breakdown, showCounts = false } = Astro.props;
+const { counts, percentages, total } = breakdown;
+
+const segments = LIVENESS_ORDER.filter((key) => counts[key] > 0);
+---
+
+{
+  total > 0 && (
+    <div>
+      <div
+        class="flex h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-sunk"
+        aria-hidden="true"
+      >
+        {segments.map((key) => (
+          <div
+            style={`width: ${(counts[key] / total) * 100}%; background: var(--pulse-${key})`}
+          />
+        ))}
+      </div>
+
+      <ul class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-soft">
+        {segments.map((key) => (
+          <li class="flex items-center gap-1.5">
+            <span
+              class="size-2 shrink-0 rounded-full"
+              style={`background: var(--pulse-${key})`}
+              aria-hidden="true"
+            />
+            <span class="tabular-nums">{percentages[key]}%</span>
+            <span class="text-mute">
+              {LIVENESS_LABEL[key]}
+              {showCounts && ` (${fullNumber(counts[key])})`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

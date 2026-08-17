@@ -1,5 +1,6 @@
 import * as D from "drizzle-orm";
 import { loadConfig, type ConfigEntry } from "./config.ts";
+import { pulseBreakdown, type PulseBreakdown } from "./format.ts";
 import { db } from "./db/client.ts";
 import {
   awesomeItemTable,
@@ -242,14 +243,23 @@ export type ListSummary = {
   lastActivity: Date | undefined;
 };
 
+let summariesCache: ListSummary[] | undefined;
+
 /**
  * Config entries that actually have crawled data, with their size.
  *
  * A list declared in config.yaml but never crawled has no rows, and every route
  * builds off this: emitting a page for an empty list would ship thin content
  * and put a dead link in the sitemap.
+ *
+ * Memoised because the site header renders it on every page: one query per
+ * config entry is nothing once, and 80 of them across 34,000 pages is a build
+ * that never finishes. The database is a file we regenerate wholesale between
+ * builds, so there is no window in which the cache could go stale mid-run —
+ * `astro dev` picks up a fresh crawl on restart, exactly like `loadConfig`.
  */
 export async function listSummaries(): Promise<ListSummary[]> {
+  if (summariesCache) return summariesCache;
   const entries = await loadConfig();
   const summaries: ListSummary[] = [];
 
@@ -276,7 +286,57 @@ export async function listSummaries(): Promise<ListSummary[]> {
     });
   }
 
-  return summaries.sort((a, b) => b.repoCount - a.repoCount);
+  summariesCache = summaries.sort((a, b) => b.repoCount - a.repoCount);
+  return summariesCache;
+}
+
+/**
+ * The pulse split of every config entry, keyed by slug.
+ *
+ * One pass over the whole join rather than a query per list: the home page
+ * needs all 80 of them at once, and the bucketing happens in JavaScript so the
+ * thresholds stay defined exactly once, in `liveness()`. A merged entry is
+ * deduplicated across its source lists first — a repository both awesome-mac
+ * and open-source-mac-os-apps link is one project on the MacOS page, and it
+ * would otherwise be counted twice here.
+ */
+export async function listPulses(): Promise<Map<string, PulseBreakdown>> {
+  const entries = await loadConfig();
+
+  const rows = await db
+    .selectDistinct({
+      listId: awesomeItemTable.listId,
+      repoId: awesomeItemTable.repoId,
+      pushedAt: githubRepoTable.pushedAt,
+    })
+    .from(awesomeItemTable)
+    .innerJoin(
+      githubRepoTable,
+      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
+    );
+
+  const bySource = new Map<string, { repoId: string; pushedAt: Date }[]>();
+  for (const row of rows) {
+    const list = bySource.get(row.listId) ?? [];
+    list.push({ repoId: row.repoId, pushedAt: row.pushedAt });
+    bySource.set(row.listId, list);
+  }
+
+  const pulses = new Map<string, PulseBreakdown>();
+  for (const entry of entries) {
+    const seen = new Map<string, Date>();
+    for (const sourceId of entry.sourceIds) {
+      for (const row of bySource.get(sourceId) ?? []) {
+        seen.set(row.repoId, row.pushedAt);
+      }
+    }
+    pulses.set(
+      entry.slug,
+      pulseBreakdown([...seen.values()].map((pushedAt) => ({ pushedAt }))),
+    );
+  }
+
+  return pulses;
 }
 
 /** ids of every repository that at least one list links, for getStaticPaths */

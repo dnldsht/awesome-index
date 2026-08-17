@@ -1,9 +1,10 @@
 ---
 import CategoryNav from "./CategoryNav.astro";
 import Pagination from "./Pagination.astro";
+import PulseBar from "./PulseBar.astro";
 import RepoCard from "./RepoCard.astro";
 import Base from "../layouts/Base.astro";
-import { fullNumber, relativeTime } from "../lib/format.ts";
+import { fullNumber, type PulseBreakdown } from "../lib/format.ts";
 import type {
   Category,
   ListSummary,
@@ -27,12 +28,14 @@ export type Props = {
   categories: Category[];
   /** this page's slice, not the whole list */
   repos: RepoWithSections[];
+  /** across the whole list, not this page: it describes the list, not the slice */
+  breakdown: PulseBreakdown;
   /** 1-based */
   page: number;
   totalPages: number;
 };
 
-const { summary, categories, repos, page, totalPages } = Astro.props;
+const { summary, categories, repos, breakdown, page, totalPages } = Astro.props;
 const { entry } = summary;
 
 const from = firstOnPage(page);
@@ -105,37 +108,72 @@ const jsonLd = [
   jsonLd={jsonLd}
   ogImage={ogListPath(entry.slug)}
 >
+  {
+    /*
+    The header states the list rather than describing it. The paragraph that
+    used to sit here spent four lines saying what the numbers below say in one,
+    and the pulse split — the one fact no README carries — was a clause at the
+    end of it. A reader landing from a search result should be able to tell in
+    one glance how big this list is and how much of it is still alive.
+  */
+  }
   <header>
-    <h1
-      class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl"
-    >
-      {entry.icon && <span aria-hidden="true">{entry.icon}</span>}
-      {" "}
-      Awesome {entry.name}
-    </h1>
+    <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+      <h1
+        class="font-display text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl"
+      >
+        {entry.icon && <span aria-hidden="true">{entry.icon}</span>}
+        {" "}
+        Awesome {entry.name}
+      </h1>
 
-    <p class="mt-5 max-w-xl text-lg text-ink-soft">
-      {fullNumber(summary.repoCount)} projects in {
-        fullNumber(categories.length)
-      } categories.{" "}
       {
-        page > 1 && (
-          <span>
-            Showing {range}, page {page} of {totalPages}.{" "}
-          </span>
-        )
+        /* a plain link, not a widget: this page stays free of JavaScript, and
+          the search page reads its own filters out of the query string */
+      }
+      <a
+        class="shrink-0 text-sm text-accent decoration-accent underline-offset-4 hover:underline"
+        href={listSearchUrl(entry.slug)}
+      >
+        Search {fullNumber(summary.repoCount)}{" "}{entry.name} projects →
+      </a>
+    </div>
+
+    <p
+      class="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft"
+    >
+      <span class="font-medium tabular-nums">
+        {fullNumber(summary.repoCount)} projects
+      </span>
+      <span aria-hidden="true" class="text-mute">·</span>
+      <span class="tabular-nums">
+        {fullNumber(categories.length)} categories
+      </span>
+      {
+        /* "newest push" is deliberately absent: on a list of any size some
+          repository was always pushed minutes ago, so it read "just now" on
+          nearly every page — a metric that never varies is decoration. The bar
+          below carries freshness in a form that actually differs per list. */
       }
       {
-        summary.lastActivity && (
-          <span class="text-mute">
-            The newest change anywhere in the list landed{" "}
-            {relativeTime(summary.lastActivity)}.
-          </span>
+        page > 1 && (
+          <>
+            <span aria-hidden="true" class="text-mute">
+              ·
+            </span>
+            <span class="text-mute">
+              showing {range}, page {page} of {totalPages}
+            </span>
+          </>
         )
       }
     </p>
 
-    <p class="mt-4 flex flex-wrap items-baseline gap-x-2 text-sm text-mute">
+    <div class="mt-5">
+      <PulseBar breakdown={breakdown} />
+    </div>
+
+    <p class="mt-5 flex flex-wrap items-baseline gap-x-2 text-sm text-mute">
       <span>
         {entry.sourceIds.length > 1 ? "Merged from" : "Sourced from"}
       </span>
@@ -152,20 +190,6 @@ const jsonLd = [
           </Fragment>
         ))
       }
-    </p>
-
-    {
-      /* a plain link, not a widget: this page stays free of JavaScript, and the
-        search page reads its own filters out of the query string */
-    }
-    <p class="mt-4 text-sm">
-      <a
-        class="text-accent decoration-accent underline-offset-4 hover:underline"
-        href={listSearchUrl(entry.slug)}
-      >
-        Search {fullNumber(summary.repoCount)}
-        {entry.name} projects →
-      </a>
     </p>
   </header>
 
@@ -185,7 +209,11 @@ const jsonLd = [
         }
       </h2>
 
-      <ul class="mt-4 border-t border-rule">
+      {
+        /* the row padding is bled back out with -mx-4 so the text keeps the
+          column's left edge while the hover fill runs past it */
+      }
+      <ul class="mt-4 -mx-4 border-t border-rule">
         {
           repos.map((repo) => (
             <li class="border-b border-rule">

@@ -522,6 +522,19 @@ const jsonLd = [
       >
         Open on github.com ↗
       </a>
+      {
+        /* whatever the owner put in GitHub's Website box, normalised by the
+          crawler; null on most repositories, so this is genuinely optional */
+        repo.homepageUrl && (
+          <a
+            class="text-accent decoration-accent underline-offset-4 hover:underline"
+            href={repo.homepageUrl}
+            rel="noopener nofollow"
+          >
+            Project website ↗
+          </a>
+        )
+      }
       <a
         class="text-ink-soft underline-offset-4 hover:underline"
         href={ownerUrl(repo.ownerLogin)}
@@ -555,8 +568,7 @@ const jsonLd = [
       >
         Appears in{" "}
         <span class="tabular-nums">
-          {listCount}
-          {listCount === 1 ? "list" : "lists"}
+          {listCount}{" "}{listCount === 1 ? "list" : "lists"}
         </span>
       </h2>
 
@@ -626,7 +638,7 @@ const jsonLd = [
             </a>
           </div>
 
-          <ul class="mt-4 border-t border-rule">
+          <ul class="mt-4 -mx-4 border-t border-rule">
             {related.map((other) => (
               <li class="border-b border-rule">
                 <RepoCard repo={other} headingLevel={3} />

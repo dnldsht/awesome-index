@@ -1,5 +1,6 @@
 ---
 import ListPage from "../../../components/ListPage.astro";
+import { pulseBreakdown } from "../../../lib/format.ts";
 import { pageCount, pageSlice } from "../../../lib/pagination.ts";
 import {
   categoriesForList,
@@ -30,6 +31,9 @@ export async function getStaticPaths() {
       categoriesForList(summary.entry),
     ]);
     const totalPages = pageCount(repos.length);
+    // the list's pulse split, not this page's: it is the same header on every
+    // page of the list, and computing it per slice would make it wobble
+    const breakdown = pulseBreakdown(repos);
 
     for (let page = 2; page <= totalPages; page++) {
       paths.push({
@@ -39,6 +43,7 @@ export async function getStaticPaths() {
           summary,
           categories,
           repos: pageSlice(repos, page),
+          breakdown,
           page,
           totalPages,
         },

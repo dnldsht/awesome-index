@@ -65,6 +65,9 @@ export const repoPath = (repoId: string) => `/r/${repoId}/`;
 /** the repository on github.com, not on this site */
 export const githubUrl = (repoId: string) => `https://github.com/${repoId}`;
 
+/** this site's own source, linked from the header alongside the theme toggle */
+export const SOURCE_REPO = "dnldsht/awesome-index";
+
 export const ownerUrl = (login: string) => `https://github.com/${login}`;
 
 /** absolute, for canonical tags, og:url and the sitemap */

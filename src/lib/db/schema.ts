@@ -62,6 +62,8 @@ export const githubRepoTable = sqliteTable(
   {
     id: text("id").primaryKey().notNull(),
     description: text("description").notNull().default(""),
+    /** the "Website" GitHub shows next to a repo, absent on most of them */
+    homepageUrl: text("homepage_url"),
     topics: text("topics", { mode: "json" }).$type<string[]>().notNull(),
     ownerLogin: text("owner_login").notNull(),
     ownerAvatarUrl: text("owner_avatar_url").notNull(),

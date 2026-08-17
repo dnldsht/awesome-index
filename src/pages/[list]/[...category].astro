@@ -1,9 +1,14 @@
 ---
 import CategoryNav from "../../components/CategoryNav.astro";
 import Pagination from "../../components/Pagination.astro";
+import PulseBar from "../../components/PulseBar.astro";
 import RepoCard from "../../components/RepoCard.astro";
 import Base from "../../layouts/Base.astro";
-import { fullNumber } from "../../lib/format.ts";
+import {
+  fullNumber,
+  pulseBreakdown,
+  type PulseBreakdown,
+} from "../../lib/format.ts";
 import { firstOnPage, pageCount, pageSlice } from "../../lib/pagination.ts";
 import {
   categoriesForList,
@@ -68,6 +73,8 @@ export async function getStaticPaths() {
       }
 
       const totalPages = pageCount(all.length);
+      // the category's split, shared by every page of it
+      const breakdown = pulseBreakdown(all);
 
       for (let page = 1; page <= totalPages; page++) {
         paths.push({
@@ -85,6 +92,7 @@ export async function getStaticPaths() {
             category,
             categories,
             repos: pageSlice(all, page),
+            breakdown,
             page,
             totalPages,
             totalRepos: all.length,
@@ -103,14 +111,24 @@ type Props = {
   categories: Category[];
   /** this page's slice, not the whole category */
   repos: RepoWithSections[];
+  /** across the whole category, not this page */
+  breakdown: PulseBreakdown;
   /** 1-based */
   page: number;
   totalPages: number;
   totalRepos: number;
 };
 
-const { summary, category, categories, repos, page, totalPages, totalRepos } =
-  Astro.props;
+const {
+  summary,
+  category,
+  categories,
+  repos,
+  breakdown,
+  page,
+  totalPages,
+  totalRepos,
+} = Astro.props;
 const { entry } = summary;
 
 const name = category.path.at(-1) ?? category.slug;
@@ -266,51 +284,61 @@ const jsonLd = [
     </ol>
   </nav>
 
+  {
+    /* Same treatment as the list header, and for the same reason: the sentence
+      that used to live here restated the breadcrumb directly above it. What a
+      reader cannot get from the breadcrumb is how big this heading is and how
+      much of it still moves. */
+  }
   <header class="mt-4">
-    <h1
-      class="font-display text-3xl leading-[1.15] font-semibold tracking-tight sm:text-4xl"
-    >
-      {entry.name}{" "}
-      <span class="text-mute" aria-hidden="true">·</span>{" "}
-      {name}
-    </h1>
+    <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+      <h1
+        class="font-display text-3xl leading-[1.15] font-semibold tracking-tight sm:text-4xl"
+      >
+        {entry.name}{" "}
+        <span class="text-mute" aria-hidden="true">·</span>{" "}
+        {name}
+      </h1>
 
-    <p class="mt-4 max-w-xl text-ink-soft">
-      {fullNumber(totalRepos)}{" "}
-      {totalRepos === 1 ? "project" : "projects"}{" "}
+      <a
+        class="shrink-0 text-sm text-accent decoration-accent underline-offset-4 hover:underline"
+        href={listSearchUrl(entry.slug)}
+      >
+        Search all {entry.name} projects →
+      </a>
+    </div>
+
+    <p
+      class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft"
+    >
+      <span class="font-medium tabular-nums">
+        {fullNumber(totalRepos)}{" "}{totalRepos === 1 ? "project" : "projects"}
+      </span>
+      <span aria-hidden="true" class="text-mute">·</span>
       {
         bucket ? (
-          <Fragment>
-            that the lists behind{" "}
-            <a
-              class="text-accent decoration-accent underline-offset-4 hover:underline"
-              href={listPath(entry.slug)}
-            >
-              Awesome {entry.name}
-            </a>{" "}
-            link before any heading, so they belong to no section of their own
-          </Fragment>
+          <span class="text-mute">listed before any heading on the list</span>
         ) : (
-          <Fragment>
-            filed under {category.path.join(" › ")} on the{" "}
-            <a
-              class="text-accent decoration-accent underline-offset-4 hover:underline"
-              href={listPath(entry.slug)}
-            >
-              Awesome {entry.name}
-            </a>{" "}
-            list
-          </Fragment>
+          <span class="text-mute">{category.path.join(" › ")}</span>
         )
-      }, most starred first.{" "}
+      }
       {
         totalPages > 1 && (
-          <span class="text-mute">
-            Showing {range}, page {page} of {totalPages}.
-          </span>
+          <>
+            <span aria-hidden="true" class="text-mute">
+              ·
+            </span>
+            <span class="text-mute">
+              showing {range}, page {page} of {totalPages}
+            </span>
+          </>
         )
       }
     </p>
+
+    <div class="mt-4">
+      <PulseBar breakdown={breakdown} />
+    </div>
   </header>
 
   <div class="mt-10 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12">
@@ -334,7 +362,7 @@ const jsonLd = [
         }
       </h2>
 
-      <ul class="mt-4 border-t border-rule">
+      <ul class="mt-4 -mx-4 border-t border-rule">
         {
           repos.map((repo) => (
             <li class="border-b border-rule">

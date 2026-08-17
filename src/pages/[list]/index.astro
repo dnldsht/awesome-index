@@ -1,5 +1,6 @@
 ---
 import ListPage from "../../components/ListPage.astro";
+import { pulseBreakdown } from "../../lib/format.ts";
 import { pageCount, pageSlice } from "../../lib/pagination.ts";
 import {
   categoriesForList,
@@ -35,6 +36,8 @@ export async function getStaticPaths() {
           summary,
           categories,
           repos: pageSlice(repos, 1),
+          // computed from the whole list, which only this scope still holds
+          breakdown: pulseBreakdown(repos),
           page: 1,
           totalPages: pageCount(repos.length),
         },

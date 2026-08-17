@@ -27,6 +27,7 @@ import {
   type SearchState,
   type SortKey,
 } from "../lib/search.ts";
+import { githubUrl } from "../lib/urls.ts";
 
 /**
  * The site's only piece of client-side JavaScript.
@@ -434,7 +435,9 @@ export default function SearchApp({ lists }: Props) {
             </p>
           )}
 
-          <ul class="border-t border-rule">
+          {/* -mx-4 keeps the row text on the column's edge while the hover
+              fill runs past it, same as the list and category pages */}
+          <ul class="-mx-4 border-t border-rule">
             {cards.map((card) => (
               <li key={card.url} class="border-b border-rule">
                 <Result card={card} />
@@ -464,9 +467,9 @@ function Result({ card }: { card: Card }) {
   return (
     <article
       data-pulse={card.pulse}
-      class="py-3 pl-4 transition-colors hover:bg-sunk"
+      class="p-4 transition-colors hover:bg-sunk"
     >
-      <div class="flex items-baseline justify-between gap-4">
+      <div class="flex items-baseline justify-between gap-3">
         <h3 class="min-w-0 font-mono text-[0.95rem] leading-tight">
           <a
             href={card.url}
@@ -477,9 +480,36 @@ function Result({ card }: { card: Card }) {
           </a>
         </h3>
 
-        <span class="shrink-0 font-mono text-sm text-ink-soft tabular-nums">
-          {compactNumber(card.stars)} <span class="text-mute">★</span>
-        </span>
+        <div class="flex shrink-0 items-center gap-3">
+          <span class="flex items-center gap-1 font-mono text-sm font-medium text-ink-soft tabular-nums">
+            <svg
+              class="size-4 shrink-0 fill-current text-mute"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.94L12 2.5z" />
+            </svg>
+            {compactNumber(card.stars)}
+            <span class="sr-only">stars</span>
+          </span>
+
+          {/* the homepage is not in the index, so a result carries the one
+              quick link it can reconstruct from the id it already has */}
+          <a
+            href={githubUrl(`${card.owner}/${card.name}`)}
+            rel="noopener"
+            aria-label={`${card.owner}/${card.name} on GitHub`}
+            class="text-mute transition-colors hover:text-accent"
+          >
+            <svg
+              class="size-4 fill-current"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+            >
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+          </a>
+        </div>
       </div>
 
       {card.blurb && (

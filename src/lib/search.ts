@@ -11,7 +11,7 @@
  * silently matches nothing becomes a type error instead.
  */
 
-import type { Liveness } from "./format.ts";
+import { LIVENESS_ORDER } from "./format.ts";
 
 /** the island's page; `trailingSlash: "always"`, hence the closing slash */
 export const SEARCH_PATH = "/search/";
@@ -45,12 +45,7 @@ export const FILTER_LABEL: Record<FilterKey, string> = {
 };
 
 /** the values of the two closed filters, in the order they should be shown */
-export const PULSE_ORDER: Liveness[] = [
-  "active",
-  "steady",
-  "slowing",
-  "dormant",
-];
+export const PULSE_ORDER = LIVENESS_ORDER;
 
 export const ARCHIVED_ORDER = ["no", "yes"] as const;
 
