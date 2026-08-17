@@ -38,7 +38,18 @@ pages and a few thousand.
 | category                       | `/rust/libraries/artificial-intelligence/`        |
 | category, page 2+              | `/rust/libraries/artificial-intelligence/page/2/` |
 | entries filed under no heading | `/javascript/uncategorized/`                      |
-| repository                     | `/r/tokio-rs/tokio/`                              |
+
+A repository has no URL here. It used to — `/r/tokio-rs/tokio/`, 30,464 of them,
+88% of the site's URLs — but 93% of the dataset is curated by a single list and
+91% carries one note of about 73 characters, so the page was github.com's own
+metadata plus a sentence, competing with github.com for the one query it was
+always going to lose. Rows, `ItemList` entries and search results all link
+github.com directly; the curators' prose lives on the listing pages, which show
+sixty notes at a time instead of one.
+
+The search did not go with them: `bin/index-search.ts` writes one Pagefind record
+per project straight from sqlite after the build, so `/search/` still covers every
+project while the site itself is only listings.
 
 Page 1 never carries a `page/1` suffix, so no URL moves when a listing grows
 past one page. Paginated pages self-canonical rather than pointing back at page

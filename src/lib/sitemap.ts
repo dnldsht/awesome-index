@@ -2,9 +2,15 @@
  * The URL set, derived once and shared by the index and every shard.
  *
  * Everything here comes out of the same query helpers the routes themselves
- * build from — `listSummaries`, `categoriesForList`, `allRepoIds` — so a page
- * that stops being generated stops being listed in the same build, rather than
- * leaving a 404 in the sitemap for a crawler to find.
+ * build from — `listSummaries`, `categoriesForList` — so a page that stops being
+ * generated stops being listed in the same build, rather than leaving a 404 in
+ * the sitemap for a crawler to find.
+ *
+ * Every URL in here is a listing: the home page, 80 lists, ~3,400 categories and
+ * the pages they spill onto. Repositories are not listed because they no longer
+ * have pages — a row links github.com directly — which took the set from 34,440
+ * URLs to a tenth of that, and left it made entirely of pages that say something
+ * github.com does not.
  *
  * Pagination is on the same footing: page counts come from `pageCount()`, the
  * function the routes slice with, and the URLs from `listPagePath` /
@@ -15,22 +21,16 @@
  */
 
 import { pageCount } from "./pagination.ts";
-import {
-  allRepoIds,
-  categoriesForList,
-  listSummaries,
-  repoDetail,
-  reposForList,
-} from "./queries.ts";
-import { absolute, categoryPagePath, listPagePath, repoPath } from "./urls.ts";
+import { categoriesForList, listSummaries, reposForList } from "./queries.ts";
+import { absolute, categoryPagePath, listPagePath } from "./urls.ts";
 
 /**
- * The protocol caps a sitemap at 50,000 URLs / 50MB uncompressed. At 20k
- * repositories plus their category pages we are past a third of that, and the
- * cap is the kind of limit you notice by silently losing the tail of the file,
- * so shards are kept an order of magnitude under it. 5,000 URLs is roughly
- * 400KB of XML — small enough that a shard re-fetch after a nightly crawl is
- * cheap for the crawler too.
+ * The protocol caps a sitemap at 50,000 URLs / 50MB uncompressed, and the
+ * listings fit inside one shard today. Sharding is kept anyway: it costs one
+ * extra fetch, the cap is the kind of limit you notice by silently losing the
+ * tail of a file, and a dozen more lists in config.yaml would walk us back
+ * towards it. 5,000 URLs is roughly 400KB of XML — small enough that a shard
+ * re-fetch after a nightly crawl is cheap for the crawler too.
  */
 export const SHARD_SIZE = 5_000;
 
@@ -38,10 +38,10 @@ export type SitemapUrl = {
   /** absolute, and trailing-slashed to match the page's own canonical */
   loc: string;
   /**
-   * Real freshness, not the build clock. A repository page changes when the
-   * repository is pushed to; a list or category page changes when anything in
-   * it is. Stamping every URL with "today" on every nightly build is how a
-   * sitemap teaches a crawler to stop believing its lastmod.
+   * Real freshness, not the build clock: a list or category page changes when
+   * anything in it is pushed to. Stamping every URL with "today" on every
+   * nightly build is how a sitemap teaches a crawler to stop believing its
+   * lastmod.
    */
   lastmod: Date;
 };
@@ -56,8 +56,6 @@ async function collect(): Promise<SitemapUrl[]> {
   const summaries = await listSummaries();
 
   const urls: SitemapUrl[] = [];
-  /** pushedAt per repository, harvested while walking the lists */
-  const pushedAt = new Map<string, Date>();
   let siteNewest = EPOCH;
 
   for (const summary of summaries) {
@@ -72,7 +70,6 @@ async function collect(): Promise<SitemapUrl[]> {
     let listNewest = EPOCH;
 
     for (const repo of repos) {
-      pushedAt.set(repo.id, newer(pushedAt.get(repo.id), repo.pushedAt));
       listNewest = newer(listNewest, repo.pushedAt);
       for (const section of repo.sections) {
         perCategory.set(
@@ -108,19 +105,6 @@ async function collect(): Promise<SitemapUrl[]> {
         });
       }
     }
-  }
-
-  // the /r/ route builds from `allRepoIds`, so the sitemap does too rather than
-  // from the union of the lists above: the two differ the moment the database
-  // still holds a list that config.yaml has dropped
-  for (const id of await allRepoIds()) {
-    let pushed = pushedAt.get(id);
-    if (!pushed) {
-      const detail = await repoDetail(id);
-      if (!detail) continue;
-      pushed = detail.repo.pushedAt;
-    }
-    urls.push({ loc: repoPath(id), lastmod: pushed });
   }
 
   urls.push({

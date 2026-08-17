@@ -214,28 +214,6 @@ export async function reposForCategory(
   return groupSections(rows);
 }
 
-/** one repository plus every list and section that features it */
-export async function repoDetail(id: string) {
-  const [repo] = await db
-    .select()
-    .from(githubRepoTable)
-    .where(D.eq(githubRepoTable.id, id))
-    .limit(1);
-  if (!repo) return undefined;
-
-  const appearances = await db
-    .select({
-      listId: awesomeItemTable.listId,
-      section: awesomeItemTable.section,
-      sectionSlug: awesomeItemTable.sectionSlug,
-      note: awesomeItemTable.note,
-    })
-    .from(awesomeItemTable)
-    .where(D.eq(awesomeItemTable.repoId, id));
-
-  return { repo, appearances };
-}
-
 export type ListSummary = {
   entry: ConfigEntry;
   repoCount: number;
@@ -337,16 +315,4 @@ export async function listPulses(): Promise<Map<string, PulseBreakdown>> {
   }
 
   return pulses;
-}
-
-/** ids of every repository that at least one list links, for getStaticPaths */
-export async function allRepoIds(): Promise<string[]> {
-  const rows = await db
-    .selectDistinct({ id: githubRepoTable.id })
-    .from(githubRepoTable)
-    .innerJoin(
-      awesomeItemTable,
-      D.eq(awesomeItemTable.repoId, githubRepoTable.id),
-    );
-  return rows.map((row) => row.id);
 }

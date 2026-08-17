@@ -1,14 +1,14 @@
 /**
- * The contract between the page that *writes* the search index and the island
+ * The contract between the script that *writes* the search index and the island
  * that reads it.
  *
- * Pagefind builds its filters and sorts from `data-pagefind-*` attributes at
- * build time, and the island then asks for those exact keys and values at
- * runtime. The two live in different halves of the app — a `.astro` page that
- * only ever runs in node, a `.tsx` island that only ever runs in the browser —
- * so every key, every value and every URL parameter name is named once, here,
- * and imported by both. A typo that would otherwise show up as a filter that
- * silently matches nothing becomes a type error instead.
+ * `bin/index-search.ts` builds a Pagefind record per project after the site is
+ * built, and the island then asks for those exact keys and values at runtime.
+ * The two live in different halves of the app — a node script, a `.tsx` island
+ * that only ever runs in the browser — so every key, every value and every URL
+ * parameter name is named once, here, and imported by both. A typo that would
+ * otherwise show up as a filter that silently matches nothing becomes a type
+ * error instead.
  */
 
 import { LIVENESS_ORDER } from "./format.ts";
@@ -23,8 +23,8 @@ export const SORT_PARAM = "sort";
  * The filter keys, in the order the facets are stacked in the UI.
  *
  * `list` is the multi-valued one: a repository can be curated by several lists,
- * and Pagefind collects a filter value per tagged element rather than per page,
- * so the repository page emits one tagged element per appearance.
+ * and a custom record takes a `string[]` per key, so it holds one slug per
+ * appearance without any of the per-element tagging an HTML page needed.
  */
 export const FILTER_KEYS = [
   "list",
@@ -96,9 +96,9 @@ export function starsSortValue(stars: number): string {
 
 /**
  * Dates sort as `YYYY-MM-DD`, which is already lexicographically ordered — the
- * one date format that needs no padding. Passed as a date and not a full
- * timestamp on purpose: a colon in the value would collide with the `key:value`
- * syntax below.
+ * one date format that needs no padding. A date and not a full timestamp because
+ * the same value is the one the result card renders as "3 months ago", and the
+ * hours never showed there.
  */
 export function pushedSortValue(pushedAt: Date): string {
   return pushedAt.toISOString().slice(0, 10);
@@ -107,23 +107,6 @@ export function pushedSortValue(pushedAt: Date): string {
 /** the whole `owner/name`, because that is the form the site displays */
 export function nameSortValue(repoId: string): string {
   return repoId.toLowerCase();
-}
-
-/**
- * Pagefind reads `key:value` pairs out of a single attribute and splits the
- * pairs on commas, so a value carrying a comma would silently become a second,
- * bogus pair — and a colon would move the boundary between key and value. No
- * licence or language in the dataset contains either today, but the crawler
- * re-reads GitHub every night and nothing upstream promises it will stay that
- * way.
- */
-export function inlineValue(value: string): string {
-  return value.replace(/[,:]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-/** `data-pagefind-filter` / `-meta` / `-sort` attribute text for one pair */
-export function inlinePair(key: string, value: string | number): string {
-  return `${key}:${inlineValue(String(value))}`;
 }
 
 export type SearchState = {

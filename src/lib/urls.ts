@@ -60,9 +60,14 @@ export const categoryPagePath = (
   page: number,
 ) => paginated(categoryPath(slug, sectionSlug), page);
 
-export const repoPath = (repoId: string) => `/r/${repoId}/`;
-
-/** the repository on github.com, not on this site */
+/**
+ * A repository has no page on this site, by decision: 93% of them are curated
+ * by a single list and 91% carry one note of ~73 characters, so the page was
+ * github.com's own metadata plus a sentence — 30,464 URLs competing with
+ * github.com for the queries it was always going to win. Every row, every
+ * `ItemList` entry and every search result links straight here instead, and the
+ * curators' prose lives on the listing pages, which show 60 notes at a time.
+ */
 export const githubUrl = (repoId: string) => `https://github.com/${repoId}`;
 
 /** this site's own source, linked from the header alongside the theme toggle */

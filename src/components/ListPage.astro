@@ -13,7 +13,7 @@ import type {
 import { firstOnPage } from "../lib/pagination.ts";
 import { ogListPath } from "../lib/og.ts";
 import { listSearchUrl } from "../lib/search.ts";
-import { absolute, githubUrl, listPagePath, repoPath } from "../lib/urls.ts";
+import { absolute, githubUrl, listPagePath } from "../lib/urls.ts";
 
 /**
  * One page of a list, page 1 included.
@@ -82,11 +82,14 @@ const jsonLd = [
     // it this page shows, and the positions below stay absolute across pages
     numberOfItems: summary.repoCount,
     itemListOrder: "https://schema.org/ItemListOrderDescending",
+    // the items are repositories on github.com, so that is what the list points
+    // at — the same URL the rows themselves link, since nothing on this site
+    // stands between a reader and the code any more
     itemListElement: featured.map((repo, index) => ({
       "@type": "ListItem",
       position: from + index,
       name: repo.id,
-      url: absolute(repoPath(repo.id)),
+      url: githubUrl(repo.id),
     })),
   },
   {

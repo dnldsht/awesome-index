@@ -9,7 +9,7 @@ import { githubUrl, listPath, SOURCE_REPO } from "../lib/urls.ts";
  *
  * It used to hold a wordmark, a tagline nobody needed twice, and the theme
  * toggle. Now it carries the two things a reader actually wants from any page
- * of a 34,000 page site: a way to search it, and a way to get to another list —
+ * of a 4,000 page site: a way to search it, and a way to get to another list —
  * plus the source repository, since a site whose whole claim is "these dates
  * are real" should say where the dates come from.
  *
@@ -134,9 +134,10 @@ const ICON_CONTROL = `${CONTROL} w-8 justify-center`;
       }
       <a
         href={githubUrl(SOURCE_REPO)}
+        target="_blank"
         rel="noopener"
         class={ICON_CONTROL}
-        title={`${SOURCE_REPO} on GitHub`}
+        title={`${SOURCE_REPO} on GitHub, opens in a new tab`}
       >
         <svg aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4">
           <path
@@ -147,7 +148,12 @@ const ICON_CONTROL = `${CONTROL} w-8 justify-center`;
         <span class="sr-only">Source on GitHub</span>
       </a>
 
-      <button id="theme-toggle" type="button" class={ICON_CONTROL} aria-pressed="false">
+      <button
+        id="theme-toggle"
+        type="button"
+        class={ICON_CONTROL}
+        aria-pressed="false"
+      >
         <span aria-hidden="true">◑</span>
         <span class="sr-only">Switch to dark theme</span>
       </button>

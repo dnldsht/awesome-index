@@ -27,7 +27,6 @@ import {
   type SearchState,
   type SortKey,
 } from "../lib/search.ts";
-import { githubUrl } from "../lib/urls.ts";
 
 /**
  * The site's only piece of client-side JavaScript.
@@ -122,20 +121,20 @@ type Card = {
   lists: string;
 };
 
-const REPO_URL = /^\/r\/([^/]+)\/([^/]+)\/?$/;
-
 function toCard(data: PagefindData): Card {
   const meta = data.meta ?? {};
-  const match = REPO_URL.exec(data.url);
+  // `title` is the repository id, set by bin/index-search.ts; the url is the
+  // github.com link and is only ever followed, never parsed
   const title = meta["title"] ?? "";
+  const [owner = "", name = ""] = title.split("/");
   const stars = Number.parseInt(meta["stars"] ?? "", 10);
   const pushed = meta["pushed"];
   const pulse = meta["pulse"];
 
   return {
     url: data.url,
-    owner: match?.[1] ?? title.split("/")[0] ?? "",
-    name: match?.[2] ?? title.split("/")[1] ?? title,
+    owner,
+    name: name || title,
     blurb: meta["blurb"] ?? "",
     stars: Number.isFinite(stars) ? stars : 0,
     // the meta carries a date, not a timestamp; parsed as UTC midnight, which
@@ -471,12 +470,16 @@ function Result({ card }: { card: Card }) {
     >
       <div class="flex items-baseline justify-between gap-3">
         <h3 class="min-w-0 font-mono text-[0.95rem] leading-tight">
+          {/* a new tab, like every project link on the site: see RepoCard.astro */}
           <a
             href={card.url}
+            target="_blank"
+            rel="noopener"
             class="text-ink decoration-accent underline-offset-4 hover:underline"
           >
             <span class="text-mute">{card.owner}/</span>
             <span class="font-medium">{card.name}</span>
+            <span class="sr-only"> on GitHub, opens in a new tab</span>
           </a>
         </h3>
 
@@ -493,22 +496,8 @@ function Result({ card }: { card: Card }) {
             <span class="sr-only">stars</span>
           </span>
 
-          {/* the homepage is not in the index, so a result carries the one
-              quick link it can reconstruct from the id it already has */}
-          <a
-            href={githubUrl(`${card.owner}/${card.name}`)}
-            rel="noopener"
-            aria-label={`${card.owner}/${card.name} on GitHub`}
-            class="text-mute transition-colors hover:text-accent"
-          >
-            <svg
-              class="size-4 fill-current"
-              viewBox="0 0 16 16"
-              aria-hidden="true"
-            >
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-          </a>
+          {/* no second github.com link beside the heading: the heading *is*
+              the github.com link, exactly as in RepoCard.astro */}
         </div>
       </div>
 

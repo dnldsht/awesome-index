@@ -23,9 +23,9 @@ import { listSearchUrl } from "../../lib/search.ts";
 import {
   absolute,
   categoryPagePath,
+  githubUrl,
   listPath,
   PAGE_SEGMENT,
-  repoPath,
 } from "../../lib/urls.ts";
 
 /**
@@ -214,11 +214,12 @@ const jsonLd = [
     // its positions stay absolute across pages
     numberOfItems: totalRepos,
     itemListOrder: "https://schema.org/ItemListOrderDescending",
+    // github.com, like the rows: see the note in ListPage.astro
     itemListElement: repos.slice(0, 25).map((repo, index) => ({
       "@type": "ListItem",
       position: from + index,
       name: repo.id,
-      url: absolute(repoPath(repo.id)),
+      url: githubUrl(repo.id),
     })),
   },
 ];
