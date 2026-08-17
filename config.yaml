@@ -170,9 +170,7 @@ repos:
     url: https://github.com/wmariuss/awesome-devops
     icon: ♾️
   - name: Kubernetes
-    url:
-      - https://github.com/ramitsurana/awesome-kubernetes
-      - https://github.com/tomhuang12/awesome-k8s-resources
+    url: https://github.com/tomhuang12/awesome-k8s-resources
     icon: ☸️
   - name: Docker
     url: https://github.com/veggiemonk/awesome-docker
