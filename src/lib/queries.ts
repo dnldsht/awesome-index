@@ -268,6 +268,36 @@ export async function listSummaries(): Promise<ListSummary[]> {
   return summariesCache;
 }
 
+let overallPulseCache: PulseBreakdown | undefined;
+
+/**
+ * The pulse split of the dataset as a whole, which is the one number the home
+ * page leads with.
+ *
+ * Not the sum of `listPulses()`: a repository linked by both awesome-go and
+ * awesome-selfhosted is two rows there, on purpose, because each list page
+ * counts its own entries. Here it is one project, so the query deduplicates
+ * across lists first. The gap is real, 32,596 list entries against 30,464
+ * distinct repositories, and averaging the per-list shares instead would let
+ * the 80 lists vote by count rather than by size.
+ */
+export async function overallPulse(): Promise<PulseBreakdown> {
+  if (overallPulseCache) return overallPulseCache;
+  const rows = await db
+    .selectDistinct({
+      repoId: awesomeItemTable.repoId,
+      pushedAt: githubRepoTable.pushedAt,
+    })
+    .from(awesomeItemTable)
+    .innerJoin(
+      githubRepoTable,
+      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
+    );
+
+  overallPulseCache = pulseBreakdown(rows);
+  return overallPulseCache;
+}
+
 /** null once resolved and found empty, so an empty database is not re-queried */
 let crawledAtCache: Date | null | undefined;
 

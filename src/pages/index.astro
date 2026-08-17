@@ -6,12 +6,23 @@ import {
   LIVENESS_ORDER,
   pulseBreakdown,
 } from "../lib/format.ts";
-import { listPulses, listSummaries } from "../lib/queries.ts";
-import { QUERY_PARAM, SEARCH_PATH } from "../lib/search.ts";
+import { luckyFallback } from "../lib/lucky.ts";
+import { listPulses, listSummaries, overallPulse } from "../lib/queries.ts";
+import { SEARCH_PATH } from "../lib/search.ts";
 import { absolute, listPath } from "../lib/urls.ts";
 
 const summaries = await listSummaries();
 const total = summaries.reduce((sum, s) => sum + s.repoCount, 0);
+
+/**
+ * The share that has gone three years without a commit, which is the claim the
+ * whole site rests on and the only number here a README could not tell you.
+ * Read from the data rather than written into the copy: it is a nightly crawl,
+ * and a hardcoded "a third" would quietly drift away from the rows below it.
+ */
+const dormant = (await overallPulse()).percentages.dormant;
+
+const lucky = await luckyFallback();
 
 /**
  * Every row used to end in "newest change just now", which is what a list of
@@ -39,7 +50,7 @@ const rows = summaries.map((summary) => {
 
 const title =
   "Awesome Index: GitHub's awesome lists, with the dead entries marked";
-const description = `${compactNumber(total)} projects from ${summaries.length} curated awesome lists, each showing how recently anyone actually worked on it.`;
+const description = `${compactNumber(total)} projects from ${summaries.length} curated awesome lists, sorted by stars and kept under the categories their curators wrote, each showing how long since anyone touched it.`;
 
 const jsonLd = [
   {
@@ -61,40 +72,41 @@ const jsonLd = [
   </h1>
 
   <p class="mt-6 max-w-xl text-lg text-ink-soft">
-    {compactNumber(total)} projects from {summaries.length} lists, each carrying what
-    a README leaves out: how long since anyone touched it.
+    {compactNumber(total)} projects from {summaries.length} lists, sorted by stars
+    and kept under the categories their curators wrote. Every entry carries what a
+    README leaves out: how long since anyone touched it, and {dormant}% have
+    gone three years without a commit.
   </p>
 
   {
-    /* The same GET form as the header, given the room it deserves on the one
-      page a first-time reader lands on. No JavaScript here either: it submits
-      to the search page, which builds its state from the query string. */
+    /* This page used to open with a second copy of the header's search box,
+      which is the one control already on all 3,977 pages. Two buttons instead,
+      because the two ways in are "I know what I want" and "show me something":
+      the first is the box that never left the header, the second had no door at
+      all. */
   }
-  <form role="search" method="get" action={SEARCH_PATH} class="mt-8 max-w-xl">
-    <label for="home-search" class="sr-only">Search projects</label>
-    <div class="flex gap-2">
-      <input
-        id="home-search"
-        type="search"
-        name={QUERY_PARAM}
-        placeholder={`Search ${fullNumber(total)} projects`}
-        autocomplete="off"
-        class="w-full border border-rule bg-paper px-4 py-2.5 text-ink placeholder:text-mute hover:border-mute focus:border-accent focus:outline-none"
-      />
-      <button
-        type="submit"
-        class="shrink-0 cursor-pointer bg-accent px-4 py-2.5 text-sm font-medium text-paper hover:opacity-90"
-      >
-        Search
-      </button>
-    </div>
-  </form>
+  <div class="mt-8 flex flex-wrap gap-3">
+    <a
+      id="lucky"
+      href={lucky}
+      data-pool="/lucky.json"
+      class="cursor-pointer border border-rule px-4 py-2.5 text-sm font-medium text-ink hover:bg-sunk"
+    >
+      I'm feeling lucky
+    </a>
+    <a
+      href={SEARCH_PATH}
+      class="bg-accent px-4 py-2.5 text-sm font-medium text-paper hover:opacity-90"
+    >
+      Search {fullNumber(total)} projects →
+    </a>
+  </div>
 
   {
     /*
     Finding one of 80 lists is a different job from finding one of 32,000
-    projects, and the box above does the second one: it leaves the page. This
-    one never does: it filters the rows already on screen, which for a set this
+    projects, and the button above does the second one: it leaves the page. This
+    box never does: it filters the rows already on screen, which for a set this
     small is instant and needs no index. Both controls are revealed by the
     script that powers them, so a reader without JavaScript is not handed a
     filter that does nothing; the rows below are already in the order the
@@ -173,11 +185,60 @@ const jsonLd = [
   </ul>
 
   <p id="list-empty" hidden class="mt-4 text-sm text-mute">
-    No list matches that. <a class="text-accent hover:underline" href={SEARCH_PATH}
-      >Search the projects instead →</a
+    No list matches that. <a
+      class="text-accent hover:underline"
+      href={SEARCH_PATH}>Search the projects instead →</a
     >
   </p>
 </Base>
+
+{
+  /*
+  "I'm feeling lucky" is a real link before this runs and stays one after: the
+  script only swaps which category it points at. It fetches the pool on the
+  first hint of interest rather than on load, and rewrites `href` as soon as it
+  lands, so a middle-click or a long-press opens a random page too instead of
+  the one the build happened to pick. If the fetch is still in flight when the
+  click comes, or never succeeded, the click follows the href already there.
+*/
+}
+<script is:inline>
+  (() => {
+    const link = document.getElementById("lucky");
+    if (!link) return;
+
+    let pool = null;
+    let pending = null;
+
+    const pick = () => pool[Math.floor(Math.random() * pool.length)];
+
+    const load = () => {
+      if (pool || pending) return pending;
+      pending = fetch(link.dataset.pool)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((paths) => {
+          if (Array.isArray(paths) && paths.length) {
+            pool = paths;
+            link.href = pick();
+          }
+        })
+        .catch(() => {});
+      return pending;
+    };
+
+    for (const event of ["pointerenter", "focus", "touchstart"]) {
+      link.addEventListener(event, load, { passive: true, once: true });
+    }
+
+    link.addEventListener("click", (event) => {
+      // let the browser have the modified clicks: the href is already random
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey) return;
+      if (!pool) return;
+      event.preventDefault();
+      location.href = pick();
+    });
+  })();
+</script>
 
 <script is:inline>
   (() => {
