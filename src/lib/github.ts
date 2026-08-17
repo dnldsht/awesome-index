@@ -1,4 +1,5 @@
 import { Octokit } from "octokit";
+import { stripEmoji } from "./emoji.ts";
 import {
   PARSER_VERSION,
   parseAwesomeReadme,
@@ -163,7 +164,8 @@ export async function fetchGithubProjects(ids: string[]) {
     if (!node) return;
     projects.set(id, {
       id: node.nameWithOwner,
-      description: node.description ?? "",
+      // "Node.js JavaScript runtime ✨🐢🚀✨" is stored as the words alone
+      description: stripEmoji(node.description ?? ""),
       homepageUrl: normalizeHomepage(node.homepageUrl, node.nameWithOwner),
       topics: (node.repositoryTopics?.nodes ?? []).map(
         (x: any) => x.topic.name,

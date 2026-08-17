@@ -2,6 +2,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
+import { stripEmoji } from "./emoji.ts";
 import { slugifyPath } from "./slug.ts";
 
 /**
@@ -48,7 +49,7 @@ const RESERVED_OWNERS = new Set([
  * otherwise an improvement to this file would only reach a list on the day its
  * author happens to edit it.
  */
-export const PARSER_VERSION = 2;
+export const PARSER_VERSION = 3;
 
 export type ParsedItem = {
   repoId: string;
@@ -161,6 +162,110 @@ function resolveEntry(
   return { display: display.node, repoId: source.repoId };
 }
 
+/**
+ * A heading that names the list's own navigation rather than a category of
+ * projects. It still closes the headings deeper than itself, it just never
+ * becomes part of a path: awesome-scala hangs its "### Database" straight off
+ * "## Table of Contents" with no "## Projects" in between, which filed all 269
+ * of its projects under "Table of Contents > ...".
+ */
+const NAVIGATION_HEADING = /^(table of )?contents?$|^toc$/i;
+
+/**
+ * The entry a node holds, whichever of the three shapes it is written in, or
+ * undefined for the vast majority of nodes that hold no entry at all.
+ */
+function resolveNode(
+  node: Node,
+  definitions: Map<string, string>,
+): { repoId: string; note: string | null } | undefined {
+  if (node.type === "tableRow") return resolveTableRow(node, definitions);
+  if (node.type !== "listItem" && node.type !== "blockquote") return undefined;
+
+  const paragraph = node.children?.find((c) => c.type === "paragraph");
+  if (!paragraph) return undefined;
+
+  const entry = resolveEntry(paragraph, definitions);
+  if (!entry) return undefined;
+  return { repoId: entry.repoId, note: extractNote(paragraph, entry.display) };
+}
+
+/**
+ * The entry a table row is about.
+ *
+ * awesome-scala and awesome-datascience tabulate instead of listing:
+ * "| [doobie](url) | Functional JDBC layer for Scala. | ![stars badge] |".
+ * remark keeps those rows as `tableRow`, which the list walk never looked at, so
+ * awesome-scala contributed 5 of its ~270 projects.
+ *
+ * The entry is named by the first cell. The note is whichever later cell carries
+ * the most prose: the column order is the author's choice, and the activity
+ * column flattens to nothing once its badge images are dropped, so the longest
+ * cell is the description in both layouts without either being hardcoded.
+ */
+function resolveTableRow(
+  row: Node,
+  definitions: Map<string, string>,
+): { repoId: string; note: string | null } | undefined {
+  const cells = (row.children ?? []).filter((c) => c.type === "tableCell");
+  const [first, ...rest] = cells;
+  if (!first) return undefined;
+
+  // the header row ("Name | Description | GitHub Activity") links nothing
+  const entry = resolveEntry(first, definitions);
+  if (!entry) return undefined;
+
+  const note = rest
+    .map((cell) => stripEmoji(toText(cell)))
+    .reduce(
+      (longest, text) => (text.length > longest.length ? text : longest),
+      "",
+    );
+  // a one column table puts the prose next to the link, like a list item would
+  return {
+    repoId: entry.repoId,
+    note: note || extractNote(first, entry.display),
+  };
+}
+
+/**
+ * awesome-emacs ships its list as README.org, and remark reads org-mode as
+ * prose: "** Version control" is a bullet rather than a heading, and
+ * "[[url][name]]" is plain text, which cost the list its section paths and a
+ * third of its projects.
+ *
+ * Only the three constructs an entry is made of are translated, which is enough
+ * for the walk below and keeps this well short of an org parser. In org a "*"
+ * in the first column is always a heading, never a bullet, so the rewrite is
+ * unambiguous once the file is known to be org.
+ */
+function orgToMarkdown(source: string): string {
+  return source
+    .replace(
+      // org indents its bullets to sit under their heading, and four spaces of
+      // that is an indented code block in markdown, which is what hid most of
+      // this list's entries. Nesting is not worth preserving: a sub-entry parses
+      // the same whether it is a child or a sibling.
+      /^[ \t]+(?=(?:[-+]|\d+[.)])[ \t])/gm,
+      "",
+    )
+    .replace(
+      // trailing ":TOC_5:QUOTE:" style tags belong to the heading, not its text
+      /^(\*+)[ \t]+(.*?)(?:[ \t]+:[\w@:]+:)?[ \t]*$/gm,
+      (_, stars: string, text: string) => `${"#".repeat(stars.length)} ${text}`,
+    )
+    .replace(
+      /\[\[([^[\]]+)\]\[([^[\]]*)\]\]/g,
+      (_, url, text) => `[${text}](${url})`,
+    )
+    .replace(/\[\[([^[\]]+)\]\]/g, (_, url) => `<${url}>`);
+}
+
+/** org headings and org links, the pair no markdown file carries by accident */
+function looksLikeOrg(source: string): boolean {
+  return /^\*+[ \t]/m.test(source) && /\[\[[^[\]]+\]\[/.test(source);
+}
+
 /** "[1]: https://github.com/Dead2/zlib-ng" -> {"1" => "https://..."} */
 function collectDefinitions(tree: Node): Map<string, string> {
   const definitions = new Map<string, string>();
@@ -181,16 +286,15 @@ function collectDefinitions(tree: Node): Map<string, string> {
  *
  * An entry is usually a list item, but awesome-java gives each project its own
  * blockquote ("> **[ArchUnit](url)** <kbd>★ 3.8k</kbd><br>Test library..."), so
- * blockquotes owning a paragraph count too.
+ * blockquotes owning a paragraph count too, and awesome-scala tabulates its
+ * entries, so table rows do as well.
  */
 export function parseAwesomeReadme(
   markdown: string,
   options: { exclude?: string } = {},
 ): ParsedItem[] {
-  const tree = unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .parse(markdown) as Node;
+  const source = looksLikeOrg(markdown) ? orgToMarkdown(markdown) : markdown;
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(source) as Node;
 
   const definitions = collectDefinitions(tree);
   /** current heading text by depth, e.g. {2: "Applications", 3: "Audio"} */
@@ -207,18 +311,13 @@ export function parseAwesomeReadme(
         if (known >= depth) headings.delete(known);
       }
       const text = toText(node).trim();
-      if (text) headings.set(depth, text);
+      if (text && !NAVIGATION_HEADING.test(text)) headings.set(depth, text);
       return;
     }
 
-    if (node.type !== "listItem" && node.type !== "blockquote") return;
-
-    const paragraph = node.children?.find((c) => c.type === "paragraph");
-    if (!paragraph) return;
-
-    const entry = resolveEntry(paragraph, definitions);
-    if (!entry || entry.repoId === options.exclude) return;
-    const { repoId } = entry;
+    const resolved = resolveNode(node, definitions);
+    if (!resolved || resolved.repoId === options.exclude) return;
+    const { repoId, note } = resolved;
 
     // depth 1 is the list's own title ("# Awesome Rust"), it would prefix
     // every single path without telling the reader anything
@@ -241,7 +340,7 @@ export function parseAwesomeReadme(
       repoId,
       section,
       sectionSlug,
-      note: extractNote(paragraph, entry.display),
+      note,
       position: position++,
     });
   });
@@ -296,11 +395,18 @@ function dropTrailingLinkRefs(note: string, linkTexts: Set<string>): string {
   }
 }
 
-/** the prose the author wrote after the link, minus the link text and separators */
+/**
+ * The prose the author wrote after the link, minus the link text, the
+ * separators and the decorative emoji.
+ *
+ * Emoji go before the separators are peeled rather than after: "🔥 - blazing
+ * fast" would otherwise be left opening on the dash that used to sit behind the
+ * pictogram.
+ */
 function extractNote(paragraph: Node, link: Node): string | null {
   const kept = dropTrailingTags(paragraph.children ?? []);
-  const full = kept.map(toText).join("").replace(/\s+/g, " ").trim();
-  const linkText = toText(link).replace(/\s+/g, " ").trim();
+  const full = stripEmoji(kept.map(toText).join(""));
+  const linkText = stripEmoji(toText(link));
 
   let note = full;
   if (linkText && full.startsWith(linkText)) {
@@ -319,7 +425,7 @@ function extractNote(paragraph: Node, link: Node): string | null {
 
   const linkTexts = new Set(
     collectLinks(paragraph)
-      .map((node) => toText(node).replace(/\s+/g, " ").trim().toLowerCase())
+      .map((node) => stripEmoji(toText(node)).toLowerCase())
       .filter(Boolean),
   );
   return dropTrailingLinkRefs(note.trim(), linkTexts).trim() || null;

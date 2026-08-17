@@ -214,6 +214,71 @@ export async function reposForCategory(
   return groupSections(rows);
 }
 
+export type TopRepo = GithubRepo & {
+  /** the names of the config entries that curate it, in config order */
+  lists: string[];
+};
+
+/**
+ * The most starred projects in the dataset, whichever list they came from.
+ *
+ * This is what the search page shows before anybody has searched. It used to
+ * ask Pagefind for "everything, sorted by stars", which is the one query
+ * Pagefind is bad at — with no term it has to materialise and rank all 30,464
+ * records, and that took seven seconds before a single result appeared. The
+ * answer never changes between builds, so it is a query here instead and the
+ * index is not touched until the reader actually types or filters.
+ */
+export async function topRepos(limit: number): Promise<TopRepo[]> {
+  const entries = await loadConfig();
+  const nameOfSource = new Map(
+    entries.flatMap((entry) =>
+      entry.sourceIds.map((id) => [id, entry.name] as const),
+    ),
+  );
+
+  // asks for more than it needs: a repository whose only list has since left
+  // config.yaml is not on this site and is dropped below, exactly as the
+  // search index drops it
+  const rows = await db
+    .select({ repo: githubRepoTable })
+    .from(githubRepoTable)
+    .innerJoin(
+      awesomeItemTable,
+      D.eq(awesomeItemTable.repoId, githubRepoTable.id),
+    )
+    .groupBy(githubRepoTable.id)
+    .orderBy(D.desc(githubRepoTable.stars))
+    .limit(limit * 2);
+
+  const ids = rows.map((row) => row.repo.id);
+  const items = await db
+    .select({
+      repoId: awesomeItemTable.repoId,
+      listId: awesomeItemTable.listId,
+    })
+    .from(awesomeItemTable)
+    .where(D.inArray(awesomeItemTable.repoId, ids));
+
+  const listsOf = new Map<string, Set<string>>();
+  for (const item of items) {
+    const name = nameOfSource.get(item.listId);
+    if (!name) continue;
+    const names = listsOf.get(item.repoId) ?? new Set<string>();
+    names.add(name);
+    listsOf.set(item.repoId, names);
+  }
+
+  const top: TopRepo[] = [];
+  for (const row of rows) {
+    const names = listsOf.get(row.repo.id);
+    if (!names) continue;
+    top.push({ ...row.repo, lists: [...names] });
+    if (top.length === limit) break;
+  }
+  return top;
+}
+
 export type ListSummary = {
   entry: ConfigEntry;
   repoCount: number;

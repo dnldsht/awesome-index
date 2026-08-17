@@ -1,9 +1,9 @@
 ---
-import SearchApp from "../components/SearchApp.tsx";
+import SearchApp, { type FeaturedRepo } from "../components/SearchApp.tsx";
 import Base from "../layouts/Base.astro";
-import { compactNumber } from "../lib/format.ts";
-import { listSummaries } from "../lib/queries.ts";
-import { SEARCH_PATH } from "../lib/search.ts";
+import { compactNumber, liveness } from "../lib/format.ts";
+import { listSummaries, overallPulse, topRepos } from "../lib/queries.ts";
+import { pushedSortValue, SEARCH_PATH } from "../lib/search.ts";
 import { listPath } from "../lib/urls.ts";
 
 /**
@@ -19,9 +19,23 @@ import { listPath } from "../lib/urls.ts";
  * `astro build` has finished. Readers without JavaScript get the noscript
  * below, which is a real answer rather than an apology: the whole dataset is
  * browsable through the lists.
+ *
+ * What the island does *not* have to ask the index for is the state it opens
+ * in. The most starred projects are a query this build can answer, and they go
+ * up as props, so arriving on this page costs no index, no worker and no wasm
+ * until the reader searches.
  */
 const summaries = await listSummaries();
-const total = summaries.reduce((sum, summary) => sum + summary.repoCount, 0);
+
+/**
+ * Distinct projects, not list entries.
+ *
+ * The header counts entries (32.6K), which is the right number for "how much
+ * have these lists curated". This page is a view onto the index, and the index
+ * holds one record per project, so it counts projects (30.5K) — otherwise the
+ * heading promises 2,132 rows that no search can ever return.
+ */
+const total = (await overallPulse()).total;
 
 const lists = summaries.map((summary) => ({
   slug: summary.entry.slug,
@@ -29,8 +43,21 @@ const lists = summaries.map((summary) => ({
   icon: summary.entry.icon,
 }));
 
+/** two "Show more" presses' worth; past that the reader is browsing, not searching */
+const featured: FeaturedRepo[] = (await topRepos(50)).map((repo) => ({
+  id: repo.id,
+  blurb: repo.description.trim(),
+  stars: repo.stars,
+  pushed: pushedSortValue(repo.pushedAt),
+  pulse: liveness(repo.pushedAt),
+  language: repo.primaryLanguage ?? "",
+  license: repo.license ?? "",
+  archived: repo.archived,
+  lists: repo.lists.join(" · "),
+}));
+
 const title = `Search ${compactNumber(total)} projects · Awesome Index`;
-const description = `Search every project on Awesome Index by name and description, filtered by list, language, licence and how recently anyone touched it.`;
+const description = `Search every project on Awesome Index by name and description, filtered by list, language, licence, GitHub topic and how recently anyone touched it.`;
 ---
 
 <Base
@@ -39,20 +66,15 @@ const description = `Search every project on Awesome Index by name and descripti
   canonicalPath={SEARCH_PATH}
   noindex
 >
-  <header class="max-w-2xl">
-    <h1
-      class="font-display text-3xl leading-[1.15] font-semibold tracking-tight sm:text-4xl"
-    >
-      Search
-    </h1>
-    <p class="mt-4 text-ink-soft">
-      {compactNumber(total)} projects from {summaries.length} curated lists. Filter
-      by list, language, licence and pulse; sort by stars, last push or name.
-    </p>
-  </header>
+  {
+    /* the only heading the page needs: the query box states what this is, and
+      a title plus a paragraph restating the filters was a screenful of chrome
+      above the one control anybody came here to use */
+  }
+  <h1 class="sr-only">Search {compactNumber(total)} projects</h1>
 
   <noscript>
-    <div class="mt-8 max-w-2xl border-l-2 border-rule pl-4">
+    <div class="mb-8 max-w-2xl border-l-2 border-rule pl-4">
       <p class="text-ink-soft">
         Search needs JavaScript. The index is a set of static files that the
         browser fetches and queries as you type, so with scripting turned off
@@ -80,7 +102,10 @@ const description = `Search every project on Awesome Index by name and descripti
     </div>
   </noscript>
 
-  <div class="mt-8">
-    <SearchApp client:only="preact" lists={lists} />
-  </div>
+  <SearchApp
+    client:only="preact"
+    lists={lists}
+    featured={featured}
+    total={total}
+  />
 </Base>

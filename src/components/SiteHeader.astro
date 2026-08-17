@@ -1,41 +1,42 @@
 ---
-import { compactNumber, fullNumber } from "../lib/format.ts";
-import { listSummaries } from "../lib/queries.ts";
+import { compactNumber } from "../lib/format.ts";
+import { overallPulse } from "../lib/queries.ts";
 import { QUERY_PARAM, SEARCH_PATH } from "../lib/search.ts";
-import { githubUrl, listPath, SOURCE_REPO } from "../lib/urls.ts";
+import { githubUrl, SOURCE_REPO } from "../lib/urls.ts";
 
 /**
  * The site header, on every page.
  *
- * It used to hold a wordmark, a tagline nobody needed twice, and the theme
- * toggle. Now it carries the two things a reader actually wants from any page
- * of a 4,000 page site: a way to search it, and a way to get to another list,
- * plus the source repository, since a site whose whole claim is "these dates
- * are real" should say where the dates come from.
+ * One control, plus the source repository and the theme toggle. There used to
+ * be a "Lists" menu beside the search box holding the eight biggest lists: two
+ * ways to reach the same 80 pages, sitting a centimetre apart, one of which
+ * could only ever show a tenth of them. The search box does that job on its
+ * own — it opens on the same lists before a word is typed — so the menu went.
  *
- * Both stay free of JavaScript. The search box is a plain GET form pointed at
- * the search page, which already reads its whole state (query, filters, sort)
- * out of the query string, so submitting here lands on exactly the URL the
- * island would have produced. The list menu is a `<details>`: it does not close
- * on an outside click, which is the one behaviour a script would buy, and that
- * is not worth shipping a script to every page for.
+ * The box stays free of JavaScript at its floor: it is a plain GET form
+ * pointed at the search page, which reads its whole state (query, filters,
+ * sort) out of the query string, so submitting it lands on exactly the URL the
+ * island would have produced. Everything below is an enhancement on top.
  */
-const summaries = await listSummaries();
-const total = summaries.reduce((sum, summary) => sum + summary.repoCount, 0);
-
-/** already sorted by size in listSummaries(), so this is the biggest few */
-const featured = summaries.slice(0, 8);
+/**
+ * Distinct projects, not list entries.
+ *
+ * The two numbers differ by 2,132 — the repositories more than one list
+ * curates — and this one is on a search box, which can only ever return
+ * projects. Promising 32.6K of them and then showing 30.5K is a promise the
+ * search page has to break.
+ */
+const total = (await overallPulse()).total;
 
 /**
- * The three controls on the right are one row of equal boxes, so their size is
- * stated once here rather than three times in three slightly different ways,
- * which is how the theme toggle ended up a couple of pixels shorter than the
- * list menu. `h-8` and not padding alone: an icon-only button and a text button
- * only agree on height if the height is the thing that is set.
+ * The two controls on the right are one row of equal boxes, so their size is
+ * stated once here rather than twice in two slightly different ways, which is
+ * how the theme toggle ended up a couple of pixels shorter than its neighbour.
+ * `h-8` and not padding alone: two icon buttons only agree on height if the
+ * height is the thing that is set.
  */
-const CONTROL =
-  "flex h-8 shrink-0 cursor-pointer items-center border border-rule text-sm text-ink-soft hover:bg-sunk";
-const ICON_CONTROL = `${CONTROL} w-8 justify-center`;
+const ICON_CONTROL =
+  "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center border border-rule text-sm text-ink-soft hover:bg-sunk";
 ---
 
 <header class="border-b border-rule">
@@ -49,85 +50,73 @@ const ICON_CONTROL = `${CONTROL} w-8 justify-center`;
       Awesome Index
     </a>
 
-    <form
-      role="search"
-      method="get"
-      action={SEARCH_PATH}
-      class="order-last w-full sm:order-none sm:w-auto sm:min-w-56 sm:flex-1"
+    <div
+      id="site-search-box"
+      class="relative order-last w-full sm:order-none sm:w-auto sm:min-w-56 sm:flex-1"
+      data-total={compactNumber(total)}
+      data-search-path={SEARCH_PATH}
+      data-query-param={QUERY_PARAM}
+      data-nav-index="/nav-index.json"
+      data-lucky="/lucky.json"
     >
-      <label for="site-search" class="sr-only">Search projects</label>
-      <input
-        id="site-search"
-        type="search"
-        name={QUERY_PARAM}
-        placeholder={`Search ${compactNumber(total)} projects`}
-        autocomplete="off"
-        class="w-full max-w-md border border-rule bg-paper px-3 py-1.5 text-sm text-ink placeholder:text-mute hover:border-mute focus:border-accent focus:outline-none"
-      />
-    </form>
+      {
+        /* the width lives on the form, not on the field: the shortcut hint is
+          positioned against this box, and against a wider one it floats off
+          the end of the field it belongs to */
+      }
+      <form
+        role="search"
+        method="get"
+        action={SEARCH_PATH}
+        class="relative max-w-md"
+      >
+        <label for="site-search" class="sr-only">
+          Search lists, categories and projects
+        </label>
+        <input
+          id="site-search"
+          type="search"
+          name={QUERY_PARAM}
+          placeholder={`Search ${compactNumber(total)} projects`}
+          autocomplete="off"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="site-search-panel"
+          aria-autocomplete="list"
+          class="w-full border border-rule bg-paper py-1.5 pr-12 pl-3 text-sm text-ink placeholder:text-mute hover:border-mute focus:border-accent focus:outline-none"
+        />
+
+        {
+          /* the shortcut the script installs, so it is only ever shown where it
+            works; hidden while the box is in use, since by then the reader has
+            got where it would have taken them, and it would sit under the
+            browser's own clear button */
+        }
+        <kbd
+          id="site-search-hint"
+          hidden
+          aria-hidden="true"
+          class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 border border-rule px-1 py-0.5 font-mono text-[0.65rem] leading-none text-mute select-none max-sm:hidden"
+        >
+        </kbd>
+      </form>
+
+      {
+        /* filled in by the script below; empty and hidden until then, so a
+          reader without JavaScript sees the form and nothing else */
+      }
+      <div
+        id="site-search-panel"
+        hidden
+        class="absolute top-full left-0 z-30 mt-1 max-h-[70vh] w-full max-w-md overflow-y-auto border border-rule bg-paper py-1 shadow-lg"
+      >
+      </div>
+    </div>
 
     <nav
       class="ml-auto flex shrink-0 items-center gap-2"
       aria-label="Site navigation"
     >
-      <details class="group relative">
-        <summary
-          class={`${CONTROL} list-none gap-1.5 px-2.5 [&::-webkit-details-marker]:hidden`}
-        >
-          Lists
-          {
-            /* a drawn chevron rather than the ▾ glyph, which every font renders
-              at a different weight and none of them at the weight of the text
-              beside it; it also gets to point the other way when the menu is
-              open, which a character cannot do */
-          }
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="h-3 w-3 text-mute transition-transform group-open:rotate-180"
-          >
-            <path d="M2.75 4.5 6 7.75 9.25 4.5"></path>
-          </svg>
-        </summary>
-
-        <div
-          class="absolute right-0 z-20 mt-2 w-64 border border-rule bg-paper p-1.5 shadow-lg"
-        >
-          <ul>
-            {
-              featured.map((summary) => (
-                <li>
-                  <a
-                    href={listPath(summary.entry.slug)}
-                    class="flex items-baseline gap-2 px-2 py-1.5 text-sm hover:bg-sunk"
-                  >
-                    {summary.entry.icon && (
-                      <span aria-hidden="true">{summary.entry.icon}</span>
-                    )}
-                    <span class="text-ink">{summary.entry.name}</span>
-                    <span class="ml-auto font-mono text-xs text-mute tabular-nums">
-                      {fullNumber(summary.repoCount)}
-                    </span>
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
-
-          <a
-            href="/"
-            class="mt-1 block border-t border-rule px-2 py-2 text-sm text-accent hover:bg-sunk"
-          >
-            All {summaries.length} lists →
-          </a>
-        </div>
-      </details>
-
       {
         /* the source of the site itself, which is the one link a reader who
           wants to know how the dates were arrived at goes looking for */
@@ -160,6 +149,433 @@ const ICON_CONTROL = `${CONTROL} w-8 justify-center`;
     </nav>
   </div>
 </header>
+
+{
+  /*
+  The header's search box, as a combobox over this site's own pages.
+
+  Not `pagefind-ui.js`, and not an island. The stock widget searches the project
+  index, which is the one thing it *cannot* usefully complete in a header —
+  30,464 repositories whose home is github.com — and it brings its own markup
+  and stylesheet to do it. What a reader wants from every page of this site is
+  the site: the 80 lists and the 3,300 headings their curators wrote. Those fit
+  in one 3,400-row file, matched in the browser with no index, no wasm and no
+  framework, fetched on the first focus and never again.
+
+  Enter with nothing chosen submits the form, which is the plain GET that has
+  always been here, so the whole of this is an enhancement over a control that
+  still works with the script blocked or still loading.
+*/
+}
+<script>
+  const box = document.getElementById("site-search-box");
+  const field = document.getElementById("site-search");
+  const dropdown = document.getElementById("site-search-panel");
+
+  if (box && field instanceof HTMLInputElement && dropdown) {
+    // re-bound inside the block so the hoisted functions below see the checked
+    // types rather than the `HTMLElement | null` they were fetched as
+    const input = field;
+    const panel = dropdown;
+    const form = box.querySelector("form");
+    const searchPath = box.dataset.searchPath || "/search/";
+    const queryParam = box.dataset.queryParam || "q";
+    const navIndexPath = box.dataset.navIndex || "/nav-index.json";
+    const luckyPath = box.dataset.lucky || "/lucky.json";
+    const total = box.dataset.total || "";
+
+    const hint = document.getElementById("site-search-hint");
+
+    /** how many of each kind a panel shows; more than this is a page, not a menu */
+    const MAX_LISTS = 3;
+    const MAX_CATEGORIES = 6;
+    const MAX_RECENT = 3;
+    /** the empty panel offers whole lists, which is what it opens onto */
+    const MAX_BROWSE = 6;
+    const RECENT_KEY = "recent-searches";
+
+    type Tuple = [string, string, string, number];
+    type Row = {
+      element: HTMLAnchorElement;
+      onFollow?: (event: Event) => void;
+    };
+
+    let index: { lists: Tuple[]; categories: Tuple[] } | null = null;
+    let indexRequest: Promise<unknown> | null = null;
+    let lucky: string[] | null = null;
+    let luckyRequest: Promise<unknown> | null = null;
+    let rows: Row[] = [];
+    let active = -1;
+
+    const searchUrlFor = (query: string) =>
+      `${searchPath}?${queryParam}=${encodeURIComponent(query)}`;
+
+    /** accents folded so "café" is reachable by typing "cafe" */
+    const normalize = (value: string) =>
+      value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+    function loadIndex() {
+      indexRequest ??= fetch(navIndexPath)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((json) => {
+          index = json;
+          if (document.activeElement === input) draw();
+        })
+        .catch(() => {
+          /* the form still submits; a menu that never opens is the fallback */
+        });
+      return indexRequest;
+    }
+
+    function loadLucky() {
+      luckyRequest ??= fetch(luckyPath)
+        .then((response) => (response.ok ? response.json() : []))
+        .then((paths: string[]) => (lucky = paths))
+        .catch(() => (lucky = []));
+      return luckyRequest;
+    }
+
+    function readRecent(): string[] {
+      try {
+        const held: unknown = JSON.parse(
+          localStorage.getItem(RECENT_KEY) || "[]",
+        );
+        return Array.isArray(held)
+          ? held.filter((value): value is string => typeof value === "string")
+          : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function rememberRecent(query: string) {
+      const trimmed = query.trim();
+      if (!trimmed) return;
+      const kept = [
+        trimmed,
+        ...readRecent().filter((value) => value !== trimmed),
+      ].slice(0, MAX_RECENT);
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(kept));
+      } catch {
+        /* private mode; the panel simply has no history to show */
+      }
+    }
+
+    /**
+     * How well one row answers the query.
+     *
+     * Every token has to appear somewhere, so "rust cli" cannot match a row
+     * that only knows about Rust. Where it appears is the ranking: the start of
+     * the title beats the start of a word inside it, which beats the middle of
+     * a word, which beats a match that is only in the list a category belongs
+     * to. Ties go to the bigger row, because a heading with 200 projects under
+     * it is more likely the one meant than a namesake with two.
+     */
+    function score(title: string, context: string, tokens: string[]): number {
+      const haystack = normalize(title);
+      const where = normalize(context);
+      let points = 0;
+      for (const token of tokens) {
+        const inTitle = haystack.indexOf(token);
+        if (inTitle === 0) points += 100;
+        else if (inTitle > 0) {
+          points += /[a-z0-9]/.test(haystack[inTitle - 1] ?? "") ? 30 : 60;
+        } else if (where.includes(token)) points += 10;
+        else return 0;
+      }
+      return points;
+    }
+
+    function group(label: string) {
+      const heading = document.createElement("li");
+      heading.setAttribute("role", "presentation");
+      heading.className =
+        "px-3 pt-2 pb-1 font-mono text-[0.65rem] tracking-widest text-mute uppercase";
+      heading.textContent = label;
+      return heading;
+    }
+
+    function row(
+      list: HTMLUListElement,
+      options: {
+        label: string;
+        href: string;
+        note?: string;
+        icon?: string;
+        count?: number;
+        onFollow?: (event: Event) => void;
+      },
+    ) {
+      const index = rows.length;
+      const item = document.createElement("li");
+      const option = document.createElement("a");
+      option.href = options.href;
+      option.id = `site-search-option-${index}`;
+      option.setAttribute("role", "option");
+      option.setAttribute("aria-selected", "false");
+      option.className =
+        "flex items-baseline gap-2 px-3 py-1.5 text-sm text-ink aria-selected:bg-sunk hover:bg-sunk";
+
+      if (options.icon) {
+        const icon = document.createElement("span");
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = options.icon;
+        option.append(icon);
+      }
+
+      const label = document.createElement("span");
+      label.className = "min-w-0 truncate";
+      label.textContent = options.label;
+      option.append(label);
+
+      if (options.note) {
+        const note = document.createElement("span");
+        note.className = "shrink-0 text-xs text-mute";
+        note.textContent = options.note;
+        option.append(note);
+      }
+
+      if (options.count !== undefined) {
+        const count = document.createElement("span");
+        count.className =
+          "ml-auto shrink-0 font-mono text-xs text-mute tabular-nums";
+        // grouped like every other count on the site; 2,564 not 2564
+        count.textContent = Number(options.count).toLocaleString("en");
+        option.append(count);
+      }
+
+      option.addEventListener("mousemove", () => setActive(index));
+      if (options.onFollow) option.addEventListener("click", options.onFollow);
+
+      item.append(option);
+      list.append(item);
+      rows.push({ element: option, onFollow: options.onFollow });
+    }
+
+    function setActive(next: number) {
+      active = next;
+      rows.forEach((held, position) => {
+        const on = position === active;
+        held.element.setAttribute("aria-selected", String(on));
+        if (on) held.element.scrollIntoView({ block: "nearest" });
+      });
+      input.setAttribute(
+        "aria-activedescendant",
+        active >= 0 ? `site-search-option-${active}` : "",
+      );
+    }
+
+    function close() {
+      panel.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+      active = -1;
+    }
+
+    function draw() {
+      const query = input.value.trim();
+      const tokens = normalize(query).split(/\s+/).filter(Boolean);
+
+      rows = [];
+      active = -1;
+      panel.textContent = "";
+
+      const list = document.createElement("ul");
+      list.setAttribute("role", "listbox");
+      list.setAttribute("aria-label", "Lists and categories");
+
+      if (tokens.length === 0) {
+        /*
+         * An empty box opens on the site itself: the biggest lists, which is
+         * what the "Lists" menu next to it used to hold, and which is the
+         * answer to "what is even in here" that a blinking cursor is not. The
+         * lists come out of the same file the matching does, so they appear as
+         * soon as it lands — a fraction of a second on the first focus of a
+         * session, instantly on every one after.
+         */
+        const recent = readRecent();
+        if (recent.length > 0) {
+          list.append(group("Recent"));
+          for (const held of recent) {
+            row(list, {
+              label: held,
+              href: searchUrlFor(held),
+              note: "search",
+            });
+          }
+        }
+
+        const browse = index ? index.lists.slice(0, MAX_BROWSE) : [];
+        if (browse.length > 0) {
+          list.append(group("Biggest lists"));
+          for (const [name, href, icon, count] of browse) {
+            row(list, { label: name, href, icon, count });
+          }
+        }
+
+        list.append(group("Or"));
+
+        if (index) {
+          row(list, {
+            label: `Browse all ${index.lists.length} lists`,
+            href: "/",
+          });
+        }
+
+        // resolved when it is clicked, not when the panel opens: the pool of
+        // category pages is 30KB nobody should pay for by opening a menu
+        row(list, {
+          label: "Go somewhere at random",
+          href: "/",
+          onFollow: (event) => {
+            event.preventDefault();
+            void loadLucky().then(() => {
+              const paths = lucky ?? [];
+              const pick =
+                paths.length > 0
+                  ? paths[Math.floor(Math.random() * paths.length)]
+                  : "/";
+              window.location.href = pick ?? "/";
+            });
+          },
+        });
+      } else {
+        if (!index) void loadIndex();
+
+        const rank = (source: Tuple[], limit: number) =>
+          source
+            .map((tuple) => ({
+              tuple,
+              points: score(tuple[0], tuple[2], tokens),
+            }))
+            .filter((held) => held.points > 0)
+            .sort(
+              (a, b) =>
+                b.points - a.points || Number(b.tuple[3]) - Number(a.tuple[3]),
+            )
+            .slice(0, limit)
+            .map((held) => held.tuple);
+
+        const lists = index ? rank(index.lists, MAX_LISTS) : [];
+        const categories = index ? rank(index.categories, MAX_CATEGORIES) : [];
+
+        if (lists.length > 0) {
+          list.append(group("Lists"));
+          for (const [name, href, icon, count] of lists) {
+            row(list, { label: name, href, icon, count });
+          }
+        }
+
+        if (categories.length > 0) {
+          list.append(group("Categories"));
+          for (const [name, href, inList, count] of categories) {
+            row(list, { label: name, href, note: inList, count });
+          }
+        }
+
+        list.append(group("Everything else"));
+        row(list, {
+          label: `Search “${query}” in ${total} projects`,
+          href: searchUrlFor(query),
+          onFollow: () => rememberRecent(query),
+        });
+      }
+
+      panel.append(list);
+      panel.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }
+
+    /*
+     * The shortcut, printed in the box that answers to it.
+     *
+     * Apple keyboards get ⌘, everything else Ctrl, decided here rather than
+     * guessed by the reader. It is hidden the moment the box is in use: by
+     * then it has done its job, and on WebKit it would sit underneath the
+     * browser's own clear button.
+     */
+    const apple = /mac|iphone|ipad|ipod/i.test(navigator.platform || "");
+    if (hint) {
+      hint.textContent = apple ? "⌘K" : "Ctrl K";
+      hint.hidden = false;
+    }
+
+    const showHint = () => {
+      if (hint) hint.hidden = document.activeElement === input || !!input.value;
+    };
+
+    input.addEventListener("focus", () => {
+      showHint();
+      void loadIndex();
+      draw();
+    });
+    input.addEventListener("blur", showHint);
+    input.addEventListener("input", () => {
+      showHint();
+      draw();
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (panel.hidden && event.key !== "Escape") {
+        if (event.key === "ArrowDown") draw();
+        return;
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (rows.length === 0) return;
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        setActive((active + step + rows.length) % rows.length);
+      } else if (event.key === "Enter") {
+        // nothing chosen falls through to the form, i.e. to /search/?q=
+        if (active < 0) {
+          rememberRecent(input.value);
+          return;
+        }
+        event.preventDefault();
+        rows[active]?.element.click();
+      } else if (event.key === "Escape") {
+        close();
+        input.blur();
+      }
+    });
+
+    form?.addEventListener("submit", () => rememberRecent(input.value));
+
+    box.addEventListener("focusout", (event) => {
+      const next = event.relatedTarget;
+      if (next instanceof Node && box.contains(next)) return;
+      close();
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      const target = event.target;
+      if (target instanceof Node && box.contains(target)) return;
+      close();
+    });
+
+    /*
+     * `/` and ⌘K from anywhere on the page, the two shortcuts a reader who
+     * uses a search box already has in their fingers. Both are ignored while
+     * something else is being typed into, so `/` in a search box stays a slash.
+     */
+    document.addEventListener("keydown", (event) => {
+      const target = event.target;
+      const typing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          /^(input|textarea|select)$/i.test(target.tagName));
+      const slash = event.key === "/" && !event.metaKey && !event.ctrlKey;
+      const command =
+        (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
+      if ((slash && !typing) || command) {
+        event.preventDefault();
+        input.focus();
+        input.select();
+      }
+    });
+  }
+</script>
 
 {
   /*

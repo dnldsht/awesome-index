@@ -113,19 +113,23 @@ const crawledAt = await lastCrawledAt();
         class="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-5 py-8 text-sm text-mute sm:px-8"
       >
         <span>
-          Figures are a snapshot from the last crawl, not live from GitHub.
+          Made with ♥ by{" "}
+          <a
+            class="text-accent hover:underline"
+            href="https://donald.me"
+            rel="noopener">Donald</a
+          >{" "}and{" Claude Code"}
         </span>
         {
           crawledAt && (
-            <span>
-              Updated{" "}
+            <span class="ml-auto">
+              Last update{" "}
               <time datetime={crawledAt.toISOString()}>
                 {longDate(crawledAt)}
               </time>
             </span>
           )
         }
-        <a class="text-accent hover:underline" href="/">All lists</a>
       </div>
     </footer>
   </body>

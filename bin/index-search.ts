@@ -36,6 +36,8 @@
  * Usage: pnpm build (i.e. `astro build && node bin/index-search.ts`)
  */
 import * as D from "drizzle-orm";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { parseArgs } from "node:util";
 import * as pagefind from "pagefind";
 import { loadConfig } from "../src/lib/config.ts";
@@ -44,6 +46,7 @@ import { awesomeItemTable, githubRepoTable } from "../src/lib/db/schema.ts";
 import { liveness } from "../src/lib/format.ts";
 import { sectionOf } from "../src/lib/queries.ts";
 import {
+  FACETS_FILE,
   nameSortValue,
   pushedSortValue,
   starsSortValue,
@@ -173,6 +176,96 @@ function contentOf(
   return parts.filter(Boolean).join(". ");
 }
 
+/**
+ * How many repositories a topic has to sit on before it earns a filter row.
+ *
+ * GitHub topics are free text: 31,064 distinct ones across this dataset, and
+ * four fifths of them appear on fewer than five repositories. The filter index
+ * is downloaded whole by the search page, so indexing that tail would roughly
+ * double it to buy a list of values nobody could usefully tick. Every topic is
+ * still *searchable* — `contentOf` puts them all in the record's text — only
+ * the facet is thresholded.
+ */
+const TOPIC_MIN_REPOS = 50;
+
+/**
+ * What a topic is not allowed to be about.
+ *
+ * Two kinds of noise. A topic that names the language the project is written
+ * in — "golang" on a Go project — is a second, worse copy of the language
+ * facet sitting right above it, and it is what the most popular topics almost
+ * all are. And the badges: `hacktoberfest` is on 1,166 repositories and says
+ * only that somebody wanted pull requests one October, `awesome` and
+ * `awesome-list` say the thing every project on this site already has in
+ * common.
+ *
+ * The language names come from the dataset rather than a hand-written list, so
+ * a language GitHub starts reporting next year is covered without an edit; the
+ * aliases are the forms a topic uses that a language name never does.
+ */
+const TOPIC_BADGES = new Set([
+  "awesome",
+  "awesome-list",
+  "awesome-lists",
+  "hacktoberfest",
+  "hacktoberfest2021",
+  "hacktoberfest2022",
+  "hacktoberfest2023",
+  "list",
+  "lists",
+]);
+
+const LANGUAGE_ALIASES = new Set([
+  "golang",
+  "cpp",
+  "c-plus-plus",
+  "cplusplus",
+  "csharp",
+  "c-sharp",
+  "dotnet",
+  "js",
+  "ts",
+  "py",
+  "objc",
+  "objectivec",
+  "vuejs",
+  "nodejs",
+  "node-js",
+  "emacs-lisp",
+  "commonlisp",
+  "shellscript",
+  "bash-script",
+]);
+
+/** "Objective-C++" and "objective-c-plus-plus" have to collide on something */
+const normalizeTopic = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const languageNames = new Set<string>();
+for (const repo of repoRows) {
+  if (repo.primaryLanguage)
+    languageNames.add(normalizeTopic(repo.primaryLanguage));
+}
+for (const alias of LANGUAGE_ALIASES) languageNames.add(normalizeTopic(alias));
+
+const topicCounts = new Map<string, number>();
+for (const id of appearancesOf.keys()) {
+  const repo = repoById.get(id);
+  if (!repo) continue;
+  // a repository counts once per topic even if GitHub hands it back twice
+  for (const topic of new Set(repo.topics)) {
+    if (TOPIC_BADGES.has(topic)) continue;
+    if (languageNames.has(normalizeTopic(topic))) continue;
+    topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
+  }
+}
+
+const facetTopics = new Set(
+  [...topicCounts]
+    .filter(([, count]) => count >= TOPIC_MIN_REPOS)
+    .map(([topic]) => topic),
+);
+
 const { index, errors: openErrors } = await pagefind.createIndex();
 if (!index) {
   console.error(`pagefind: could not start\n${openErrors.join("\n")}`);
@@ -182,6 +275,29 @@ if (!index) {
 const failures: string[] = [];
 const concurrency = Math.max(1, Number(flags.concurrency) || 1);
 const ids = [...appearancesOf.keys()];
+
+/**
+ * Every facet value with the number of projects carrying it, accumulated from
+ * the records as they are written and saved next to the index.
+ *
+ * The island used to get these from Pagefind's own `filters()`, which means
+ * downloading the whole filter index — 728KB — before it can draw a sidebar.
+ * The same numbers are 15KB as a flat object, and they are the only thing the
+ * page needs to be useful before anybody searches. Written from this loop
+ * rather than queried again from sqlite so it cannot drift from the index: it
+ * counts the records that were actually added, with the filters they were
+ * actually given.
+ */
+const facetCounts: Record<string, Map<string, number>> = {};
+
+function tally(filters: Record<string, string[]>) {
+  for (const [key, values] of Object.entries(filters)) {
+    const bucket = (facetCounts[key] ??= new Map());
+    for (const value of values) {
+      bucket.set(value, (bucket.get(value) ?? 0) + 1);
+    }
+  }
+}
 
 for (let i = 0; i < ids.length; i += concurrency) {
   await Promise.all(
@@ -207,6 +323,13 @@ for (let i = 0; i < ids.length; i += concurrency) {
       };
       if (repo.primaryLanguage) filters["language"] = [repo.primaryLanguage];
       if (repo.license) filters["license"] = [repo.license];
+
+      const topics = [...new Set(repo.topics)].filter((topic) =>
+        facetTopics.has(topic),
+      );
+      if (topics.length > 0) filters["topic"] = topics;
+
+      tally(filters);
 
       const meta: Record<string, string> = {
         title: repo.id,
@@ -260,6 +383,27 @@ if (written.errors.length > 0) {
   process.exit(1);
 }
 
+// inside the bundle, so the one middleware that serves `/pagefind/` to the dev
+// server serves this too, and one directory holds everything search needs
+const facets = Object.fromEntries(
+  Object.entries(facetCounts).map(([key, bucket]) => [
+    key,
+    Object.fromEntries(
+      [...bucket].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+    ),
+  ]),
+);
+
+const facetsFile = path.join(written.outputPath, FACETS_FILE);
+await fs.writeFile(facetsFile, JSON.stringify(facets));
+
+const facetValues = Object.values(facets).reduce(
+  (sum, bucket) => sum + Object.keys(bucket).length,
+  0,
+);
+
 console.log(
-  `indexed ${ids.length.toLocaleString("en")} projects into ${written.outputPath}`,
+  `indexed ${ids.length.toLocaleString("en")} projects into ${written.outputPath}\n` +
+    `wrote ${facetValues} facet values into ${facetsFile} ` +
+    `(${Math.round((await fs.stat(facetsFile)).size / 1024)}KB)`,
 );

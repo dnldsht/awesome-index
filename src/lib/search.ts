@@ -16,31 +16,50 @@ import { LIVENESS_ORDER } from "./format.ts";
 /** the island's page; `trailingSlash: "always"`, hence the closing slash */
 export const SEARCH_PATH = "/search/";
 
+/**
+ * Every facet value and how many projects carry it, written beside the index by
+ * `bin/index-search.ts` and read by the island instead of Pagefind's own
+ * `filters()`, which cannot answer the question without pulling down the whole
+ * 728KB filter index. 15KB, and it is what lets the page draw a working sidebar
+ * before a single byte of the search index is fetched.
+ */
+export const FACETS_FILE = "facets.json";
+
+export const FACETS_PATH = `/pagefind/${FACETS_FILE}`;
+
 export const QUERY_PARAM = "q";
 export const SORT_PARAM = "sort";
 
 /**
  * The filter keys, in the order the facets are stacked in the UI.
  *
- * `list` is the multi-valued one: a repository can be curated by several lists,
- * and a custom record takes a `string[]` per key, so it holds one slug per
- * appearance without any of the per-element tagging an HTML page needed.
+ * `pulse` leads because the island lifts it out of the sidebar and renders it
+ * as the row of buttons under the search box: it is the one axis this dataset
+ * has that github.com does not, so it is the first thing offered rather than
+ * the fourth heading down a column.
+ *
+ * `list` and `topic` are the multi-valued ones: a repository can be curated by
+ * several lists and carry several GitHub topics, and a custom record takes a
+ * `string[]` per key, so it holds one value per appearance without any of the
+ * per-element tagging an HTML page needed.
  */
 export const FILTER_KEYS = [
+  "pulse",
   "list",
   "language",
+  "topic",
   "license",
-  "pulse",
   "archived",
 ] as const;
 
 export type FilterKey = (typeof FILTER_KEYS)[number];
 
 export const FILTER_LABEL: Record<FilterKey, string> = {
+  pulse: "Pulse",
   list: "In list",
   language: "Language",
+  topic: "Topic",
   license: "Licence",
-  pulse: "Pulse",
   archived: "Archived",
 };
 
@@ -116,7 +135,38 @@ export type SearchState = {
 };
 
 export function emptyFilters(): Record<FilterKey, string[]> {
-  return { list: [], language: [], license: [], pulse: [], archived: [] };
+  return {
+    pulse: [],
+    list: [],
+    language: [],
+    topic: [],
+    license: [],
+    archived: [],
+  };
+}
+
+/**
+ * The selection as Pagefind's search API wants it.
+ *
+ * Within one facet the values are OR-ed, between facets they are AND-ed: two
+ * ticked languages means "Rust or Go", because the set of repositories written
+ * in both is empty and nobody ticking two boxes was asking for it, while a
+ * language plus a pulse means "Rust and still moving", which is the whole point
+ * of having two facets. Pagefind reads a bare array as AND, so the `any`
+ * wrapper is the behaviour, not decoration.
+ *
+ * Keys with nothing ticked are left out entirely; an empty `any` matches
+ * nothing.
+ */
+export function pagefindFilters(
+  filters: Record<FilterKey, string[]>,
+): Record<string, { any: string[] }> {
+  const query: Record<string, { any: string[] }> = {};
+  for (const key of FILTER_KEYS) {
+    const values = filters[key];
+    if (values.length > 0) query[key] = { any: values };
+  }
+  return query;
 }
 
 /**
