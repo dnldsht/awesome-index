@@ -5,6 +5,10 @@ import { fullNumber, longDate } from "../lib/format.ts";
 import { OG_DEFAULT_PATH } from "../lib/og.ts";
 import { lastCrawledAt, listSummaries, overallPulse } from "../lib/queries.ts";
 import { absolute } from "../lib/urls.ts";
+// The latin subset, hashed by the build. It is the only one the pages
+// actually hit, and importing it here is what lets the preload below name a
+// file whose hash we cannot otherwise know.
+import bricolageLatin from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
 
 export type Props = {
   title: string;
@@ -56,6 +60,24 @@ const [crawledAt, total, summaries] = await Promise.all([
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {
+      /*
+      Without this the font is a third link in the chain: the browser has to
+      fetch the stylesheet, parse it, and only then discover the @font-face it
+      needs for the heading. Preloading it from the HTML starts both downloads
+      together. `crossorigin` is not optional even same-origin — fonts are
+      fetched in CORS mode, and a preload whose mode differs is thrown away and
+      fetched a second time.
+    */
+    }
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={bricolageLatin}
+      crossorigin
+    />
 
     <title>{title}</title>
     <meta name="description" content={description} />
