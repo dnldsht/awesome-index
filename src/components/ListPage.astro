@@ -2,13 +2,13 @@
 import CategoryNav from "./CategoryNav.astro";
 import Pagination from "./Pagination.astro";
 import PulseBar from "./PulseBar.astro";
-import RepoCard from "./RepoCard.astro";
+import TargetCard from "./TargetCard.astro";
 import Base from "../layouts/Base.astro";
 import { fullNumber, type PulseBreakdown } from "../lib/format.ts";
 import type {
   Category,
   ListSummary,
-  RepoWithSections,
+  TargetWithSections,
 } from "../lib/queries.ts";
 import { firstOnPage } from "../lib/pagination.ts";
 import { ogListPath } from "../lib/og.ts";
@@ -27,7 +27,7 @@ export type Props = {
   summary: ListSummary;
   categories: Category[];
   /** this page's slice, not the whole list */
-  repos: RepoWithSections[];
+  targets: TargetWithSections[];
   /** across the whole list, not this page: it describes the list, not the slice */
   breakdown: PulseBreakdown;
   /** 1-based */
@@ -35,11 +35,12 @@ export type Props = {
   totalPages: number;
 };
 
-const { summary, categories, repos, breakdown, page, totalPages } = Astro.props;
+const { summary, categories, targets, breakdown, page, totalPages } =
+  Astro.props;
 const { entry } = summary;
 
 const from = firstOnPage(page);
-const to = from + repos.length - 1;
+const to = from + targets.length - 1;
 const range = `${fullNumber(from)}–${fullNumber(to)}`;
 
 /**
@@ -49,18 +50,18 @@ const range = `${fullNumber(from)}–${fullNumber(to)}`;
  */
 const title =
   page === 1
-    ? `Awesome ${entry.name}: ${fullNumber(summary.repoCount)} projects, ranked and dated`
+    ? `Awesome ${entry.name}: ${fullNumber(summary.entryCount)} projects, ranked and dated`
     : `Awesome ${entry.name}: projects ${range} by stars, page ${page} of ${totalPages}`;
 
 const description =
   page === 1
     ? `Every project on the awesome-${entry.slug} list, most starred first, across ${fullNumber(categories.length)} categories, each showing how long it has been since anyone touched it.`
-    : `Projects ${range} of ${fullNumber(summary.repoCount)} on the awesome-${entry.slug} list, most starred first, each showing how long it has been since anyone touched it.`;
+    : `Projects ${range} of ${fullNumber(summary.entryCount)} on the awesome-${entry.slug} list, most starred first, each showing how long it has been since anyone touched it.`;
 
 const path = listPagePath(entry.slug, page);
 
 /** enough to describe the page to a crawler without restating the whole table */
-const featured = repos.slice(0, 25);
+const featured = targets.slice(0, 25);
 
 const crumbs = [
   { name: "Awesome Index", path: "/" },
@@ -80,16 +81,17 @@ const jsonLd = [
     url: absolute(path),
     // the list is the whole list on every page; what changes is the window of
     // it this page shows, and the positions below stay absolute across pages
-    numberOfItems: summary.repoCount,
+    numberOfItems: summary.entryCount,
     itemListOrder: "https://schema.org/ItemListOrderDescending",
-    // the items are repositories on github.com, so that is what the list points
-    // at: the same URL the rows themselves link, since nothing on this site
-    // stands between a reader and the code any more
-    itemListElement: featured.map((repo, index) => ({
+    // the items point where the rows point: github.com for a repository, the
+    // project's own address for the rest, since nothing on this site stands
+    // between a reader and the thing itself any more
+    itemListElement: featured.map((target, index) => ({
       "@type": "ListItem",
       position: from + index,
-      name: repo.id,
-      url: githubUrl(repo.id),
+      // the id names a repository; everything else is named by its curator
+      name: target.kind === "github" ? target.id : (target.title ?? target.url),
+      url: target.url,
     })),
   },
   {
@@ -138,7 +140,7 @@ const jsonLd = [
         class="shrink-0 text-sm text-accent decoration-accent underline-offset-4 hover:underline"
         href={listSearchUrl(entry.slug)}
       >
-        Search {fullNumber(summary.repoCount)}{" "}{entry.name} projects →
+        Search {fullNumber(summary.entryCount)}{" "}{entry.name} projects →
       </a>
     </div>
 
@@ -146,8 +148,23 @@ const jsonLd = [
       class="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft"
     >
       <span class="font-medium tabular-nums">
-        {fullNumber(summary.repoCount)} projects
+        {fullNumber(summary.entryCount)} projects
       </span>
+      {
+        /* the entries this list writes that are not repositories: they have a
+          name, a note and a link and no stars to be ranked by, so the count is
+          stated rather than left for a reader to notice at the bottom */
+        summary.linkCount > 0 && (
+          <>
+            <span aria-hidden="true" class="text-mute">
+              ·
+            </span>
+            <span class="tabular-nums text-mute">
+              {fullNumber(summary.linkCount)} off GitHub
+            </span>
+          </>
+        )
+      }
       <span aria-hidden="true" class="text-mute">·</span>
       <span class="tabular-nums">
         {fullNumber(categories.length)} categories
@@ -207,7 +224,7 @@ const jsonLd = [
       <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
         {
           totalPages > 1
-            ? `Projects ${range} of ${fullNumber(summary.repoCount)}, most starred first`
+            ? `Projects ${range} of ${fullNumber(summary.entryCount)}, most starred first`
             : "All projects, most starred first"
         }
       </h2>
@@ -218,9 +235,9 @@ const jsonLd = [
       }
       <ul class="mt-4 -mx-4 border-t border-rule">
         {
-          repos.map((repo) => (
+          targets.map((target) => (
             <li class="border-b border-rule">
-              <RepoCard repo={repo} note={repo.note} headingLevel={3} />
+              <TargetCard target={target} headingLevel={3} />
             </li>
           ))
         }

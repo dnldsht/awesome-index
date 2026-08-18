@@ -4,43 +4,7 @@ import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { stripEmoji } from "./emoji.ts";
 import { slugifyPath } from "./slug.ts";
-
-/**
- * github.com paths shaped like <owner>/<repo> that are not repositories.
- * Awesome lists link to plenty of them (github.com/sponsors/..., /topics/...).
- */
-const RESERVED_OWNERS = new Set([
-  "about",
-  "account",
-  "apps",
-  "codespaces",
-  "collections",
-  "contact",
-  "dashboard",
-  "enterprise",
-  "explore",
-  "features",
-  "issues",
-  "join",
-  "login",
-  "marketplace",
-  "new",
-  "notifications",
-  "organizations",
-  "orgs",
-  "pricing",
-  "pulls",
-  "search",
-  "security",
-  "settings",
-  "site",
-  "sponsors",
-  "stars",
-  "topics",
-  "trending",
-  "users",
-  "watching",
-]);
+import { resolveTarget, type ResolvedTarget } from "./targets.ts";
 
 /**
  * Bumped whenever a change here makes the parser return something different for
@@ -49,12 +13,15 @@ const RESERVED_OWNERS = new Set([
  * otherwise an improvement to this file would only reach a list on the day its
  * author happens to edit it.
  */
-export const PARSER_VERSION = 4;
+export const PARSER_VERSION = 6;
 
 export type ParsedItem = {
-  repoId: string;
+  /** what the entry points at, and who owns it; see lib/targets.ts */
+  target: ResolvedTarget;
   section: string[];
   sectionSlug: string;
+  /** the link text, kept for the targets whose id is not a name */
+  title: string | null;
   note: string | null;
   position: number;
 };
@@ -69,32 +36,6 @@ type Node = {
   identifier?: string;
   children?: Node[];
 };
-
-/**
- * "https://github.com/hyperium/hyper/tree/master#readme" -> "hyperium/hyper".
- * Returns undefined for anything that is not a repository URL, which is how
- * anchors, badges pointing at shields.io and github.com/sponsors links drop out.
- */
-export function normalizeRepoId(url: string): string | undefined {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return undefined;
-  }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:")
-    return undefined;
-  const host = parsed.hostname.replace(/^www\./, "");
-  if (host !== "github.com") return undefined;
-
-  const [owner, repo] = parsed.pathname.split("/").filter(Boolean);
-  if (!owner || !repo) return undefined;
-  if (RESERVED_OWNERS.has(owner.toLowerCase())) return undefined;
-
-  const name = repo.replace(/\.git$/i, "").replace(/\.+$/, "");
-  if (!name) return undefined;
-  return `${owner}/${name}`;
-}
 
 /** flattens a node to its visible text, dropping images so alt text of badges does not leak in */
 function toText(node: Node): string {
@@ -125,41 +66,54 @@ const SOURCE_LINK_TEXT =
   /^(source(\s*code)?|code|git|repo(sitory)?|github(\s+repo(sitory)?)?|open[-\s]?source)$/i;
 
 /**
- * The repository an entry is about, plus the link that names it.
+ * What an entry is about, plus the link that names it.
  *
- * Most lists lead with the repository ("[serde](github.com/serde-rs/serde) —"),
- * but awesome-selfhosted, awesome-mac and awesome-blender lead with the
- * project's own website and hang the repository off a trailing
- * "([Source Code](...))" or a bare badge, which is why immich, listed as
- * "[Immich](https://immich.app/) ... ([Source Code](github.com/immich-app/immich))",
- * used to drop out entirely.
+ * Three shapes, in order of precedence, and the order matters:
  *
- * The fallback only accepts a link that announces itself as the source, never
- * an arbitrary repository mentioned in the prose: those are almost always a
- * *different* project ("a rewrite of [MB-Lab](...)").
+ * 1. the entry leads with its repository ("[serde](github.com/serde-rs/serde) —"),
+ *    which is how most lists write it;
+ * 2. it leads with the project's own site and hangs the repository off a
+ *    trailing "([Source Code](...))" or a bare badge, which is how
+ *    awesome-selfhosted, awesome-mac and awesome-blender write it, and why
+ *    immich, listed as "[Immich](https://immich.app/) ... ([Source
+ *    Code](github.com/immich-app/immich))", is a repository row rather than a
+ *    website one;
+ * 3. it leads with something that is not a repository and offers no source link
+ *    at all — gtkmm, GnuTLS, LLDB, Mobilizon — which used to be the end of the
+ *    entry and is now a `web` target.
+ *
+ * (2) is checked before (3) on purpose: a project that tells us where its code
+ * is gets the row with stars and a pulse on it, not the one with a hostname. And
+ * the source-link fallback still only accepts a link that announces itself as
+ * the source, never an arbitrary repository in the prose, because those are
+ * almost always a *different* project ("a rewrite of [MB-Lab](...)").
  */
 function resolveEntry(
   paragraph: Node,
   definitions: Map<string, string>,
-): { display: Node; repoId: string } | undefined {
+): { display: Node; target: ResolvedTarget } | undefined {
   const links = collectLinks(paragraph).map((node) => {
     const url =
       node.url ??
       (node.identifier ? definitions.get(node.identifier) : undefined);
-    return { node, repoId: url ? normalizeRepoId(url) : undefined };
+    return { node, target: url ? resolveTarget(url) : undefined };
   });
 
   const display = links[0];
   if (!display) return undefined;
-  if (display.repoId) return { display: display.node, repoId: display.repoId };
+  if (display.target?.kind === "github") {
+    return { display: display.node, target: display.target };
+  }
 
-  const source = links.slice(1).find(({ node, repoId }) => {
-    if (!repoId) return false;
+  const source = links.slice(1).find(({ node, target }) => {
+    if (target?.kind !== "github") return false;
     const text = toText(node).trim();
     return text === "" || SOURCE_LINK_TEXT.test(text);
   });
-  if (!source?.repoId) return undefined;
-  return { display: display.node, repoId: source.repoId };
+  if (source?.target) return { display: display.node, target: source.target };
+
+  if (!display.target) return undefined;
+  return { display: display.node, target: display.target };
 }
 
 /**
@@ -171,6 +125,19 @@ function resolveEntry(
  */
 const NAVIGATION_HEADING = /^(table of )?contents?$|^toc$/i;
 
+/** one entry, whichever shape the README wrote it in */
+type Entry = {
+  target: ResolvedTarget;
+  /** the link text, which for a non-repository row is the only name it has */
+  title: string | null;
+  note: string | null;
+};
+
+/** the visible text of the naming link, emoji and inner whitespace tidied */
+function titleOf(link: Node): string | null {
+  return stripEmoji(toText(link)).replace(/\s+/g, " ").trim() || null;
+}
+
 /**
  * The entry a node holds, whichever of the three shapes it is written in, or
  * undefined for the vast majority of nodes that hold no entry at all.
@@ -178,7 +145,7 @@ const NAVIGATION_HEADING = /^(table of )?contents?$|^toc$/i;
 function resolveNode(
   node: Node,
   definitions: Map<string, string>,
-): { repoId: string; note: string | null } | undefined {
+): Entry | undefined {
   if (node.type === "tableRow") return resolveTableRow(node, definitions);
   if (node.type !== "listItem" && node.type !== "blockquote") return undefined;
 
@@ -187,7 +154,11 @@ function resolveNode(
 
   const entry = resolveEntry(paragraph, definitions);
   if (!entry) return undefined;
-  return { repoId: entry.repoId, note: extractNote(paragraph, entry.display) };
+  return {
+    target: entry.target,
+    title: titleOf(entry.display),
+    note: extractNote(paragraph, entry.display),
+  };
 }
 
 /**
@@ -206,7 +177,7 @@ function resolveNode(
 function resolveTableRow(
   row: Node,
   definitions: Map<string, string>,
-): { repoId: string; note: string | null } | undefined {
+): Entry | undefined {
   const cells = (row.children ?? []).filter((c) => c.type === "tableCell");
   const [first, ...rest] = cells;
   if (!first) return undefined;
@@ -223,7 +194,8 @@ function resolveTableRow(
     );
   // a one column table puts the prose next to the link, like a list item would
   return {
-    repoId: entry.repoId,
+    target: entry.target,
+    title: titleOf(entry.display),
     note: note || extractNote(first, entry.display),
   };
 }
@@ -277,8 +249,56 @@ function collectDefinitions(tree: Node): Map<string, string> {
 }
 
 /**
- * Extracts the repositories linked from an awesome list README, together with
- * the heading path each one sits under.
+ * Link text that names no project: the side links an entry trails
+ * ("([Demo](...), [Website](...))") and the words a list uses for its own
+ * plumbing. A badge flattens to no text at all, which counts too.
+ */
+const GENERIC_TITLE =
+  /^(demo|live demo|try ?it( out)?|web ?site|home ?page|official (site|web ?site|page)|docs?|documentation|manual|guide|download|mirror|blog|paper|article|video|talk|slides|link|here|more|readme|wiki)$/i;
+
+/**
+ * The headings a list keeps for itself: what licence it is published under, how
+ * to contribute to it, who did. The links under them are about the list, not
+ * entries in it, and awesome-selfhosted's "List of Licenses" is 40 spdx.org
+ * pages that would otherwise become 40 rows.
+ *
+ * Whole-heading matches only: "License Management" is a category of software
+ * somebody self-hosts, "License" is the footer.
+ */
+const BOILERPLATE_HEADING =
+  /^(licen[cs]es?|list of licen[cs]es|contributing|contribution guidelines|contributions?|contributors?|code of conduct|acknowledg\w*|credits?|thanks|authors?|maintainers?|sponsors?|backers?|disclaimer|footnotes?)$/i;
+
+/**
+ * Whether a link that is not a repository is an entry at all.
+ *
+ * Until now `resolveTarget` returning nothing answered this for free: a badge, a
+ * "back to top" anchor, a table-of-contents bullet, a `[[crate](crates.io)]`
+ * reference and a footer link were all simply "not a repository". The catch-all
+ * provider recognises every one of them, so what used to be a side effect of the
+ * github filter has to be stated:
+ *
+ * - it has to be *named*. A paragraph that opens on a badge has no link text
+ *   once the image is dropped, and a row whose name is "https://..." is not a
+ *   row anybody scans.
+ * - it has to sit under a heading. Everything above the first one is the
+ *   list's own front matter — its badges, its "Awesome" cross-links, its
+ *   contribution notice — and the headingless bucket the site publishes exists
+ *   for lists that write no headings at all, not for preambles.
+ * - the heading has to be about projects rather than about the list itself.
+ *
+ * Repositories are held to none of this, deliberately: they are 88% of the
+ * dataset, they have been through 4 parser versions of scrutiny, and tightening
+ * the rules under them would silently drop rows the site has always had.
+ */
+function looksLikeEntry(title: string | null, section: string[]): boolean {
+  if (!title || GENERIC_TITLE.test(title)) return false;
+  if (section.length === 0) return false;
+  return !section.some((heading) => BOILERPLATE_HEADING.test(heading.trim()));
+}
+
+/**
+ * Extracts the entries an awesome list README links, together with the heading
+ * path each one sits under and the target each one points at.
  *
  * Only the paragraph directly owned by an entry is inspected, never its nested
  * lists: otherwise an item with sub-items would also claim every repository
@@ -300,7 +320,7 @@ export function parseAwesomeReadme(
   /** current heading text by depth, e.g. {2: "Applications", 3: "Audio"} */
   const headings = new Map<number, string>();
   const items: ParsedItem[] = [];
-  /** a repo may be listed twice under the same section, keep the first note */
+  /** a target may be listed twice under the same section, keep the first note */
   const seen = new Set<string>();
   let position = 0;
 
@@ -316,8 +336,10 @@ export function parseAwesomeReadme(
     }
 
     const resolved = resolveNode(node, definitions);
-    if (!resolved || resolved.repoId === options.exclude) return;
-    const { repoId, note } = resolved;
+    if (!resolved) return;
+    const { target, title, note } = resolved;
+    // the list's own repository, which every list links from its own header
+    if (target.kind === "github" && target.id === options.exclude) return;
 
     // depth 1 is the list's own title ("# Awesome Rust"), it would prefix
     // every single path without telling the reader anything
@@ -331,15 +353,19 @@ export function parseAwesomeReadme(
     // heading at all and would otherwise be filed as an uncategorized entry
     if (node.type === "blockquote" && section.length === 0) return;
 
+    if (target.kind !== "github" && !looksLikeEntry(title, section)) return;
+
     const sectionSlug = slugifyPath(section);
-    const key = `${repoId} ${sectionSlug}`;
+    const key = `${target.id} ${sectionSlug}`;
     if (seen.has(key)) return;
     seen.add(key);
 
     items.push({
-      repoId,
+      target,
       section,
       sectionSlug,
+      // a repository is named by its id; nothing else is
+      title: target.kind === "github" ? null : title,
       note,
       position: position++,
     });

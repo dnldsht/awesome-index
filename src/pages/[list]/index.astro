@@ -5,7 +5,7 @@ import { pageCount, pageSlice } from "../../lib/pagination.ts";
 import {
   categoriesForList,
   listSummaries,
-  reposForList,
+  targetsForList,
 } from "../../lib/queries.ts";
 
 /**
@@ -25,8 +25,8 @@ export async function getStaticPaths() {
 
   return await Promise.all(
     summaries.map(async (summary) => {
-      const [repos, categories] = await Promise.all([
-        reposForList(summary.entry),
+      const [targets, categories] = await Promise.all([
+        targetsForList(summary.entry),
         categoriesForList(summary.entry),
       ]);
       return {
@@ -35,11 +35,11 @@ export async function getStaticPaths() {
         props: {
           summary,
           categories,
-          repos: pageSlice(repos, 1),
+          targets: pageSlice(targets, 1),
           // computed from the whole list, which only this scope still holds
-          breakdown: pulseBreakdown(repos),
+          breakdown: pulseBreakdown(targets),
           page: 1,
-          totalPages: pageCount(repos.length),
+          totalPages: pageCount(targets.length),
         },
       };
     }),

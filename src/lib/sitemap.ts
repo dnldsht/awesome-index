@@ -12,6 +12,9 @@
  * 34,440 URLs to a tenth of that and left it made entirely of pages that say
  * github.com does not.
  *
+ * Nor is every category listed: one made entirely of links off GitHub has
+ * nothing of ours on it, and `collect()` says why where it skips them.
+ *
  * Pagination is on the same footing: page counts come from `pageCount()`, the
  * function the routes slice with, and the URLs from `listPagePath` /
  * `categoryPagePath`, the functions the pages canonicalise with. A paginated
@@ -21,7 +24,7 @@
  */
 
 import { pageCount } from "./pagination.ts";
-import { categoriesForList, listSummaries, reposForList } from "./queries.ts";
+import { categoriesForList, listSummaries, targetsForList } from "./queries.ts";
 import { absolute, categoryPagePath, listPagePath } from "./urls.ts";
 
 /**
@@ -60,21 +63,25 @@ async function collect(): Promise<SitemapUrl[]> {
 
   for (const summary of summaries) {
     const { entry } = summary;
-    const [repos, categories] = await Promise.all([
-      reposForList(entry),
+    const [targets, categories] = await Promise.all([
+      targetsForList(entry),
       categoriesForList(entry),
     ]);
 
-    /** newest push under each heading path of this list */
+    /** newest activity under each heading path of this list */
     const perCategory = new Map<string, Date>();
     let listNewest = EPOCH;
 
-    for (const repo of repos) {
-      listNewest = newer(listNewest, repo.pushedAt);
-      for (const section of repo.sections) {
+    // a row with no last activity (a website: see queries.ts) cannot date a
+    // page, so it is skipped here and the listing falls back to the newest
+    // among the rows that can
+    for (const target of targets) {
+      if (!target.lastActivityAt) continue;
+      listNewest = newer(listNewest, target.lastActivityAt);
+      for (const section of target.sections) {
         perCategory.set(
           section.slug,
-          newer(perCategory.get(section.slug), repo.pushedAt),
+          newer(perCategory.get(section.slug), target.lastActivityAt),
         );
       }
     }
@@ -92,11 +99,24 @@ async function collect(): Promise<SitemapUrl[]> {
      * claiming otherwise would be the sort of lastmod a crawler learns to
      * ignore.
      */
-    for (let page = 1; page <= pageCount(repos.length); page++) {
+    for (let page = 1; page <= pageCount(targets.length); page++) {
       urls.push({ loc: listPagePath(entry.slug, page), lastmod: listLastmod });
     }
 
     for (const category of categories) {
+      /*
+       * A heading whose every row is a link and not a repository is left out.
+       *
+       * It has a page, it is linked from the category nav, and a crawler that
+       * wants it can have it. What it does not get is an invitation: the page is
+       * a handful of names, a note each and a hostname, i.e. the README's own
+       * words with nothing of ours added, since there are no stars, no pulse and
+       * no dates to add. That is the same test the 30,464 repository pages
+       * failed, and it is better applied here than discovered in a report of
+       * thin content six months from now.
+       */
+      if (category.repoCount === 0) continue;
+
       const lastmod = perCategory.get(category.slug) ?? listLastmod;
       for (let page = 1; page <= pageCount(category.count); page++) {
         urls.push({
@@ -159,8 +179,8 @@ const XML_ESCAPES: Record<string, string> = {
 };
 
 /**
- * Repository ids are `[A-Za-z0-9._-]` and slugs are `[a-z0-9-]`, so nothing we
- * emit needs escaping today. It is applied anyway because the day a list name
+ * The set is made of slugs, which are `[a-z0-9-]`, so nothing we emit needs
+ * escaping today. It is applied anyway because the day a list name
  * with an ampersand slips through, the failure is a sitemap the crawler drops
  * whole for being malformed, with no error anywhere in our build.
  */

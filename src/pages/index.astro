@@ -7,7 +7,12 @@ import {
   pulseBreakdown,
 } from "../lib/format.ts";
 import { luckyFallback } from "../lib/lucky.ts";
-import { listPulses, listSummaries, overallPulse } from "../lib/queries.ts";
+import {
+  datasetTotals,
+  listPulses,
+  listSummaries,
+  overallPulse,
+} from "../lib/queries.ts";
 import { SEARCH_PATH } from "../lib/search.ts";
 import { absolute, listPath } from "../lib/urls.ts";
 
@@ -17,18 +22,22 @@ const pulse = await overallPulse();
 
 /**
  * Distinct projects, not the sum of the lists' own counts: the two differ by
- * every repository more than one curator picked, some two thousand of them, and
+ * every project more than one curator picked, some two thousand of them, and
  * this page now states the number twice — here and in the footer — where two
  * readings of "projects" a screen apart read as an error rather than as a
  * definition. This is also the one the search box can deliver.
  */
-const total = pulse.total;
+const { targets: total, repos, links } = await datasetTotals();
 
 /**
  * The share that has gone three years without a commit, which is the claim the
  * whole site rests on and the only number here a README could not tell you.
  * Read from the data rather than written into the copy: it is a nightly crawl,
  * and a hardcoded "a third" would quietly drift away from the rows below it.
+ *
+ * Its denominator is `repos`, not `total`: the share is of the projects that
+ * have a commit history to be silent for. Saying "of everything" would let a
+ * list of newsletters and meetups quietly improve the number.
  */
 const dormant = pulse.percentages.dormant;
 
@@ -69,7 +78,7 @@ const rows = [...summaries]
   .sort(
     (a, b) =>
       b.pulse.percentages.active - a.pulse.percentages.active ||
-      b.summary.repoCount - a.summary.repoCount,
+      b.summary.entryCount - a.summary.entryCount,
   );
 
 const title =
@@ -98,8 +107,9 @@ const jsonLd = [
   <p class="mt-6 max-w-xl text-lg text-ink-soft">
     {compactNumber(total)} projects from {summaries.length} lists, sorted by stars
     and kept under the categories their curators wrote. Every entry carries what a
-    README leaves out: how long since anyone touched it, and {dormant}% have
-    gone three years without a commit.
+    README leaves out: of the {compactNumber(repos)} on GitHub, {dormant}% have
+    gone three years without a commit, and the {compactNumber(links)} that live elsewhere
+    say whether they still answer at all.
   </p>
 
   {
@@ -168,7 +178,7 @@ const jsonLd = [
         <li
           class="border-b border-rule"
           data-search={`${summary.entry.name} ${summary.entry.slug}`.toLowerCase()}
-          data-projects={summary.repoCount}
+          data-projects={summary.entryCount}
           data-active={pulse.percentages.active}
           data-name={summary.entry.name.toLowerCase()}
         >
@@ -183,7 +193,7 @@ const jsonLd = [
               {summary.entry.name}
             </span>
             <span class="font-mono text-sm text-ink-soft tabular-nums">
-              {compactNumber(summary.repoCount)} projects
+              {compactNumber(summary.entryCount)} projects
             </span>
             <span class="ml-auto flex items-center gap-3">
               {/* a sparkline of the same scale the list page charts in full;

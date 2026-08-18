@@ -2,7 +2,7 @@
 import SearchApp, { type FeaturedRepo } from "../components/SearchApp.tsx";
 import Base from "../layouts/Base.astro";
 import { compactNumber, liveness } from "../lib/format.ts";
-import { listSummaries, overallPulse, topRepos } from "../lib/queries.ts";
+import { datasetTotals, listSummaries, topStarred } from "../lib/queries.ts";
 import { pushedSortValue, SEARCH_PATH } from "../lib/search.ts";
 import { listPath } from "../lib/urls.ts";
 
@@ -28,14 +28,14 @@ import { listPath } from "../lib/urls.ts";
 const summaries = await listSummaries();
 
 /**
- * Distinct projects, not list entries.
+ * Distinct entries, not list entries.
  *
  * This page is a view onto the index, and the index holds one record per
- * project; summing the lists' own counts would promise 2,132 rows that no
+ * target; summing the lists' own counts would promise 2,132 rows that no
  * search can ever return. The front page and the footer count the same way, so
  * the number a reader arrives here with is the number they leave with.
  */
-const total = (await overallPulse()).total;
+const total = (await datasetTotals()).targets;
 
 const lists = summaries.map((summary) => ({
   slug: summary.entry.slug,
@@ -44,15 +44,15 @@ const lists = summaries.map((summary) => ({
 }));
 
 /** two "Show more" presses' worth; past that the reader is browsing, not searching */
-const featured: FeaturedRepo[] = (await topRepos(50)).map((repo) => ({
+const featured: FeaturedRepo[] = (await topStarred(50)).map((repo) => ({
   id: repo.id,
   blurb: repo.description.trim(),
-  stars: repo.stars,
-  pushed: pushedSortValue(repo.pushedAt),
-  pulse: liveness(repo.pushedAt),
+  stars: repo.stars ?? 0,
+  pushed: pushedSortValue(repo.lastActivityAt),
+  pulse: repo.lastActivityAt ? liveness(repo.lastActivityAt) : undefined,
   language: repo.primaryLanguage ?? "",
   license: repo.license ?? "",
-  archived: repo.archived,
+  archived: repo.archived ?? false,
   lists: repo.lists.join(" · "),
 }));
 

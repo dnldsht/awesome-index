@@ -36,7 +36,7 @@ export const GET: APIRoute = async () => {
     summary.entry.name,
     listPath(summary.entry.slug),
     summary.entry.icon ?? "",
-    summary.repoCount,
+    summary.entryCount,
     (pulses.get(summary.entry.slug) ?? emptyPulse).percentages.active,
   ]);
 

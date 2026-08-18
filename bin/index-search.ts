@@ -42,7 +42,7 @@ import { parseArgs } from "node:util";
 import * as pagefind from "pagefind";
 import { loadConfig } from "../src/lib/config.ts";
 import { db } from "../src/lib/db/client.ts";
-import { awesomeItemTable, githubRepoTable } from "../src/lib/db/schema.ts";
+import { awesomeItemTable, targetTable } from "../src/lib/db/schema.ts";
 import { liveness } from "../src/lib/format.ts";
 import { sectionOf } from "../src/lib/queries.ts";
 import {
@@ -51,7 +51,7 @@ import {
   pushedSortValue,
   starsSortValue,
 } from "../src/lib/search.ts";
-import { githubUrl } from "../src/lib/urls.ts";
+import { targetHost } from "../src/lib/targets.ts";
 
 const { values: flags } = parseArgs({
   options: {
@@ -72,7 +72,7 @@ if (flags.help) {
   process.exit(0);
 }
 
-/** one config entry that features a repository, as the index describes it */
+/** one config entry that features a target, as the index describes it */
 type Appearance = {
   slug: string;
   name: string;
@@ -80,24 +80,27 @@ type Appearance = {
   sections: string[];
   /** every distinct note this list's curators wrote about it */
   notes: string[];
+  /** what this list calls it, which is the only name a non-repository row has */
+  title: string | null;
 };
 
-const [entries, repoRows, itemRows] = await Promise.all([
+const [entries, targetRows, itemRows] = await Promise.all([
   loadConfig(),
-  db.select().from(githubRepoTable),
+  db.select().from(targetTable),
   db
     .select({
       listId: awesomeItemTable.listId,
-      repoId: awesomeItemTable.repoId,
+      targetId: awesomeItemTable.targetId,
       section: awesomeItemTable.section,
       sectionSlug: awesomeItemTable.sectionSlug,
+      title: awesomeItemTable.title,
       note: awesomeItemTable.note,
     })
     .from(awesomeItemTable)
     .orderBy(D.asc(awesomeItemTable.listId), D.asc(awesomeItemTable.position)),
 ]);
 
-const repoById = new Map(repoRows.map((row) => [row.id, row]));
+const targetById = new Map(targetRows.map((row) => [row.id, row]));
 
 // awesome_item is keyed by source list id ("rust-unofficial/awesome-rust") while
 // the site is keyed by config slug, and one entry can merge several source lists
@@ -112,14 +115,14 @@ const appearancesOf = new Map<string, Map<string, Appearance>>();
 for (const item of itemRows) {
   // a repository the list links but GitHub no longer serves has no metadata row,
   // and a list crawled once that has since left config.yaml has no entry
-  if (!repoById.has(item.repoId)) continue;
+  if (!targetById.has(item.targetId)) continue;
   const entry = entryOfList.get(item.listId);
   if (!entry) continue;
 
-  let byEntry = appearancesOf.get(item.repoId);
+  let byEntry = appearancesOf.get(item.targetId);
   if (!byEntry) {
     byEntry = new Map();
-    appearancesOf.set(item.repoId, byEntry);
+    appearancesOf.set(item.targetId, byEntry);
   }
 
   let appearance = byEntry.get(entry.slug);
@@ -129,9 +132,11 @@ for (const item of itemRows) {
       name: entry.name,
       sections: [],
       notes: [],
+      title: item.title,
     };
     byEntry.set(entry.slug, appearance);
   }
+  appearance.title ??= item.title;
 
   // entries sitting above every heading are filed under the synthetic bucket,
   // exactly as the category pages file them
@@ -145,7 +150,7 @@ for (const item of itemRows) {
 /**
  * What a query is actually matched against.
  *
- * The id leads, because "tokio" is how somebody looks for tokio. Then the
+ * The name leads, because "tokio" is how somebody looks for tokio. Then the
  * project's own description, then the curators' prose, the one part of this
  * that exists nowhere else and the reason the dataset is worth searching. Then
  * the headings it was filed under and the lists that curate it, so "http
@@ -155,11 +160,15 @@ for (const item of itemRows) {
  * Topics come last, unpunctuated: they are keywords, not a sentence.
  */
 function contentOf(
-  repo: (typeof repoRows)[number],
+  target: (typeof targetRows)[number],
   appearances: Appearance[],
+  name: string,
 ): string {
-  const description = repo.description.trim();
-  const parts = [repo.id, repo.ownerLogin, description];
+  const description = target.description.trim();
+  const parts = [name, target.ownerLogin ?? "", description];
+  // the host is worth matching on for a row that is a website: "gnu.org" and
+  // "crates.io" are how a reader remembers where something lived
+  if (target.kind !== "github") parts.push(targetHost(target.url));
 
   for (const appearance of appearances) {
     parts.push(appearance.name, ...appearance.sections);
@@ -170,8 +179,8 @@ function contentOf(
     }
   }
 
-  if (repo.primaryLanguage) parts.push(repo.primaryLanguage);
-  if (repo.topics.length > 0) parts.push(repo.topics.join(" "));
+  if (target.primaryLanguage) parts.push(target.primaryLanguage);
+  if (target.topics?.length) parts.push(target.topics.join(" "));
 
   return parts.filter(Boolean).join(". ");
 }
@@ -242,18 +251,18 @@ const normalizeTopic = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 const languageNames = new Set<string>();
-for (const repo of repoRows) {
-  if (repo.primaryLanguage)
-    languageNames.add(normalizeTopic(repo.primaryLanguage));
+for (const target of targetRows) {
+  if (target.primaryLanguage)
+    languageNames.add(normalizeTopic(target.primaryLanguage));
 }
 for (const alias of LANGUAGE_ALIASES) languageNames.add(normalizeTopic(alias));
 
 const topicCounts = new Map<string, number>();
 for (const id of appearancesOf.keys()) {
-  const repo = repoById.get(id);
-  if (!repo) continue;
+  const target = targetById.get(id);
+  if (!target) continue;
   // a repository counts once per topic even if GitHub hands it back twice
-  for (const topic of new Set(repo.topics)) {
+  for (const topic of new Set(target.topics ?? [])) {
     if (TOPIC_BADGES.has(topic)) continue;
     if (languageNames.has(normalizeTopic(topic))) continue;
     topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
@@ -302,29 +311,56 @@ function tally(filters: Record<string, string[]>) {
 for (let i = 0; i < ids.length; i += concurrency) {
   await Promise.all(
     ids.slice(i, i + concurrency).map(async (id) => {
-      const repo = repoById.get(id);
+      const target = targetById.get(id);
       const byEntry = appearancesOf.get(id);
-      if (!repo || !byEntry) return;
+      if (!target || !byEntry) return;
 
       const appearances = [...byEntry.values()].sort(
         (a, b) => (entryOrder.get(a.slug) ?? 0) - (entryOrder.get(b.slug) ?? 0),
       );
-      const pulse = liveness(repo.pushedAt);
-      const archived = repo.archived ? "yes" : "no";
-      const description = repo.description.trim();
+      const repo = target.kind === "github";
+      /**
+       * What the card calls it. A repository is `owner/name`, which is what the
+       * listing pages show and what somebody types into a package manager;
+       * anything else is called whatever the first curator to list it called it,
+       * and falls back to its host so a record can never be nameless.
+       */
+      const name = repo
+        ? target.id
+        : (appearances.find((appearance) => appearance.title)?.title ??
+          targetHost(target.url));
+      const pulse = target.lastActivityAt
+        ? liveness(target.lastActivityAt)
+        : undefined;
+      const description = target.description.trim();
 
       // Only keys with a value: a repository with no detected language must not
       // become a `language: ""` row in the facet, which is how a filter ends up
-      // offering a blank checkbox that matches 8,000 projects.
+      // offering a blank checkbox that matches 8,000 projects. The same rule now
+      // covers the facets a non-repository row has nothing to say to at all —
+      // pulse and archived — rather than inventing a value for them.
       const filters: Record<string, string[]> = {
         list: appearances.map((appearance) => appearance.slug),
-        pulse: [pulse],
-        archived: [archived],
+        kind: [target.kind],
       };
-      if (repo.primaryLanguage) filters["language"] = [repo.primaryLanguage];
-      if (repo.license) filters["license"] = [repo.license];
+      /*
+       * Every record carries exactly one liveness value, so the facet's counts
+       * add up to the whole index: a repository contributes its pulse bucket, a
+       * link contributes whether it answers. "reachable" is everything not known
+       * to be dead, including what we could not get a clear answer about; see
+       * PULSE_ORDER in lib/search.ts.
+       */
+      filters["pulse"] = pulse
+        ? [pulse]
+        : [target.status === "dead" ? "dead" : "reachable"];
+      if (target.archived !== null) {
+        filters["archived"] = [target.archived ? "yes" : "no"];
+      }
+      if (target.primaryLanguage)
+        filters["language"] = [target.primaryLanguage];
+      if (target.license) filters["license"] = [target.license];
 
-      const topics = [...new Set(repo.topics)].filter((topic) =>
+      const topics = [...new Set(target.topics ?? [])].filter((topic) =>
         facetTopics.has(topic),
       );
       if (topics.length > 0) filters["topic"] = topics;
@@ -332,37 +368,47 @@ for (let i = 0; i < ids.length; i += concurrency) {
       tally(filters);
 
       const meta: Record<string, string> = {
-        title: repo.id,
-        stars: String(repo.stars),
-        pushed: pushedSortValue(repo.pushedAt),
-        pulse,
-        archived,
+        title: name,
+        kind: target.kind,
         // the byline on a result card: which lists thought this was worth
         // linking, which is the one thing a github.com search cannot tell you
         lists: appearances.map((appearance) => appearance.name).join(" · "),
       };
+      if (target.stars !== null) meta["stars"] = String(target.stars);
+      if (target.lastActivityAt) {
+        meta["pushed"] = pushedSortValue(target.lastActivityAt);
+      }
+      if (pulse) meta["pulse"] = pulse;
+      if (target.archived !== null) {
+        meta["archived"] = target.archived ? "yes" : "no";
+      }
+      if (!repo) meta["host"] = targetHost(target.url);
+      if (target.status) meta["status"] = target.status;
       if (description) meta["blurb"] = description;
-      if (repo.primaryLanguage) meta["language"] = repo.primaryLanguage;
-      if (repo.license) meta["license"] = repo.license;
+      if (target.primaryLanguage) meta["language"] = target.primaryLanguage;
+      if (target.license) meta["license"] = target.license;
 
       const { errors } = await index.addCustomRecord({
         // Pagefind stores this verbatim and hands it back to the island, so a
-        // result links to github.com without the site having a page of its own
-        url: githubUrl(repo.id),
-        content: contentOf(repo, appearances),
+        // result links straight to the thing itself without the site having a
+        // page of its own: github.com for a repository, the project's own
+        // address for the rest
+        url: target.url,
+        content: contentOf(target, appearances, name),
         language: "en",
         meta,
         filters,
         // zero-padded / date-shaped, because Pagefind compares sort values as
         // strings; see the helpers in search.ts
         sort: {
-          stars: starsSortValue(repo.stars),
-          pushed: pushedSortValue(repo.pushedAt),
-          name: nameSortValue(repo.id),
+          stars: starsSortValue(target.stars),
+          pushed: pushedSortValue(target.lastActivityAt),
+          name: nameSortValue(name),
         },
       });
 
-      if (errors.length > 0) failures.push(`${repo.id}: ${errors.join(", ")}`);
+      if (errors.length > 0)
+        failures.push(`${target.id}: ${errors.join(", ")}`);
     }),
   );
 }
@@ -403,7 +449,7 @@ const facetValues = Object.values(facets).reduce(
 );
 
 console.log(
-  `indexed ${ids.length.toLocaleString("en")} projects into ${written.outputPath}\n` +
+  `indexed ${ids.length.toLocaleString("en")} entries into ${written.outputPath}\n` +
     `wrote ${facetValues} facet values into ${facetsFile} ` +
     `(${Math.round((await fs.stat(facetsFile)).size / 1024)}KB)`,
 );

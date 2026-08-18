@@ -163,7 +163,7 @@ function card(input: OgCard): Node {
               gap: 18,
             },
             [
-              box({ fontSize: 26, fontWeight: 700 }, "awesomeindex.dev"),
+              box({ fontSize: 26, fontWeight: 700 }, "awesome.donld.me"),
               box({ flex: "1" }),
               ...(["active", "steady", "slowing", "dormant"] as const).flatMap(
                 (level) => [

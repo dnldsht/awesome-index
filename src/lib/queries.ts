@@ -2,11 +2,7 @@ import * as D from "drizzle-orm";
 import { loadConfig, type ConfigEntry } from "./config.ts";
 import { pulseBreakdown, type PulseBreakdown } from "./format.ts";
 import { db } from "./db/client.ts";
-import {
-  awesomeItemTable,
-  githubRepoTable,
-  type GithubRepo,
-} from "./db/schema.ts";
+import { awesomeItemTable, targetTable, type Target } from "./db/schema.ts";
 import { collidesWithPagination } from "./urls.ts";
 
 /**
@@ -17,11 +13,30 @@ import { collidesWithPagination } from "./urls.ts";
  * into a second store and make the build slower for no gain.
  */
 
-export type RepoWithSections = GithubRepo & {
-  /** the sections of *this* list the repo was filed under */
+export type TargetWithSections = Target & {
+  /** the sections of *this* list the target was filed under */
   sections: { path: string[]; slug: string }[];
+  /** what the curator calls it, which is the only name a `web` row has */
+  title: string | null;
   note: string | null;
 };
+
+/**
+ * The order every listing is in: most starred first, then the rows that have no
+ * stars to be sorted by, in the order the README writes them.
+ *
+ * `nulls last` is the whole rule. A `web` target has no star count — not zero,
+ * none — so it cannot be ranked against a repository, and putting it anywhere
+ * inside the ranking would be inventing a position for it. After the ranking, in
+ * the curator's own order, is the one place that claims nothing: the rows land
+ * on the last page of a multi-page listing together, and a reader who has
+ * scrolled that far is looking at "and these, which we cannot rank" rather than
+ * at a suspiciously unstarred stretch of the top 60.
+ */
+const LISTING_ORDER = [
+  D.sql`${targetTable.stars} desc nulls last`,
+  D.asc(awesomeItemTable.position),
+];
 
 /**
  * The synthetic heading that entries above every real heading are filed under.
@@ -53,52 +68,60 @@ export function sectionOf(slug: string, path: string[]) {
 
 function groupSections(
   rows: {
-    repo: GithubRepo;
+    target: Target;
     section: string[];
     sectionSlug: string;
+    title: string | null;
     note: string | null;
     position: number;
   }[],
-): RepoWithSections[] {
-  const byId = new Map<string, RepoWithSections>();
+): TargetWithSections[] {
+  const byId = new Map<string, TargetWithSections>();
   for (const row of rows) {
-    let entry = byId.get(row.repo.id);
+    let entry = byId.get(row.target.id);
     if (!entry) {
-      entry = { ...row.repo, sections: [], note: row.note };
-      byId.set(row.repo.id, entry);
+      entry = {
+        ...row.target,
+        sections: [],
+        title: row.title,
+        note: row.note,
+      };
+      byId.set(row.target.id, entry);
     }
     const section = sectionOf(row.sectionSlug, row.section);
     // two source lists merged into one entry (JavaScript is sorrycc + uhub) can
-    // both file the same repo under no heading, and both collapse onto the same
+    // both file the same target under no heading, and both collapse onto the same
     // synthetic slug; the section list is a set of pages, not of rows
     if (!entry.sections.some((s) => s.slug === section.slug)) {
       entry.sections.push(section);
     }
-    // keep the first note we saw, list authors repeat the link with no prose
+    // keep the first note and title we saw, list authors repeat the link with
+    // no prose and two lists may name the same thing differently
+    entry.title ??= row.title;
     entry.note ??= row.note;
   }
   return [...byId.values()];
 }
 
-/** every repository featured by a config entry, most starred first */
-export async function reposForList(
+const listingColumns = {
+  target: targetTable,
+  section: awesomeItemTable.section,
+  sectionSlug: awesomeItemTable.sectionSlug,
+  title: awesomeItemTable.title,
+  note: awesomeItemTable.note,
+  position: awesomeItemTable.position,
+};
+
+/** everything a config entry features, most starred first */
+export async function targetsForList(
   entry: ConfigEntry,
-): Promise<RepoWithSections[]> {
+): Promise<TargetWithSections[]> {
   const rows = await db
-    .select({
-      repo: githubRepoTable,
-      section: awesomeItemTable.section,
-      sectionSlug: awesomeItemTable.sectionSlug,
-      note: awesomeItemTable.note,
-      position: awesomeItemTable.position,
-    })
+    .select(listingColumns)
     .from(awesomeItemTable)
-    .innerJoin(
-      githubRepoTable,
-      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
-    )
+    .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
     .where(D.inArray(awesomeItemTable.listId, entry.sourceIds))
-    .orderBy(D.desc(githubRepoTable.stars));
+    .orderBy(...LISTING_ORDER);
 
   return groupSections(rows);
 }
@@ -109,21 +132,31 @@ export type Category = {
   /**
    * What `awesome_item.section_slug` actually holds: the empty string for the
    * headingless bucket, identical to `slug` otherwise. Kept separate so
-   * `reposForCategory` can be handed the storage key without having to guess
+   * `targetsForCategory` can be handed the storage key without having to guess
    * whether "uncategorized" means the bucket or a heading someone really wrote.
    */
   sectionSlug: string;
   path: string[];
+  /** distinct targets under the heading, which is what the page paginates */
   count: number;
+  /**
+   * How many of those are repositories, i.e. how many carry stars and a pulse.
+   *
+   * `count - repoCount` is the rest: sites, registries, whatever the curator
+   * linked that we can only show a name and a note for. The gap matters to the
+   * sitemap, which does not advertise a heading made entirely of those; see
+   * `sitemap.ts`.
+   */
+  repoCount: number;
 };
 
 /**
- * The heading paths of a config entry, with how many repositories each holds.
+ * The heading paths of a config entry, with how much each one holds.
  *
- * Joins github_repo rather than counting awesome_item alone: a list keeps
- * linking repositories that were since deleted or made private, and those never
- * get a github_repo row. Counting them would inflate every category and, for a
- * section whose repos are all gone, emit a category page with nothing on it.
+ * Joins `target` rather than counting awesome_item alone: a list keeps linking
+ * repositories that were since deleted or made private, and those never get a
+ * `target` row. Counting them would inflate every category and, for a section
+ * whose repos are all gone, emit a category page with nothing on it.
  *
  * Rows with no heading are not dropped any more; they become the synthetic
  * `UNCATEGORIZED_SLUG` category, which is what makes them crawlable.
@@ -131,18 +164,32 @@ export type Category = {
 export async function categoriesForList(
   entry: ConfigEntry,
 ): Promise<Category[]> {
-  const count = D.sql<number>`count(distinct ${awesomeItemTable.repoId})`;
+  const count = D.sql<number>`count(distinct ${awesomeItemTable.targetId})`;
+  const repoCount = D.sql<number>`count(distinct case when ${targetTable.kind} = 'github' then ${awesomeItemTable.targetId} end)`;
+  /*
+   * Several heading paths can slugify to one category, and then one of them has
+   * to be the name of the page. `min()` picks it, rather than the bare column,
+   * whose value sqlite is free to take from whichever row it likes: "Misc" and
+   * "Misc." are the same category written twice and merging them is right, but a
+   * page whose title changes between builds is not.
+   *
+   * `variants` is how the case stops being invisible. Merging headings that
+   * differ by a full stop is fine; merging two that do not is a slug that needs
+   * fixing (see `slugify`, which had exactly that bug for C, C++ and C#), and a
+   * warning in the build log is where that gets noticed.
+   */
+  const section = D.sql<string>`min(${awesomeItemTable.section})`;
+  const variants = D.sql<string>`group_concat(distinct ${awesomeItemTable.section})`;
   const rows = await db
     .select({
       slug: awesomeItemTable.sectionSlug,
-      section: awesomeItemTable.section,
+      section,
+      variants,
       count,
+      repoCount,
     })
     .from(awesomeItemTable)
-    .innerJoin(
-      githubRepoTable,
-      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
-    )
+    .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
     .where(D.inArray(awesomeItemTable.listId, entry.sourceIds))
     .groupBy(awesomeItemTable.sectionSlug)
     .orderBy(D.desc(count));
@@ -169,52 +216,51 @@ export async function categoriesForList(
   }
 
   return rows.map((row) => {
-    const section = sectionOf(row.slug, row.section);
+    const path = JSON.parse(row.section) as string[];
+    const section = sectionOf(row.slug, path);
+    if (row.variants && row.variants.includes("],[")) {
+      console.warn(
+        `[categories] ${entry.slug}/${section.slug}: several headings share ` +
+          `this slug (${row.variants}); the page is titled after the first`,
+      );
+    }
     return {
       slug: section.slug,
       sectionSlug: row.slug,
       path: section.path,
       count: row.count,
+      repoCount: row.repoCount,
     };
   });
 }
 
 /**
- * Repositories filed under one heading path of one config entry.
+ * Everything filed under one heading path of one config entry.
  *
  * `sectionSlug` is the *stored* slug, i.e. `Category.sectionSlug` and not
  * `Category.slug`: pass `""` to get the headingless bucket the site publishes
  * at `UNCATEGORIZED_SLUG`.
  */
-export async function reposForCategory(
+export async function targetsForCategory(
   entry: ConfigEntry,
   sectionSlug: string,
-): Promise<RepoWithSections[]> {
+): Promise<TargetWithSections[]> {
   const rows = await db
-    .select({
-      repo: githubRepoTable,
-      section: awesomeItemTable.section,
-      sectionSlug: awesomeItemTable.sectionSlug,
-      note: awesomeItemTable.note,
-      position: awesomeItemTable.position,
-    })
+    .select(listingColumns)
     .from(awesomeItemTable)
-    .innerJoin(
-      githubRepoTable,
-      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
-    )
+    .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
     .where(
       D.and(
         D.inArray(awesomeItemTable.listId, entry.sourceIds),
         D.eq(awesomeItemTable.sectionSlug, sectionSlug),
       ),
     )
-    .orderBy(D.desc(githubRepoTable.stars));
+    .orderBy(...LISTING_ORDER);
 
   return groupSections(rows);
 }
 
-export type TopRepo = GithubRepo & {
+export type TopRepo = Target & {
   /** the names of the config entries that curate it, in config order */
   lists: string[];
 };
@@ -228,8 +274,10 @@ export type TopRepo = GithubRepo & {
  * records, and that took seven seconds before a single result appeared. The
  * answer never changes between builds, so it is a query here instead and the
  * index is not touched until the reader actually types or filters.
+ *
+ * Repositories by construction: a row has to have stars to be sorted by them.
  */
-export async function topRepos(limit: number): Promise<TopRepo[]> {
+export async function topStarred(limit: number): Promise<TopRepo[]> {
   const entries = await loadConfig();
   const nameOfSource = new Map(
     entries.flatMap((entry) =>
@@ -237,43 +285,44 @@ export async function topRepos(limit: number): Promise<TopRepo[]> {
     ),
   );
 
-  // asks for more than it needs: a repository whose only list has since left
+  // asks for more than it needs: a target whose only list has since left
   // config.yaml is not on this site and is dropped below, exactly as the
   // search index drops it
   const rows = await db
-    .select({ repo: githubRepoTable })
-    .from(githubRepoTable)
+    .select({ target: targetTable })
+    .from(targetTable)
     .innerJoin(
       awesomeItemTable,
-      D.eq(awesomeItemTable.repoId, githubRepoTable.id),
+      D.eq(awesomeItemTable.targetId, targetTable.id),
     )
-    .groupBy(githubRepoTable.id)
-    .orderBy(D.desc(githubRepoTable.stars))
+    .where(D.isNotNull(targetTable.stars))
+    .groupBy(targetTable.id)
+    .orderBy(D.desc(targetTable.stars))
     .limit(limit * 2);
 
-  const ids = rows.map((row) => row.repo.id);
+  const ids = rows.map((row) => row.target.id);
   const items = await db
     .select({
-      repoId: awesomeItemTable.repoId,
+      targetId: awesomeItemTable.targetId,
       listId: awesomeItemTable.listId,
     })
     .from(awesomeItemTable)
-    .where(D.inArray(awesomeItemTable.repoId, ids));
+    .where(D.inArray(awesomeItemTable.targetId, ids));
 
   const listsOf = new Map<string, Set<string>>();
   for (const item of items) {
     const name = nameOfSource.get(item.listId);
     if (!name) continue;
-    const names = listsOf.get(item.repoId) ?? new Set<string>();
+    const names = listsOf.get(item.targetId) ?? new Set<string>();
     names.add(name);
-    listsOf.set(item.repoId, names);
+    listsOf.set(item.targetId, names);
   }
 
   const top: TopRepo[] = [];
   for (const row of rows) {
-    const names = listsOf.get(row.repo.id);
+    const names = listsOf.get(row.target.id);
     if (!names) continue;
-    top.push({ ...row.repo, lists: [...names] });
+    top.push({ ...row.target, lists: [...names] });
     if (top.length === limit) break;
   }
   return top;
@@ -281,7 +330,10 @@ export async function topRepos(limit: number): Promise<TopRepo[]> {
 
 export type ListSummary = {
   entry: ConfigEntry;
-  repoCount: number;
+  /** distinct targets, i.e. every row the list page paginates */
+  entryCount: number;
+  /** how many of those are not repositories, and so carry no pulse */
+  linkCount: number;
   /** most recent push across the list, i.e. how fresh the niche itself is */
   lastActivity: Date | undefined;
 };
@@ -309,28 +361,63 @@ export async function listSummaries(): Promise<ListSummary[]> {
   for (const entry of entries) {
     const [row] = await db
       .select({
-        repoCount: D.sql<number>`count(distinct ${awesomeItemTable.repoId})`,
-        lastActivity: D.sql<number | null>`max(${githubRepoTable.pushedAt})`,
+        entryCount: D.sql<number>`count(distinct ${awesomeItemTable.targetId})`,
+        linkCount: D.sql<number>`count(distinct case when ${targetTable.kind} != 'github' then ${awesomeItemTable.targetId} end)`,
+        lastActivity: D.sql<number | null>`max(${targetTable.lastActivityAt})`,
       })
       .from(awesomeItemTable)
-      .innerJoin(
-        githubRepoTable,
-        D.eq(githubRepoTable.id, awesomeItemTable.repoId),
-      )
+      .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
       .where(D.inArray(awesomeItemTable.listId, entry.sourceIds));
 
-    if (!row || row.repoCount === 0) continue;
+    if (!row || row.entryCount === 0) continue;
     summaries.push({
       entry,
-      repoCount: row.repoCount,
+      entryCount: row.entryCount,
+      linkCount: row.linkCount,
       lastActivity: row.lastActivity
         ? new Date(row.lastActivity * 1000)
         : undefined,
     });
   }
 
-  summariesCache = summaries.sort((a, b) => b.repoCount - a.repoCount);
+  summariesCache = summaries.sort((a, b) => b.entryCount - a.entryCount);
   return summariesCache;
+}
+
+export type DatasetTotals = {
+  /** distinct targets across every crawled list, i.e. what search covers */
+  targets: number;
+  /** the repositories among them, which are the ones with a pulse */
+  repos: number;
+  /** the rest: a project's own site, and whatever else a curator linked */
+  links: number;
+};
+
+let totalsCache: DatasetTotals | undefined;
+
+/**
+ * How big the dataset is, counted once.
+ *
+ * Distinct targets, not list entries: a project linked by both awesome-go and
+ * awesome-selfhosted is one row here and two on the list pages, on purpose,
+ * because each list counts its own. The home page, the search page and the
+ * footer all state this number, so it is derived in one place — three readings
+ * of "projects" a screen apart that disagree read as a bug, not as a definition.
+ */
+export async function datasetTotals(): Promise<DatasetTotals> {
+  if (totalsCache) return totalsCache;
+  const [row] = await db
+    .select({
+      targets: D.sql<number>`count(distinct ${awesomeItemTable.targetId})`,
+      repos: D.sql<number>`count(distinct case when ${targetTable.kind} = 'github' then ${awesomeItemTable.targetId} end)`,
+    })
+    .from(awesomeItemTable)
+    .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId));
+
+  const targets = row?.targets ?? 0;
+  const repos = row?.repos ?? 0;
+  totalsCache = { targets, repos, links: targets - repos };
+  return totalsCache;
 }
 
 let overallPulseCache: PulseBreakdown | undefined;
@@ -345,19 +432,22 @@ let overallPulseCache: PulseBreakdown | undefined;
  * across lists first. The gap is real, 32,596 list entries against 30,464
  * distinct repositories, and averaging the per-list shares instead would let
  * the 80 lists vote by count rather than by size.
+ *
+ * The denominator is the targets that *have* a last activity date. A website has
+ * none, and folding those in as a fifth bucket, or as dormant ones, would make
+ * the one figure this site exists to publish depend on how many of a list's
+ * entries happen to live on GitHub.
  */
 export async function overallPulse(): Promise<PulseBreakdown> {
   if (overallPulseCache) return overallPulseCache;
   const rows = await db
     .selectDistinct({
-      repoId: awesomeItemTable.repoId,
-      pushedAt: githubRepoTable.pushedAt,
+      targetId: awesomeItemTable.targetId,
+      lastActivityAt: targetTable.lastActivityAt,
     })
     .from(awesomeItemTable)
-    .innerJoin(
-      githubRepoTable,
-      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
-    );
+    .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
+    .where(D.isNotNull(targetTable.lastActivityAt));
 
   overallPulseCache = pulseBreakdown(rows);
   return overallPulseCache;
@@ -368,7 +458,7 @@ let crawledAtCache: Date | null | undefined;
 
 /**
  * When the dataset was last refreshed: the most recent `refreshedAt` across
- * every repository, which is the moment the crawl actually ran.
+ * every target, which is the moment the crawl actually ran.
  *
  * `awesome_list.updatedAt` is the more obvious source and the wrong one: it
  * only moves when a README changed, so a footer built on it would tell a reader
@@ -380,8 +470,8 @@ let crawledAtCache: Date | null | undefined;
 export async function lastCrawledAt(): Promise<Date | undefined> {
   if (crawledAtCache === undefined) {
     const [row] = await db
-      .select({ at: D.sql<number | null>`max(${githubRepoTable.refreshedAt})` })
-      .from(githubRepoTable);
+      .select({ at: D.sql<number | null>`max(${targetTable.refreshedAt})` })
+      .from(targetTable);
     crawledAtCache = row?.at ? new Date(row.at * 1000) : null;
   }
   return crawledAtCache ?? undefined;
@@ -403,19 +493,21 @@ export async function listPulses(): Promise<Map<string, PulseBreakdown>> {
   const rows = await db
     .selectDistinct({
       listId: awesomeItemTable.listId,
-      repoId: awesomeItemTable.repoId,
-      pushedAt: githubRepoTable.pushedAt,
+      targetId: awesomeItemTable.targetId,
+      lastActivityAt: targetTable.lastActivityAt,
     })
     .from(awesomeItemTable)
-    .innerJoin(
-      githubRepoTable,
-      D.eq(githubRepoTable.id, awesomeItemTable.repoId),
-    );
+    .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
+    .where(D.isNotNull(targetTable.lastActivityAt));
 
-  const bySource = new Map<string, { repoId: string; pushedAt: Date }[]>();
+  const bySource = new Map<
+    string,
+    { targetId: string; lastActivityAt: Date }[]
+  >();
   for (const row of rows) {
+    if (!row.lastActivityAt) continue;
     const list = bySource.get(row.listId) ?? [];
-    list.push({ repoId: row.repoId, pushedAt: row.pushedAt });
+    list.push({ targetId: row.targetId, lastActivityAt: row.lastActivityAt });
     bySource.set(row.listId, list);
   }
 
@@ -424,12 +516,14 @@ export async function listPulses(): Promise<Map<string, PulseBreakdown>> {
     const seen = new Map<string, Date>();
     for (const sourceId of entry.sourceIds) {
       for (const row of bySource.get(sourceId) ?? []) {
-        seen.set(row.repoId, row.pushedAt);
+        seen.set(row.targetId, row.lastActivityAt);
       }
     }
     pulses.set(
       entry.slug,
-      pulseBreakdown([...seen.values()].map((pushedAt) => ({ pushedAt }))),
+      pulseBreakdown(
+        [...seen.values()].map((lastActivityAt) => ({ lastActivityAt })),
+      ),
     );
   }
 

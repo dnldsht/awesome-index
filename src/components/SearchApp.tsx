@@ -7,7 +7,9 @@ import {
 } from "preact/hooks";
 import {
   compactNumber,
+  LINK_STATUS_LABEL,
   LIVENESS_LABEL,
+  LIVENESS_ORDER,
   relativeTime,
   type Liveness,
 } from "../lib/format.ts";
@@ -19,7 +21,10 @@ import {
   FACETS_PATH,
   FILTER_KEYS,
   FILTER_LABEL,
+  KIND_LABEL,
+  KIND_ORDER,
   pagefindFilters,
+  PULSE_LABEL,
   parseSearchUrl,
   PULSE_ORDER,
   searchUrl,
@@ -131,7 +136,7 @@ export type FeaturedRepo = {
   stars: number;
   /** `YYYY-MM-DD`, as the index stores it */
   pushed: string;
-  pulse: Liveness;
+  pulse: Liveness | undefined;
   language: string;
   license: string;
   archived: boolean;
@@ -145,15 +150,28 @@ export type Props = {
   total: number;
 };
 
-/** one result, as this component renders it */
+/**
+ * One result, as this component renders it.
+ *
+ * Everything a non-repository row does not have is optional rather than zeroed:
+ * `stars: null` is a row that cannot be starred, `pulse: undefined` is a row with
+ * no commit history, and the card closes up around them instead of printing a
+ * zero and a "dormant" nobody measured. See TargetCard.astro, which draws the
+ * same row on the static pages.
+ */
 type Card = {
   url: string;
+  kind: "github" | "web";
   owner: string;
   name: string;
+  /** where a non-repository row lives, which is the only address it has */
+  host: string;
   blurb: string;
-  stars: number;
+  stars: number | null;
   pushedAt: Date | undefined;
   pulse: Liveness | undefined;
+  /** reachability, for the rows whose liveness is not a commit */
+  status: "ok" | "dead" | undefined;
   language: string;
   license: string;
   archived: boolean;
@@ -162,26 +180,32 @@ type Card = {
 
 function toCard(data: PagefindData): Card {
   const meta = data.meta ?? {};
-  // `title` is the repository id, set by bin/index-search.ts; the url is the
-  // github.com link and is only ever followed, never parsed
+  // `title` is what bin/index-search.ts named the row: the repository id, or the
+  // name its curator gave it. The url is only ever followed, never parsed.
   const title = meta["title"] ?? "";
+  const kind = meta["kind"] === "web" ? "web" : "github";
   const [owner = "", name = ""] = title.split("/");
   const stars = Number.parseInt(meta["stars"] ?? "", 10);
   const pushed = meta["pushed"];
   const pulse = meta["pulse"];
+  const status = meta["status"];
 
   return {
     url: data.url,
-    owner,
-    name: name || title,
+    kind,
+    owner: kind === "github" ? owner : "",
+    name: kind === "github" ? name || title : title,
+    host: meta["host"] ?? "",
     blurb: meta["blurb"] ?? "",
-    stars: Number.isFinite(stars) ? stars : 0,
+    // absent, not zero: the index leaves the key off a row that has no stars
+    stars: Number.isFinite(stars) ? stars : null,
     // the meta carries a date, not a timestamp; parsed as UTC midnight, which
     // is all "3 months ago" needs
     pushedAt: pushed ? new Date(`${pushed}T00:00:00Z`) : undefined,
-    pulse: PULSE_ORDER.includes(pulse as Liveness)
+    pulse: LIVENESS_ORDER.includes(pulse as Liveness)
       ? (pulse as Liveness)
       : undefined,
+    status: status === "ok" || status === "dead" ? status : undefined,
     language: meta["language"] ?? "",
     license: meta["license"] ?? "",
     archived: meta["archived"] === "yes",
@@ -193,12 +217,15 @@ function featuredCard(repo: FeaturedRepo): Card {
   const [owner = "", name = ""] = repo.id.split("/");
   return {
     url: githubUrl(repo.id),
+    kind: "github",
     owner,
     name: name || repo.id,
+    host: "",
     blurb: repo.blurb,
     stars: repo.stars,
-    pushedAt: new Date(`${repo.pushed}T00:00:00Z`),
+    pushedAt: repo.pulse ? new Date(`${repo.pushed}T00:00:00Z`) : undefined,
     pulse: repo.pulse,
+    status: undefined,
     language: repo.language,
     license: repo.license,
     archived: repo.archived,
@@ -675,43 +702,64 @@ export default function SearchApp({ lists, featured, total }: Props) {
   );
 }
 
-/** the same card as `RepoCard.astro`, rebuilt from the index's metadata */
+/** the same card as `TargetCard.astro`, rebuilt from the index's metadata */
 function Result({ card }: { card: Card }) {
+  const repo = card.kind === "github";
   return (
     <article
-      data-pulse={card.pulse}
+      data-pulse={card.pulse ?? ""}
+      data-status={card.status === "dead" ? "dead" : undefined}
       class="p-4 transition-colors hover:bg-sunk"
     >
       <div class="flex items-baseline justify-between gap-3">
-        <h3 class="min-w-0 font-mono text-[0.95rem] leading-tight">
-          {/* a new tab, like every project link on the site: see RepoCard.astro */}
+        <h3
+          class={
+            repo
+              ? "min-w-0 font-mono text-[0.95rem] leading-tight"
+              : "min-w-0 text-[1rem] leading-tight font-medium"
+          }
+        >
+          {/* a new tab, like every project link on the site: see TargetCard.astro */}
           <a
             href={card.url}
             target="_blank"
-            rel="noopener"
+            rel={repo ? "noopener" : "noopener nofollow"}
             class="text-ink decoration-accent underline-offset-4 hover:underline"
           >
-            <span class="text-mute">{card.owner}/</span>
-            <span class="font-medium">{card.name}</span>
-            <span class="sr-only"> on GitHub, opens in a new tab</span>
+            {repo ? (
+              <>
+                <span class="text-mute">{card.owner}/</span>
+                <span class="font-medium">{card.name}</span>
+                <span class="sr-only"> on GitHub, opens in a new tab</span>
+              </>
+            ) : (
+              <>
+                <span>{card.name}</span>
+                <span class="sr-only">
+                  {card.host ? ` at ${card.host},` : ""} opens in a new tab
+                </span>
+              </>
+            )}
           </a>
         </h3>
 
         <div class="flex shrink-0 items-center gap-3">
-          <span class="flex items-center gap-1 font-mono text-sm font-medium text-ink-soft tabular-nums">
-            <svg
-              class="size-4 shrink-0 fill-current text-mute"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.94L12 2.5z" />
-            </svg>
-            {compactNumber(card.stars)}
-            <span class="sr-only">stars</span>
-          </span>
+          {card.stars !== null && (
+            <span class="flex items-center gap-1 font-mono text-sm font-medium text-ink-soft tabular-nums">
+              <svg
+                class="size-4 shrink-0 fill-current text-mute"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.94L12 2.5z" />
+              </svg>
+              {compactNumber(card.stars)}
+              <span class="sr-only">stars</span>
+            </span>
+          )}
 
           {/* no second github.com link beside the heading: the heading *is*
-              the github.com link, exactly as in RepoCard.astro */}
+              the link, exactly as in TargetCard.astro */}
         </div>
       </div>
 
@@ -722,14 +770,24 @@ function Result({ card }: { card: Card }) {
       )}
 
       <p class="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-mute">
+        {card.host && <span class="font-mono">{card.host}</span>}
+        {card.host && (card.language || card.license) && (
+          <span aria-hidden="true">·</span>
+        )}
         {card.language && <span>{card.language}</span>}
         {card.language && card.license && <span aria-hidden="true">·</span>}
         {card.license && <span>{card.license}</span>}
-        {(card.language || card.license) && <span aria-hidden="true">·</span>}
 
         {/* the status is stated in words, never by the stripe colour alone */}
         {card.pulse && (
-          <span style="color: var(--pulse)">{LIVENESS_LABEL[card.pulse]}</span>
+          <>
+            {(card.host || card.language || card.license) && (
+              <span aria-hidden="true">·</span>
+            )}
+            <span style="color: var(--pulse)">
+              {LIVENESS_LABEL[card.pulse]}
+            </span>
+          </>
         )}
         {card.pushedAt && <span aria-hidden="true">·</span>}
         {card.pushedAt && (
@@ -737,6 +795,17 @@ function Result({ card }: { card: Card }) {
             {relativeTime(card.pushedAt)}
           </time>
         )}
+
+        {/* only the bad news, exactly as in TargetCard.astro */}
+        {!repo && card.status === "dead" && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span style="color: var(--link-dead)">
+              {LINK_STATUS_LABEL.dead}
+            </span>
+          </>
+        )}
+
         {card.lists && <span aria-hidden="true">·</span>}
         {card.lists && <span>{card.lists}</span>}
 
@@ -794,7 +863,7 @@ function PulseFilter({
             style={`background: var(--pulse-${row.value})`}
             aria-hidden="true"
           />
-          {LIVENESS_LABEL[row.value as Liveness]}
+          {PULSE_LABEL[row.value] ?? row.value}
           <span class="font-mono text-xs text-mute tabular-nums">
             {compactNumber(row.count)}
           </span>
@@ -814,8 +883,8 @@ type FacetModel = { key: FilterKey; values: FacetValue[] };
  * `counts` is what the search effect worked out for this facet, so the numbers
  * describe what clicking would actually give you — including inside a facet
  * that already has a tick, where the value or-s onto the selection rather than
- * narrowing it. The closed facets (pulse, archived, and the lists, which are a
- * known set) additionally list every value they have, even at zero, because a
+ * narrowing it. The closed facets (pulse, kind, archived, and the lists, which
+ * are a known set) additionally list every value they have, even at zero, because a
  * scale with a rung missing reads as a bug; the open-ended ones (language,
  * licence, topic) list only what the current results contain.
  */
@@ -832,11 +901,13 @@ function buildFacet(
   const always =
     key === "pulse"
       ? [...PULSE_ORDER]
-      : key === "archived"
-        ? [...ARCHIVED_ORDER]
-        : key === "list"
-          ? input.lists.map((list) => list.slug)
-          : [];
+      : key === "kind"
+        ? [...KIND_ORDER]
+        : key === "archived"
+          ? [...ARCHIVED_ORDER]
+          : key === "list"
+            ? input.lists.map((list) => list.slug)
+            : [];
 
   const seen = new Set<string>();
   const values: FacetValue[] = [];
@@ -863,7 +934,7 @@ function buildFacet(
   // ticked, sitting 200 rows down a facet ordered by size — is the one row
   // behind "Show 338 more". Pulse and archived are exempt: their order is a
   // scale, and a scale that reorders itself when you touch it is unreadable.
-  if (key !== "pulse" && key !== "archived") {
+  if (key !== "pulse" && key !== "kind" && key !== "archived") {
     values.sort((a, b) => Number(b.selected) - Number(a.selected));
   }
 
@@ -886,7 +957,7 @@ function Facet({
   if (facet.values.length === 0) return null;
 
   // pulse is drawn by PulseFilter, above the results, not as a row here
-  const closed = facet.key === "archived";
+  const closed = facet.key === "archived" || facet.key === "kind";
   const visible =
     expanded || closed ? facet.values : facet.values.slice(0, FACET_PREVIEW);
   const hidden = facet.values.length - visible.length;
@@ -905,7 +976,9 @@ function Facet({
           const label =
             facet.key === "archived"
               ? (ARCHIVED_LABEL[row.value] ?? row.value)
-              : (list?.name ?? row.value);
+              : facet.key === "kind"
+                ? (KIND_LABEL[row.value] ?? row.value)
+                : (list?.name ?? row.value);
 
           return (
             <li key={row.value}>

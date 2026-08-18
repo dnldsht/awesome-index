@@ -63,7 +63,10 @@ jobs:
           # the built-in token allows 1000 requests/hour; set CRAWL_GITHUB_TOKEN
           # to a PAT (or several comma separated, on different accounts) for more
           GITHUB_TOKEN: ${{ secrets.CRAWL_GITHUB_TOKEN || github.token }}
-        run: pnpm crawl --stale-days=1
+        # --max-links caps pass 3, the one that talks to third-party hosts: the
+        # stalest links are checked first, so a nightly cap turns a 5,000-request
+        # burst every seventh night into a rolling weekly sweep
+        run: pnpm crawl --stale-days=1 --max-links=1200
 
       - name: Publish the dataset
         if: github.event_name != 'push' && inputs.crawl != false

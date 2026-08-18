@@ -54,6 +54,19 @@
   --pulse-steady: #4a3dd0;
   --pulse-slowing: #8a5f16;
   --pulse-dormant: #767d8a;
+
+  /* the other axis: a link that has stopped answering at all */
+  --link-dead: #a8323a;
+
+  /*
+   * The same two, named as pulse buckets, because the search page's liveness
+   * filter is one row of six buttons and each draws its dot from
+   * `--pulse-<value>`. Reachable borrows the muted ink rather than the healthy
+   * teal: "it answered" is not "somebody is working on it", and the colours
+   * should not suggest otherwise.
+   */
+  --pulse-reachable: var(--mute);
+  --pulse-dead: var(--link-dead);
 }
 
 /**
@@ -80,6 +93,8 @@
   --d-pulse-steady: #a49bff;
   --d-pulse-slowing: #d8a13f;
   --d-pulse-dormant: #7d8593;
+
+  --d-link-dead: #f0868c;
 }
 
 /* system says dark, and the reader has not explicitly asked for light */
@@ -97,6 +112,7 @@
     --pulse-steady: var(--d-pulse-steady);
     --pulse-slowing: var(--d-pulse-slowing);
     --pulse-dormant: var(--d-pulse-dormant);
+    --link-dead: var(--d-link-dead);
   }
 }
 
@@ -114,6 +130,7 @@
   --pulse-steady: var(--d-pulse-steady);
   --pulse-slowing: var(--d-pulse-slowing);
   --pulse-dormant: var(--d-pulse-dormant);
+  --link-dead: var(--d-link-dead);
 }
 
 @layer base {
@@ -171,5 +188,19 @@
   }
   [data-pulse="dormant"] {
     --pulse: var(--pulse-dormant);
+  }
+  /*
+   * A row that is not a repository has no pulse to show, and an empty
+   * `data-pulse` is how it says so: the stripe stays, in the rule colour, so the
+   * column of stripes has no holes in it and no row is quietly claiming a
+   * reading it does not have.
+   *
+   * Except when the link has stopped answering, which is the one thing we do
+   * know about it. Its own colour, not a borrowed pulse hue: "we could not
+   * reach this" is a different statement from "nobody has pushed to this".
+   */
+  [data-status="dead"] {
+    border-left: 2px solid var(--link-dead);
+    --pulse: var(--link-dead);
   }
 }

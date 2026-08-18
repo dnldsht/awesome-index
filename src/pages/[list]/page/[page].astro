@@ -5,7 +5,7 @@ import { pageCount, pageSlice } from "../../../lib/pagination.ts";
 import {
   categoriesForList,
   listSummaries,
-  reposForList,
+  targetsForList,
 } from "../../../lib/queries.ts";
 
 /**
@@ -26,14 +26,14 @@ export async function getStaticPaths() {
   const paths = [];
 
   for (const summary of summaries) {
-    const [repos, categories] = await Promise.all([
-      reposForList(summary.entry),
+    const [targets, categories] = await Promise.all([
+      targetsForList(summary.entry),
       categoriesForList(summary.entry),
     ]);
-    const totalPages = pageCount(repos.length);
+    const totalPages = pageCount(targets.length);
     // the list's pulse split, not this page's: it is the same header on every
     // page of the list, and computing it per slice would make it wobble
-    const breakdown = pulseBreakdown(repos);
+    const breakdown = pulseBreakdown(targets);
 
     for (let page = 2; page <= totalPages; page++) {
       paths.push({
@@ -42,7 +42,7 @@ export async function getStaticPaths() {
         props: {
           summary,
           categories,
-          repos: pageSlice(repos, page),
+          targets: pageSlice(targets, page),
           breakdown,
           page,
           totalPages,

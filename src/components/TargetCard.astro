@@ -1,0 +1,229 @@
+---
+import {
+  compactNumber,
+  LINK_STATUS_LABEL,
+  LIVENESS_LABEL,
+  liveness,
+  relativeTime,
+} from "../lib/format.ts";
+import type { TargetWithSections } from "../lib/queries.ts";
+import { targetHost } from "../lib/targets.ts";
+
+export type Props = {
+  target: TargetWithSections;
+  /** h2 inside a section listing, h3 when nested under a category heading */
+  headingLevel?: 2 | 3;
+};
+
+const { target, headingLevel = 2 } = Astro.props;
+
+const Heading = `h${headingLevel}` as "h2" | "h3";
+
+/**
+ * One row, whether the thing it points at is a repository or not.
+ *
+ * A repository row is unchanged: `owner/name` in mono, because that is the form
+ * you type into a package manager, stars, language, licence and the pulse. The
+ * rest of the row is what this component had to learn — 12% of the entries the
+ * READMEs write are a project's own site, and they arrive with a name, a note, a
+ * hostname and nothing else.
+ *
+ * What that row must not do is fake the missing half. No zero next to the star,
+ * no "dormant" for a site with no commits to have: the fields simply are not
+ * there, and the meta line below closes up around them. What it says instead is
+ * where the link goes (the host) and whether it still answers.
+ */
+const repo = target.kind === "github";
+const name = repo ? (target.id.split("/")[1] ?? target.id) : target.title;
+const owner = target.ownerLogin ?? target.id.split("/")[0];
+const host = repo ? "" : targetHost(target.url);
+
+const pulse = target.lastActivityAt
+  ? liveness(target.lastActivityAt)
+  : undefined;
+const pulseLabel = pulse ? LIVENESS_LABEL[pulse] : "";
+const status = target.status;
+
+/**
+ * The two places a reader wants to go from a repository row: the code, and
+ * whatever the project calls its front door. `homepageUrl` is null for most
+ * repositories, either because the owner never filled the field in or because it
+ * pointed back at the repository and the crawler dropped it, so the second link
+ * is genuinely optional rather than a slot that renders empty. A `web` row is
+ * already its own front door and has no second link to offer.
+ *
+ * The first one is the heading itself. There is no page on this site to send a
+ * row to any more (see `githubUrl` in urls.ts), and a row that carried the same
+ * link twice, once on the name and once on an icon, would just read it out twice
+ * to a screen reader.
+ *
+ * Both leave the site, so both open in a new tab: a reader working down sixty
+ * rows of a category is comparing them, and sending the list itself away on the
+ * first click makes them walk back for the second. `target="_blank"` needs the
+ * `rel` to stop the opened page reaching back through `window.opener`, and it
+ * needs saying out loud, hence the `sr-only` tail, since a new tab appearing is
+ * the one thing a screen reader cannot infer from the link text.
+ */
+const homepage = repo ? target.homepageUrl : null;
+---
+
+{
+  /* p-4, not pl-4: the hover fill spans the whole row, and text sitting flush
+     against the edge of a filled surface reads as a rendering bug */
+}
+<article
+  data-pulse={pulse ?? ""}
+  data-status={status === "dead" ? "dead" : undefined}
+  class="p-4 transition-colors hover:bg-sunk"
+>
+  <div class="flex items-baseline justify-between gap-3">
+    <Heading
+      class:list={[
+        "min-w-0 leading-tight",
+        repo ? "font-mono text-[0.95rem]" : "text-[1rem] font-medium",
+      ]}
+    >
+      <a
+        href={target.url}
+        target="_blank"
+        rel={repo ? "noopener" : "noopener nofollow"}
+        class="text-ink decoration-accent underline-offset-4 hover:underline"
+      >
+        {
+          repo ? (
+            <Fragment>
+              <span class="text-mute">{owner}/</span>
+              <span class="font-medium">{name}</span>
+              <span class="sr-only"> on GitHub, opens in a new tab</span>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <span>{name}</span>
+              <span class="sr-only"> at {host}, opens in a new tab</span>
+            </Fragment>
+          )
+        }
+      </a>
+    </Heading>
+
+    <div class="flex shrink-0 items-center gap-3">
+      {
+        /* no zero: a row with no stars has none to show, and "0" would read as
+           a project nobody starred rather than as a page that cannot be starred */
+        target.stars !== null && (
+          <span class="flex items-center gap-1 font-mono text-sm font-medium text-ink-soft tabular-nums">
+            <svg
+              class="size-4 shrink-0 fill-current text-mute"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.94L12 2.5z" />
+            </svg>
+            {compactNumber(target.stars)}
+            <span class="sr-only">stars</span>
+          </span>
+        )
+      }
+
+      {
+        homepage && (
+          <a
+            href={homepage}
+            target="_blank"
+            rel="noopener nofollow"
+            aria-label={`Website for ${target.id}, opens in a new tab`}
+            class="text-mute transition-colors hover:text-accent"
+          >
+            <svg
+              class="size-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9.25" />
+              <path d="M2.75 12h18.5" />
+              <path d="M12 2.75c2.4 2.5 3.6 5.6 3.6 9.25s-1.2 6.75-3.6 9.25c-2.4-2.5-3.6-5.6-3.6-9.25S9.6 5.25 12 2.75z" />
+            </svg>
+          </a>
+        )
+      }
+    </div>
+  </div>
+
+  {
+    target.note && (
+      <p class="mt-1 max-w-prose text-[0.925rem] text-ink-soft">
+        {target.note}
+      </p>
+    )
+  }
+
+  <p class="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-mute">
+    {
+      /* the hostname stands where `owner/` stands on a repository row: it is
+         the one thing that tells a reader where the link is about to take them */
+      host && <span class="font-mono">{host}</span>
+    }
+    {
+      host && (target.primaryLanguage || target.license) && (
+        <span aria-hidden="true">·</span>
+      )
+    }
+    {target.primaryLanguage && <span>{target.primaryLanguage}</span>}
+    {
+      target.primaryLanguage && target.license && (
+        <span aria-hidden="true">·</span>
+      )
+    }
+    {target.license && <span>{target.license}</span>}
+
+    {
+      /* the status is stated in words, never by the stripe colour alone */
+      target.lastActivityAt && (
+        <Fragment>
+          <span aria-hidden="true">·</span>
+          <span style="color: var(--pulse)">{pulseLabel}</span>
+          <span aria-hidden="true">·</span>
+          <time datetime={target.lastActivityAt.toISOString()}>
+            {relativeTime(target.lastActivityAt)}
+          </time>
+        </Fragment>
+      )
+    }
+
+    {
+      /* Only the bad news. "reachable" on 11,000 rows is a word that earns its
+         place on none of them: it is what a reader assumes of any link, so
+         printing it says nothing and printing it *sometimes* — a link we have
+         not got round to checking would have to stay blank — says something
+         false by omission. A dead link is the one state worth a word. */
+      !repo && status === "dead" && (
+        <Fragment>
+          <span aria-hidden="true">·</span>
+          <span style="color: var(--link-dead)">{LINK_STATUS_LABEL.dead}</span>
+          {target.lastOkAt && (
+            <Fragment>
+              <span aria-hidden="true">·</span>
+              <span>
+                last answered{" "}
+                <time datetime={target.lastOkAt.toISOString()}>
+                  {relativeTime(target.lastOkAt)}
+                </time>
+              </span>
+            </Fragment>
+          )}
+        </Fragment>
+      )
+    }
+
+    {
+      target.archived && (
+        <span class="ml-1 border border-rule px-1.5 py-0.5 font-medium text-ink-soft uppercase">
+          archived
+        </span>
+      )
+    }
+  </p>
+</article>

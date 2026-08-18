@@ -28,7 +28,7 @@ export const GET: APIRoute = async ({ params }) => {
   if (!summary) return new Response("not found", { status: 404 });
 
   const detail = [
-    `${compactNumber(summary.repoCount)} projects`,
+    `${compactNumber(summary.entryCount)} projects`,
     summary.lastActivity &&
       `newest change ${relativeTime(summary.lastActivity)}`,
   ]

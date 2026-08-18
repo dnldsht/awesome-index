@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import SiteHeader from "../components/SiteHeader.astro";
 import { fullNumber, longDate } from "../lib/format.ts";
+import { jsonLdScript } from "../lib/jsonld.ts";
 import { OG_DEFAULT_PATH } from "../lib/og.ts";
 import { lastCrawledAt, listSummaries, overallPulse } from "../lib/queries.ts";
 import { absolute } from "../lib/urls.ts";
@@ -124,7 +125,7 @@ const [crawledAt, total, summaries] = await Promise.all([
       jsonLd.map((item) => (
         <script
           type="application/ld+json"
-          set:html={JSON.stringify(item)}
+          set:html={jsonLdScript(item)}
           is:inline
         />
       ))

@@ -2,7 +2,7 @@
 import CategoryNav from "../../components/CategoryNav.astro";
 import Pagination from "../../components/Pagination.astro";
 import PulseBar from "../../components/PulseBar.astro";
-import RepoCard from "../../components/RepoCard.astro";
+import TargetCard from "../../components/TargetCard.astro";
 import Base from "../../layouts/Base.astro";
 import {
   fullNumber,
@@ -13,17 +13,16 @@ import { firstOnPage, pageCount, pageSlice } from "../../lib/pagination.ts";
 import {
   categoriesForList,
   listSummaries,
-  reposForCategory,
+  targetsForCategory,
   UNCATEGORIZED_SLUG,
   type Category,
   type ListSummary,
-  type RepoWithSections,
+  type TargetWithSections,
 } from "../../lib/queries.ts";
 import { listSearchUrl } from "../../lib/search.ts";
 import {
   absolute,
   categoryPagePath,
-  githubUrl,
   listPath,
   PAGE_SEGMENT,
 } from "../../lib/urls.ts";
@@ -54,21 +53,21 @@ export async function getStaticPaths() {
     const categories = await categoriesForList(summary.entry);
 
     for (const category of categories) {
-      const all = await reposForCategory(summary.entry, category.sectionSlug);
-      // categoriesForList already counts only crawled repos, so this cannot
+      const all = await targetsForCategory(summary.entry, category.sectionSlug);
+      // categoriesForList already counts only crawled targets, so this cannot
       // normally fire; it is here so a mid-crawl database can never emit a page
       // with nothing on it
       if (all.length === 0) continue;
 
       // The sitemap paginates from `category.count` and this route from the
-      // rows it actually got. They are the same count(distinct repo_id) over
+      // rows it actually got. They are the same count(distinct target_id) over
       // the same join, and the day they stop being so the symptom is a sitemap
       // advertising a page nobody wrote, so it fails here, loudly, rather than
       // there, silently.
       if (all.length !== category.count) {
         throw new Error(
           `${summary.entry.slug}/${category.slug}: categoriesForList counted ` +
-            `${category.count} repos but reposForCategory returned ${all.length}`,
+            `${category.count} targets but targetsForCategory returned ${all.length}`,
         );
       }
 
@@ -91,11 +90,11 @@ export async function getStaticPaths() {
             summary,
             category,
             categories,
-            repos: pageSlice(all, page),
+            targets: pageSlice(all, page),
             breakdown,
             page,
             totalPages,
-            totalRepos: all.length,
+            totalEntries: all.length,
           },
         });
       }
@@ -110,24 +109,24 @@ type Props = {
   category: Category;
   categories: Category[];
   /** this page's slice, not the whole category */
-  repos: RepoWithSections[];
+  targets: TargetWithSections[];
   /** across the whole category, not this page */
   breakdown: PulseBreakdown;
   /** 1-based */
   page: number;
   totalPages: number;
-  totalRepos: number;
+  totalEntries: number;
 };
 
 const {
   summary,
   category,
   categories,
-  repos,
+  targets,
   breakdown,
   page,
   totalPages,
-  totalRepos,
+  totalEntries,
 } = Astro.props;
 const { entry } = summary;
 
@@ -135,8 +134,29 @@ const name = category.path.at(-1) ?? category.slug;
 /** the synthetic heading, which needs different prose from a real one */
 const bucket = category.slug === UNCATEGORIZED_SLUG;
 
+/**
+ * A heading whose every row is a link off GitHub, which is about 5% of them:
+ * awesome-go's Meetups, awesome-ios's Newsletters, awesome-cpp's Online
+ * Compiler.
+ *
+ * They need their own words. "65 projects, most starred first, each showing how
+ * long it has been since anyone touched it" was true of every page on this site
+ * until now and is three separate lies about a page of user groups: they are not
+ * projects, there are no stars to order them by, and there is no commit to date.
+ * What that page *is* is the curator's own list, in the curator's own order.
+ */
+const onlyLinks = category.repoCount === 0;
+const noun = onlyLinks ? "links" : "projects";
+const nouns = onlyLinks
+  ? totalEntries === 1
+    ? "link"
+    : "links"
+  : totalEntries === 1
+    ? "project"
+    : "projects";
+
 const from = firstOnPage(page);
-const to = from + repos.length - 1;
+const to = from + targets.length - 1;
 const range = `${fullNumber(from)}–${fullNumber(to)}`;
 
 /**
@@ -163,17 +183,22 @@ const ancestors = segments.slice(0, -1).map((_, index) => {
  */
 const title =
   page === 1
-    ? `${name} · Awesome ${entry.name}: ${fullNumber(totalRepos)} projects`
-    : `${name} · Awesome ${entry.name}: projects ${range}, page ${page} of ${totalPages}`;
+    ? `${name} · Awesome ${entry.name}: ${fullNumber(totalEntries)} ${noun}`
+    : `${name} · Awesome ${entry.name}: ${noun} ${range}, page ${page} of ${totalPages}`;
 
 const where = bucket
   ? `listed before any heading on the awesome-${entry.slug} list`
-  : `${name} projects from the awesome-${entry.slug} list`;
+  : `${name} ${noun} from the awesome-${entry.slug} list`;
+
+/** the half of the sentence that only a listing of repositories can promise */
+const ordering = onlyLinks
+  ? "in the order their curators wrote them, each with the note that came with it"
+  : "most starred first, each showing how long it has been since anyone touched it";
 
 const description =
   page === 1
-    ? `${fullNumber(totalRepos)} ${bucket ? `projects ${where}` : where}, most starred first, each showing how long it has been since anyone touched it.`
-    : `Projects ${range} of ${fullNumber(totalRepos)} ${where}, most starred first, each showing how long it has been since anyone touched it.`;
+    ? `${fullNumber(totalEntries)} ${bucket ? `${noun} ${where}` : where}, ${ordering}.`
+    : `${onlyLinks ? "Links" : "Projects"} ${range} of ${fullNumber(totalEntries)} ${where}, ${ordering}.`;
 
 const path = categoryPagePath(entry.slug, category.slug, page);
 
@@ -212,14 +237,18 @@ const jsonLd = [
     url: absolute(path),
     // the whole category on every page; the window below is what changes, and
     // its positions stay absolute across pages
-    numberOfItems: totalRepos,
-    itemListOrder: "https://schema.org/ItemListOrderDescending",
-    // github.com, like the rows: see the note in ListPage.astro
-    itemListElement: repos.slice(0, 25).map((repo, index) => ({
+    numberOfItems: totalEntries,
+    // a star ranking where there are stars; where there are none the order is
+    // the curator's, which schema.org has no word for other than "unordered"
+    itemListOrder: onlyLinks
+      ? "https://schema.org/ItemListUnordered"
+      : "https://schema.org/ItemListOrderDescending",
+    // wherever the rows point, like the rows: see the note in ListPage.astro
+    itemListElement: targets.slice(0, 25).map((target, index) => ({
       "@type": "ListItem",
       position: from + index,
-      name: repo.id,
-      url: githubUrl(repo.id),
+      name: target.kind === "github" ? target.id : (target.title ?? target.url),
+      url: target.url,
     })),
   },
 ];
@@ -313,8 +342,22 @@ const jsonLd = [
       class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft"
     >
       <span class="font-medium tabular-nums">
-        {fullNumber(totalRepos)}{" "}{totalRepos === 1 ? "project" : "projects"}
+        {fullNumber(totalEntries)}{" "}{nouns}
       </span>
+      {
+        /* how many of them carry no stars and no pulse, stated here for the
+          same reason the list header states it */
+        totalEntries - category.repoCount > 0 && (
+          <>
+            <span aria-hidden="true" class="text-mute">
+              ·
+            </span>
+            <span class="tabular-nums text-mute">
+              {fullNumber(totalEntries - category.repoCount)} off GitHub
+            </span>
+          </>
+        )
+      }
       <span aria-hidden="true" class="text-mute">·</span>
       {
         bucket ? (
@@ -358,16 +401,16 @@ const jsonLd = [
       <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
         {
           totalPages > 1
-            ? `${name} · ${range} of ${fullNumber(totalRepos)}`
+            ? `${name} · ${range} of ${fullNumber(totalEntries)}`
             : name
         }
       </h2>
 
       <ul class="mt-4 -mx-4 border-t border-rule">
         {
-          repos.map((repo) => (
+          targets.map((target) => (
             <li class="border-b border-rule">
-              <RepoCard repo={repo} note={repo.note} headingLevel={3} />
+              <TargetCard target={target} headingLevel={3} />
             </li>
           ))
         }

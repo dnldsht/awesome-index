@@ -32,6 +32,19 @@ export const LIVENESS_ORDER: Liveness[] = [
   "dormant",
 ];
 
+/**
+ * What a `web` target's reachability reads as.
+ *
+ * Deliberately not the four pulse words. "active" on a website would mean "it
+ * answered an HTTP request", which is not what it means on a repository, and one
+ * vocabulary covering both would make the site's own signal unreadable. Two
+ * words, and the absence of either means we have not had a clear answer.
+ */
+export const LINK_STATUS_LABEL: Record<"ok" | "dead", string> = {
+  ok: "reachable",
+  dead: "dead link",
+};
+
 export type PulseBreakdown = {
   counts: Record<Liveness, number>;
   /** the same buckets as a share of the whole, summing to exactly 100 */
@@ -40,7 +53,8 @@ export type PulseBreakdown = {
 };
 
 /**
- * How a set of repositories is spread across the pulse scale.
+ * How a set of rows is spread across the pulse scale, counting only the ones
+ * that have a last activity date at all.
  *
  * Percentages are rounded by largest remainder rather than independently: four
  * numbers each rounded on their own routinely add up to 99 or 101, and a header
@@ -48,7 +62,7 @@ export type PulseBreakdown = {
  * that is not a total.
  */
 export function pulseBreakdown(
-  repos: { pushedAt: Date }[],
+  rows: { lastActivityAt: Date | null }[],
   now = Date.now(),
 ): PulseBreakdown {
   const counts: Record<Liveness, number> = {
@@ -57,9 +71,15 @@ export function pulseBreakdown(
     slowing: 0,
     dormant: 0,
   };
-  for (const repo of repos) counts[liveness(repo.pushedAt, now)]++;
-
-  const total = repos.length;
+  // A row with no last activity is not a dormant one: a website has no commit
+  // history to be dormant *in*. It is left out of the split entirely, which is
+  // why `total` is counted from the dated rows rather than from the argument.
+  let total = 0;
+  for (const row of rows) {
+    if (!row.lastActivityAt) continue;
+    counts[liveness(row.lastActivityAt, now)]++;
+    total++;
+  }
   const percentages: Record<Liveness, number> = {
     active: 0,
     steady: 0,
