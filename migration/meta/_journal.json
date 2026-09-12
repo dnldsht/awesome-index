@@ -36,6 +36,13 @@
       "when": 1787096184036,
       "tag": "0004_petite_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789238676613,
+      "tag": "0005_remarkable_white_tiger",
+      "breakpoints": true
     }
   ]
 }

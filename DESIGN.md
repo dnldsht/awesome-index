@@ -7,7 +7,7 @@ at the end says which parts of it survive.
 
 ## The one change everything else follows from
 
-The site stops being ~4,000 precomputed pages and becomes **87 documents that
+The site stops being ~4,000 precomputed pages and becomes **80 documents that
 load their own dataset and reorder it in memory**.
 
 That is the whole rewrite. The current site bakes one order — stars descending —
@@ -20,11 +20,14 @@ around a constraint that only exists because the order is decided at build time.
 
 It does not have to be. Measured on this dataset:
 
-- 87 lists, **median 409 entries**, only 16 over 1,000, only 2 over 2,000.
-- The largest, `avelino/awesome-go` at 3,044 entries, serialises to 697 KB of
-  JSON — **194 KB gzipped**, and that is the worst case in the corpus.
+- 80 lists, **median 409 entries**, only 16 over 1,000, only 2 over 2,000. (80
+  lists over 87 source READMEs: seven entries in `config.yaml` merge two.)
+- The largest, `avelino/awesome-go`, is 3,044 `awesome_item` rows but **2,829
+  renderable** — 215 point at repositories GitHub no longer serves, which have
+  no name, URL or metadata and are dropped by the join. Built as a shard it is
+  630 KB of JSON, **171 KB gzipped**, and that is the worst case in the corpus.
 
-194 KB is a photograph. Ship the list to the browser and sorting it is
+171 KB is a photograph. Ship the list to the browser and sorting it is
 `.sort()`, filtering it is `.filter()`, and the category is a heading you scroll
 to. No new URLs, no canonicals, no pagination arithmetic, nothing to reindex.
 
@@ -38,7 +41,7 @@ is what the data actually is, and it is also what a newspaper looks like.
 
 ## Product
 
-**Indexable: the 87 list pages. Not the 4,350 category pages.** Those are thin
+**Indexable: the 80 list pages. Not the 4,350 category pages.** Those are thin
 pages of somebody else's README, and they are the reason every ordering feature
 turned into a combinatorial problem. Eighty-seven substantial pages are easier
 to defend than four thousand thin ones.
@@ -71,7 +74,7 @@ still applies.
 ## Architecture
 
 **Nuxt with `nuxt generate`.** Static output, no server. Prerenders the home and
-the 87 list routes; everything below that is client-side routing over data
+the 80 list routes; everything below that is client-side routing over data
 already in memory.
 
 **One JSON shard per list.** Built at build time, fetched when the page needs it.
@@ -100,7 +103,7 @@ current site cannot produce.
 
 **Prerendered HTML is a skeleton for now**; rows arrive from the JSON. This is a
 deliberate deferral and it has a cost worth stating plainly: until it changes,
-the 87 indexable pages contain nothing for a crawler to index, so the SEO bet
+the 80 indexable pages contain nothing for a crawler to index, so the SEO bet
 above currently returns zero. With `nuxt generate` the reverse — emitting all
 rows into the HTML — is a build-time configuration change against the same
 component, not a rewrite, so the deferral is cheap and reversible.
@@ -287,5 +290,7 @@ only the additional pages; prerendering rows is a configuration change.
 ## Provenance
 
 Figures in this document were measured against `data/awesome.db` on 2026-09-12
-(34,808 GitHub targets, 11,491 web targets, 51,209 list entries, 87 lists, 4,350
-categories) and against the live GitHub API the same day.
+(34,808 GitHub targets, 11,491 web targets, 51,209 list entries, 80 lists over 87 source READMEs, 4,350
+categories) and against the live GitHub API the same day. The shard figures were
+remeasured after Wave 0 built the first one; the earlier 194 KB estimate counted
+the 215 unrenderable rows.

@@ -1,4 +1,4 @@
-import { z } from "astro/zod";
+import { z } from "zod";
 import * as fs from "node:fs/promises";
 import YAML from "yaml";
 import { slugify } from "./slug.ts";

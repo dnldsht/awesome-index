@@ -75,7 +75,7 @@ Generate the migration with `pnpm db:generate`. Do not hand-write it.
 ### 0.3 `src/lib/contracts.ts` — the file that unblocks everyone
 
 ```ts
-/** A row in a list shard. A tuple, not an object: at 3,044 rows the repeated
+/** A row in a list shard. A tuple, not an object: at ~2,800 rows the repeated
  *  keys of an object form cost more than the data. Index constants below. */
 export type Row = [
   id: string,
@@ -208,14 +208,21 @@ tiny repo cannot trend through the floor, a C library idle 18 months is not
 
 Reads the database, writes `public/data/<slug>.json` and
 `public/data/front-page.json` per the `contracts.ts` types. Rows in **curator
-order** so sections are contiguous slices. Imports B's functions by signature —
+order** so sections are contiguous slices — but group by section rather than
+cutting wherever the slug changes: three (list, section) groups in the corpus
+are non-contiguous in README order, and cutting on change would put the same
+slug in the table of contents twice. Inner-join to `target`, as the old
+`queries.ts` did and documents at length. Headingless rows (1,123 of them) go in
+a bucket slugged `uncategorized`. `bin/fixtures.ts` from Wave 0 is a working
+reference for all three rules and **must be matched exactly**, or the fixture
+Wave 1 D builds against and the real shards will disagree. Imports B's functions by signature —
 stub them locally if B has not landed.
 
 Merged lists (MacOS = two sources, JavaScript, dotNET, Scala, Shell, Haskell,
 Perl) have two positions for one target: order by source, then position, and
 record both in `sources`.
 
-**Done when**: all 87 shards build, the largest is ≤200 KB gzipped, and
+**Done when**: all 80 shards build, the largest is ≤200 KB gzipped, and
 `front-page.json` is under 50 KB.
 
 ### D · Nuxt scaffold and design system
@@ -234,7 +241,7 @@ Works entirely against `fixtures/` — no database, no crawl.
 - `content-visibility: auto` per section. Verify `Ctrl+F` still finds a string in
   a section scrolled far off-screen — that is the whole reason for this choice.
 
-**Done when**: `/golang` renders 3,044 rows from the fixture, both themes are
+**Done when**: `/golang` renders 2,829 rows from the fixture, both themes are
 legible, `Ctrl+F` finds a row near the bottom, and it is smooth on a phone.
 
 ---
@@ -279,7 +286,7 @@ a backfill is run by hand.
 ## Sequencing and the first checkpoint
 
 Wave 0 → Wave 1 (A, B, C, D in parallel) → **backfill the seven lists** →
-Wave 2 → **look at it** → extend to 87 → Wave 3.
+Wave 2 → **look at it** → extend to 80 → Wave 3.
 
 The seven prototype lists are `go, rust, node, vue, selfhosted, kubernetes, mac`:
 7,114 distinct repositories, 13,934 requests, **2.8 hours** at 14 months' depth.
@@ -289,7 +296,7 @@ which is why the checkpoint after Wave 2 is the real one:
 
 | list | entries | non-GitHub | what it tests |
 | --- | ---: | ---: | --- |
-| go | 3,044 | 8% | worst-case density, 134 sections |
+| go | 2,829 | 8% | worst-case density, 134 sections |
 | awesome-mac | 1,278 | **49%** | curator order for unrankable rows |
 | vue | 1,043 | **46%** | same, plus 119 sections |
 | MacOS (both sources) | 2,095 | — | merged-list ordering: two curators, one row |
@@ -297,7 +304,7 @@ which is why the checkpoint after Wave 2 is the real one:
 
 Three decisions in `DESIGN.md` are bets, and each breaks on a different list:
 row density breaks on `go`, the activity gradient breaks on a mixed list, and
-curator-order-for-links breaks on `awesome-mac`. Extending to 87 lists before
+curator-order-for-links breaks on `awesome-mac`. Extending to 80 lists before
 looking at these three would mean discovering the second and third problems after
 building on top of them.
 

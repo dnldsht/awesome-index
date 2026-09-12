@@ -1,3 +1,7 @@
 # drizzle-kit writes these and reads them back as JSON; reformatting them churns
 # migration history in unrelated diffs and buys nothing
 migration/meta/
+
+# generated, and deliberately compact: `prettier --write` would pretty-print
+# 630 KB of shard into 3 MB and make the size measurement meaningless
+fixtures/

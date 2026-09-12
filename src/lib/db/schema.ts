@@ -42,7 +42,9 @@ export const awesomeItemTable = sqliteTable(
     /**
      * What the entry points at: `target.id`. Not a foreign key, deliberately —
      * a list keeps linking repositories GitHub has since deleted, and those
-     * never get a `target` row. The join is what drops them (see queries.ts).
+     * never get a `target` row. The join is what drops them: the shard
+     * builder inner-joins `target`, so an entry we know nothing about never
+     * reaches a payload.
      */
     targetId: text("target_id").notNull(),
     /** heading path, outermost first: ["Applications", "Audio"] */
@@ -114,6 +116,21 @@ export const targetTable = sqliteTable(
 
     /* -- github only ------------------------------------------------------- */
 
+    /**
+     * GitHub's numeric repo id, i.e. what `databaseId` is called in GraphQL.
+     *
+     * Star history is fetched by id (`/repositories/{id}/stargazers/history`)
+     * rather than by `<owner>/<name>`, because a rename otherwise silently
+     * splits a repository's history in two: the old name keeps answering
+     * through GitHub's redirect, the new one starts its own row, and neither
+     * series is wrong enough to notice. The id survives renames, transfers and
+     * the owner changing their login.
+     *
+     * Null until the harvesting pass has seen the row, and null forever on a
+     * `web` target, which has no such notion.
+     */
+    databaseId: integer("database_id"),
+
     /** the "Website" GitHub shows next to a repo, absent on most of them */
     homepageUrl: text("homepage_url"),
     topics: text("topics", { mode: "json" }).$type<string[]>(),
@@ -147,10 +164,10 @@ export const targetTable = sqliteTable(
      *
      * `stars` answers "how many people starred this repository" and is left
      * alone: it stays null on everything that cannot be starred, which is the
-     * distinction the rest of this file and `TargetCard` are built on. This
-     * answers the different question the listings actually ask — "where does
-     * this belong in the order" — for the rows that have no star count but do
-     * have some other evidence of being wanted.
+     * distinction the rest of this file and every row on the site are built
+     * on. This answers the different question the listings actually ask —
+     * "where does this belong in the order" — for the rows that have no star
+     * count but do have some other evidence of being wanted.
      *
      * Expressed as a *star equivalent* so one `order by` can rank a repository
      * against a crate against a Codeberg project: the row's percentile inside
@@ -216,6 +233,84 @@ export const targetTable = sqliteTable(
     index("target_popularity_idx").on(t.popularity),
   ],
 );
+
+/**
+ * Weekly star deltas, one row per repository per week.
+ *
+ * The source is `GET /repositories/{databaseId}/stargazers/history`, which
+ * GitHub shipped in September 2026 to replace the page-sampling of
+ * `/stargazers` that it had restricted three months earlier. It returns
+ * `{ week, total, days }` newest first, 30 weeks to a page, and it is exact
+ * rather than sampled.
+ *
+ * What is kept is the *delta*, not the running total GitHub sends. The totals
+ * are a cumulative series and a cumulative series is the wrong thing to store
+ * for a question about change: every window the site offers — 7 days, 30 days,
+ * a year — is a sum of deltas, the trend score is a comparison of deltas
+ * against each other, and the current total is already `target.stars`. Storing
+ * both would be storing the same information twice and inviting them to
+ * disagree after a crawl that only refreshed one of them.
+ *
+ * `delta` may be negative. People unstar things, and a week that lost stars is
+ * a fact about the repository, not a fetch error to be clamped away.
+ *
+ * The rows are build-time input and never reach a payload: the shard carries
+ * three integers derived from them (see `src/lib/contracts.ts`), and the full
+ * curve, when a reader asks for it, comes from star-history.com.
+ *
+ * Keyed by `target.id` rather than by `databaseId` so it joins the rest of the
+ * dataset directly; the numeric id is how the row is *fetched*, not how it is
+ * addressed here. Not a foreign key, for the same reason `awesome_item` is not:
+ * history collected for a repository that GitHub later deletes should not take
+ * a cascade with it.
+ */
+export const starHistoryTable = sqliteTable(
+  "star_history",
+  {
+    targetId: text("target_id").notNull(),
+    /** unix timestamp of the week start, exactly as GitHub returns it */
+    week: integer("week").notNull(),
+    /** net stars gained that week; may be negative */
+    delta: integer("delta").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.targetId, t.week] })],
+);
+
+/**
+ * Where the history fetcher got to, one row per repository.
+ *
+ * Two jobs, and both of them are about not asking GitHub the same question
+ * twice. A full backfill is thirteen hours of paced requests against a
+ * 5,000/hour quota, so it has to survive being killed at hour nine and resume
+ * rather than start again — that is `pagesDone`. And the weekly refresh has to
+ * be cheap on the overwhelming majority of repositories that gained no stars
+ * since it last looked — that is `etagPage1`, because a 304 does not consume
+ * quota at all.
+ *
+ * Pages beyond the first can never change: the endpoint counts backwards from
+ * the present, so page 2 is a closed interval of weeks that has already
+ * happened. Once stored they are free forever, and deepening the history later
+ * costs only the pages beyond `pagesDone`.
+ */
+export const historyFetchTable = sqliteTable("history_fetch", {
+  targetId: text("target_id").primaryKey().notNull(),
+  /** deepest page successfully stored; the backfill resumes from page + 1 */
+  pagesDone: integer("pages_done").notNull().default(0),
+  /**
+   * The ETag of page 1 as of the last fetch, replayed as `If-None-Match` on the
+   * next one. Only page 1 needs it; the rest are immutable.
+   */
+  etagPage1: text("etag_page1"),
+  fetchedAt: integer("fetched_at", { mode: "timestamp" }),
+  /**
+   * The repository has stopped answering for a reason that will not change on
+   * its own — 404 (deleted or made private), 451 (taken down). Set so the
+   * fetcher stops spending a request per run rediscovering it; a row that is
+   * merely rate-limited or briefly 500ing is left alone, exactly as
+   * `failStreak` above distinguishes "gone" from "could not tell".
+   */
+  gone: integer("gone", { mode: "boolean" }).notNull().default(false),
+});
 
 export const awesomeListRelations = relations(awesomeListTable, ({ many }) => ({
   items: many(awesomeItemTable),

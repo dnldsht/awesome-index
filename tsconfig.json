@@ -1,9 +1,25 @@
 {
-  "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "dist-*"],
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
-  }
+    /*
+     * Node runs the .ts files in this repo directly, so the only job left for
+     * tsc is `pnpm typecheck`. That is why imports carry their `.ts` extension
+     * (what Node wants) and why nothing is ever emitted, and why
+     * `erasableSyntaxOnly` is on: enums and parameter properties typecheck
+     * fine and then fail at runtime under type stripping, which is a class of
+     * error worth refusing at the compiler rather than discovering in CI.
+     */
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "bin/**/*.ts", "drizzle.config.ts"],
+  "exclude": ["node_modules", "dist", "dist-*", ".nuxt", ".output"]
 }
