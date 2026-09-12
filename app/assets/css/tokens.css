@@ -1,0 +1,170 @@
+/*
+ * The design system, entire.
+ *
+ * Broadsheet with a terminal graft (DESIGN.md, "Visual direction"): the data is
+ * long lists and numbers, and the airy one-column newsletter default handles
+ * long lists worst — a roomy card per entry shows eight projects on a list of
+ * three thousand. So: no cards, no shadows, no boxes. Rules. Density, and a
+ * hierarchy strong enough to survive it.
+ *
+ * Two families and no third. The real contrast on this page is prose against
+ * figure, so prose is a serif and every figure is a monospace; a third family
+ * would read as disorder rather than as editing.
+ *
+ * Dark is designed, not inverted. The two blocks at the bottom are not each
+ * other's negatives: the ground is charcoal rather than black, the ink is a
+ * warm off-white rather than #fff, and the serif is set ~20 units heavier
+ * because a serif on a dark ground thins out — the light halation around
+ * light-on-dark strokes eats the thin ones, which is exactly where a
+ * transitional serif keeps its contrast.
+ */
+
+:root {
+  /* ---- families ------------------------------------------------------- */
+
+  /*
+   * Source Serif 4 for the mastheads and the project names. It was drawn for
+   * screen text at small sizes, which is the whole job here: a project name is
+   * 14px in a 32px row, and the more fashionable editorial serifs (Playfair,
+   * Fraunces at low softness, anything with real display contrast) lose their
+   * hairlines at that size and turn the list into grey. It is also variable on
+   * weight, which is how dark mode gets its heavier serif from the same file
+   * rather than from a second download.
+   */
+  --font-serif:
+    "Source Serif 4 Variable", "Source Serif 4", Charter, "Iowan Old Style",
+    Georgia, "Times New Roman", serif;
+
+  /*
+   * IBM Plex Mono for every number and every label. Monospaced, so the figures
+   * are tabular by construction and the star column lines up without
+   * `font-variant-numeric` having to be trusted. Plex over JetBrains Mono
+   * because JetBrains reads as a code editor's chrome; Plex has a grotesque
+   * spine that sits beside a transitional serif without arguing with it, and
+   * its 1/l/0/O are unambiguous, which matters when the figures are the claim.
+   */
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+
+  /* ---- type scale ----------------------------------------------------- */
+
+  /*
+   * Small, and deliberately so. Six steps, and the two the reader spends all
+   * their time in (--t-name, --t-note) are two thirds of a pixel apart in cap
+   * height rather than a whole step, because in a row the serif name and the
+   * serif note have to read as one line of text with one of them emphasised,
+   * not as a heading with a subtitle.
+   */
+  --t-micro: 10px; /* column labels, kickers */
+  --t-meta: 11.5px; /* mono metadata inside a row */
+  --t-note: 13px; /* the curator's prose */
+  --t-name: 14px; /* project name */
+  --t-section: 11.5px; /* section kicker */
+  --t-lede: 15px;
+  --t-head: 19px;
+  --t-mast: clamp(28px, 5.5vw, 42px);
+
+  /* ---- rhythm --------------------------------------------------------- */
+
+  /*
+   * 32px. Twenty-five projects per screen on a 1000px viewport, which is the
+   * number the whole visual direction is in service of: at twelve the reader
+   * sees a twentieth of `awesome-go` and leaves. The curator's note averages
+   * 73 bytes on this list, so it fits on the same line nearly always and the
+   * ones that do not are truncated rather than allowed to set the height.
+   */
+  --row-h: 32px;
+  --gutter: clamp(12px, 3vw, 32px);
+  --measure: 1360px;
+
+  /* ---- columns -------------------------------------------------------- */
+  --col-name: minmax(9rem, 17rem);
+  --col-tag: 6.5rem; /* language, or the host of a web row */
+  --col-lic: 4.75rem;
+  --col-num: 4.5rem;
+  --col-act: 4.5rem;
+
+  /* ---- serif weights, redefined on dark ------------------------------- */
+  --w-body: 400;
+  --w-name: 600;
+  --w-mast: 620;
+
+  /* ---- light: newsprint ----------------------------------------------- */
+
+  /*
+   * Warm off-white rather than #fff. Paper, and it takes the edge off a page
+   * that is 90% small text; pure white at this density glares.
+   */
+  --ground: #fbfaf6;
+  --sunk: #f1eee4; /* the expanded row, and the table of contents rail */
+  --ink: #16130d;
+  --ink-2: #56503f; /* the curator's note */
+  --ink-3: #6d6656; /* mono metadata — 5.5:1 on --ground, 4.9:1 on --sunk */
+  --rule: #e4dfd1; /* the hairline between rows */
+  --rule-2: #c8c1ad; /* between sections */
+  --rule-3: #1d1a13; /* the masthead rule, and under column labels */
+
+  /*
+   * One accent, a newspaper red, and it is spent only on structure: the
+   * masthead rule, the section marks, focus. Nothing decorative is this colour,
+   * which is what lets it mean something when it appears.
+   */
+  --accent: #9c2f14;
+  --pos: #2b6237; /* a gain */
+  --neg: #973219; /* a loss */
+  --selection: #f6e2a6;
+
+  /*
+   * The mark for "not measured yet". Subordinate to everything else on the
+   * row and still legible as a mark, because it has to be distinguishable
+   * from the genuinely empty cell of a `web` row two lines below it.
+   */
+  --nil: #b6ae9a;
+}
+
+/* ---- dark: charcoal, designed ----------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --w-body: 420;
+    --w-name: 620;
+    --w-mast: 640;
+
+    --ground: #1a1c1d;
+    --sunk: #232628;
+    --ink: #e9e6dd;
+    --ink-2: #a6a195;
+    --ink-3: #948e80; /* 5.2:1 on --ground, 4.6:1 on --sunk */
+    --rule: #2e3133;
+    --rule-2: #3d4144;
+    --rule-3: #cdc8bc;
+
+    --accent: #e07a5c;
+    --pos: #79bd8b;
+    --neg: #dd8368;
+    --selection: #4a4325;
+    --nil: #4e5356;
+  }
+}
+
+:root[data-theme="dark"] {
+  --w-body: 420;
+  --w-name: 620;
+  --w-mast: 640;
+
+  --ground: #1a1c1d;
+  --sunk: #232628;
+  --ink: #e9e6dd;
+  --ink-2: #a6a195;
+  --ink-3: #948e80;
+  --rule: #2e3133;
+  --rule-2: #3d4144;
+  --rule-3: #cdc8bc;
+
+  --accent: #e07a5c;
+  --pos: #79bd8b;
+  --neg: #dd8368;
+  --selection: #4a4325;
+  --nil: #4e5356;
+}

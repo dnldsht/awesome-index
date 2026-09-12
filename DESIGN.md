@@ -190,9 +190,18 @@ two do not.
 **Declared as one of: active / slow / stalled / archived.**
 
 The trap this has to avoid is that **dead is not the same as finished**. Eighteen
-months without a commit means abandonment for an npm package and completion for a
-C library, and fixed day thresholds are therefore systematically wrong about an
-entire family of languages.
+months without a commit means abandonment for a TypeScript package and completion
+for a C library, and fixed day thresholds are therefore systematically wrong about
+an entire family of languages. Measured on this corpus, the oldest quartile of a
+language cohort begins at **239 days for TypeScript, 298 for Rust, 934 for C,
+1,000 for Go, 1,670 for JavaScript and 3,138 for Objective-C** — so "stalled"
+means eight months in one language and eight and a half years in another.
+
+(The example above originally said "npm package", which this data does not
+support: the JavaScript cohort in an awesome-list corpus is itself mostly
+abandoned, median 1,135 days idle, so an 18-month-idle JavaScript repository
+comes out `slow`. The right conclusion is not a different threshold but that
+`primary_language` is a mediocre proxy for ecosystem.)
 
 So thresholds are **percentiles within the repository's language cohort**,
 recomputed every crawl. "Stalled" means in the bottom quartile of activity

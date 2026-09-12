@@ -5,3 +5,7 @@ migration/meta/
 # generated, and deliberately compact: `prettier --write` would pretty-print
 # 630 KB of shard into 3 MB and make the size measurement meaningless
 fixtures/
+
+# generated: fixtures/ and the shards are measured artefacts, and pretty-printing
+# 2.9 MB of them into 9 MB defeats the measurement
+public/data/

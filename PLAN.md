@@ -288,8 +288,11 @@ a backfill is run by hand.
 Wave 0 → Wave 1 (A, B, C, D in parallel) → **backfill the seven lists** →
 Wave 2 → **look at it** → extend to 80 → Wave 3.
 
-The seven prototype lists are `go, rust, node, vue, selfhosted, kubernetes, mac`:
-7,114 distinct repositories, 13,934 requests, **2.8 hours** at 14 months' depth.
+The seven prototype lists are `golang, rust, nodejs, vue, selfhosted, kubernetes,
+macos`. Those are the real `config.yaml` slugs — `go`, `node` and `mac` do not
+exist and exit 1. Measured by `--dry-run`: 7,122 repositories (including the
+eight source list repos themselves), **13,951 requests, 2.8 hours** at 14
+months' depth.
 
 They were chosen by preference but they cover the failure modes by construction,
 which is why the checkpoint after Wave 2 is the real one:
@@ -303,7 +306,7 @@ which is why the checkpoint after Wave 2 is the real one:
 | selfhosted, rust, node, k8s | — | 10-16% | the ordinary case |
 
 Three decisions in `DESIGN.md` are bets, and each breaks on a different list:
-row density breaks on `go`, the activity gradient breaks on a mixed list, and
+row density breaks on `golang`, the activity gradient breaks on a mixed list, and
 curator-order-for-links breaks on `awesome-mac`. Extending to 80 lists before
 looking at these three would mean discovering the second and third problems after
 building on top of them.

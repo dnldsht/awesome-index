@@ -1,0 +1,454 @@
+/*
+ * Everything shared: the reset, the page frame, the rules, and the row.
+ *
+ * The row lives here rather than scoped inside `ListRow.vue` on purpose. There
+ * are 2,829 of them on `avelino/awesome-go`; a scoped style would stamp a
+ * `data-v-*` attribute on every element of every one of them for no benefit,
+ * and the row's geometry has to agree with the column-label strip above it,
+ * which is a different component. One grid definition, two users.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* the list is long, and #anchors land under the sticky masthead */
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: var(--w-body);
+  font-size: var(--t-note);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- the frame --------------------------------------------------------- */
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---- masthead ---------------------------------------------------------- */
+
+/*
+ * The running head: identity on one line, column labels on the next, stuck to
+ * the top. A reader 2,000 rows down still knows which list they are in and
+ * which column the figures belong to — the newspaper's answer to being deep
+ * inside a long document, and the reason this page needs no breadcrumb.
+ */
+.mast {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--ground);
+  border-bottom: 1px solid var(--rule-3);
+}
+
+.mast-in {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  min-height: 2.6rem;
+  padding-block: 0.45rem;
+}
+
+.mast-title {
+  font-family: var(--font-serif);
+  font-weight: var(--w-mast);
+  font-size: var(--t-head);
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+/* the emoji from config.yaml is part of the masthead, not decoration */
+.mast-icon {
+  font-size: 1.05em;
+  margin-right: 0.3rem;
+}
+
+.mast-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.mast-rule {
+  height: 2px;
+  background: var(--accent);
+}
+
+/* ---- the column-label strip -------------------------------------------- */
+
+/*
+ * A newspaper's table has a head. It also earns its place: it is the only
+ * thing that says the fourth column is stars and the fifth is a change, and
+ * with every delta currently unmeasured it is what keeps the gap legible.
+ */
+.cols {
+  border-top: 1px solid var(--rule);
+  padding-block: 0.3rem 0.25rem;
+}
+
+/* ---- sections ---------------------------------------------------------- */
+
+/*
+ * The reason the rows are not virtualised.
+ *
+ * `content-visibility: auto` lets the browser skip style, layout and paint for
+ * a section that is off-screen while every row of it stays in the DOM — so
+ * Ctrl+F still finds a project 2,400 rows down, which on an index of projects
+ * is the feature people actually use. `contain-intrinsic-size: auto <h>` is
+ * what stops the scrollbar from lurching: `--sh` is set inline per section to
+ * the exact height its rows will occupy (header + n × row), and `auto` tells
+ * the browser to remember the real measurement once it has one, which is how
+ * an expanded row inside a skipped section stops being a lie.
+ */
+.section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--sh, 400px);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  height: 2rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--rule-2);
+}
+
+.section-head h2 {
+  font: inherit;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-section);
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* a nested heading path reads "PARENT / CHILD", the parent dimmed */
+.section-head .up {
+  color: var(--ink-3);
+}
+
+.section-head .n {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+/* ---- the row ----------------------------------------------------------- */
+
+.rows {
+  border-top: 1px solid var(--rule);
+}
+
+.row,
+.cols-in {
+  display: grid;
+  grid-template-columns:
+    var(--col-name) minmax(0, 1fr) var(--col-tag) var(--col-lic)
+    var(--col-num) var(--col-num) var(--col-act);
+  column-gap: 0.9rem;
+  align-items: baseline;
+}
+
+.cols-in {
+  line-height: 1.25;
+}
+
+.row {
+  height: var(--row-h);
+  /*
+   * Fixed height, baseline alignment, and the top padding tuned so the 14px
+   * serif name and the 11.5px mono figures sit on one optical line inside a
+   * 32px band. `overflow: hidden` is the guarantee: a note that wraps, an
+   * emoji in a title, a language nobody expected — none of them can push a row
+   * taller than the band, which is what keeps `contain-intrinsic-size` honest
+   * and the scrollbar still.
+   */
+  line-height: 1.25;
+  padding-block: 5px 0;
+  border-bottom: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.row:hover {
+  background: var(--sunk);
+}
+
+.row.is-open {
+  background: var(--sunk);
+  border-bottom-color: transparent;
+}
+
+/* the name: owner dimmed, repository emphasised, on one baseline */
+.nm {
+  font-size: var(--t-name);
+  font-weight: var(--w-name);
+  letter-spacing: -0.006em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nm .ow {
+  font-weight: var(--w-body);
+  color: var(--ink-3);
+}
+
+.row:hover .nm,
+.nm:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 2px;
+}
+
+/* the curator's prose. 73 bytes on average, so this truncates rarely */
+.nt {
+  font-size: var(--t-note);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tg,
+.lc,
+.ac {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st,
+.dl {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-feature-settings: "tnum" 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.st {
+  color: var(--ink);
+}
+
+.dl.up {
+  color: var(--pos);
+}
+
+.dl.down {
+  color: var(--neg);
+}
+
+/*
+ * Two different silences, and they must not look the same.
+ *
+ * `.nil` is "we have not measured this yet" — a repository whose star history
+ * the fetcher has not reached. It holds a dim figure dash, because something
+ * belongs there and is coming.
+ *
+ * A `web` row gets nothing at all in the numeric columns: a website cannot be
+ * starred, has no pulse, and will never have either. Rendering a dash there
+ * would promise a number that is not owed. 260 of golang's 2,829 rows are in
+ * this state permanently — see DESIGN.md on the 88% of non-GitHub targets that
+ * carry no popularity signal at all.
+ */
+.nil {
+  color: var(--nil);
+}
+
+.archived {
+  color: var(--neg);
+}
+
+/* a web row: the host is the only fact we hold, so it takes the tag column */
+.tg.host {
+  font-style: normal;
+  color: var(--ink-3);
+  opacity: 0.85;
+}
+
+/* ---- the expanded row -------------------------------------------------- */
+
+.open {
+  background: var(--sunk);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.1rem 0 0.75rem;
+}
+
+.open-note {
+  font-size: var(--t-note);
+  color: var(--ink);
+  max-width: 62ch;
+  margin: 0 0 0.5rem;
+}
+
+.open-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+}
+
+.open-grid b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.open-url {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--accent);
+  word-break: break-all;
+}
+
+/* ---- empty rubrics ----------------------------------------------------- */
+
+/*
+ * Three of the front page's rubrics are empty until the star-history fetcher
+ * lands, and "empty" has to read as a stated fact rather than as a page that
+ * failed to load. A rule, a sentence, and the same silence the rows use.
+ */
+.empty {
+  border-top: 1px solid var(--rule);
+  padding: 1.1rem 0 1.3rem;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+}
+
+/* ---- buttons ----------------------------------------------------------- */
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+.btn:hover {
+  color: var(--accent);
+}
+
+/* ---- narrow ------------------------------------------------------------ */
+
+/*
+ * A phone gets the two facts that survive the loss of the grid: the name and
+ * the stars. The note moves to a second line rather than disappearing — it is
+ * the curator's judgement and it is most of why the page is worth reading — so
+ * the row becomes 46px, which is still ~14 projects on a phone screen against
+ * the six a card layout would give.
+ */
+@media (max-width: 44rem) {
+  :root {
+    --row-h: 46px;
+  }
+
+  .cols {
+    display: none;
+  }
+
+  /* the source README's id is the first thing to go: it is provenance, and
+     provenance belongs at the foot of the page on a screen this narrow */
+  .mast .src {
+    display: none;
+  }
+
+  .mast-title {
+    white-space: nowrap;
+  }
+
+  .mast-in {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) 4.25rem;
+    grid-template-rows: auto auto;
+    column-gap: 0.6rem;
+    row-gap: 1px;
+    padding-block: 6px;
+    align-items: baseline;
+  }
+
+  .nm {
+    grid-area: 1 / 1;
+  }
+  .st {
+    grid-area: 1 / 2;
+  }
+  .nt {
+    grid-area: 2 / 1 / 2 / 3;
+    font-size: 12px;
+  }
+  .tg,
+  .lc,
+  .dl,
+  .ac {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}

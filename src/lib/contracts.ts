@@ -66,6 +66,9 @@ export type Row = [
    * numbering from 1 interleave into nonsense. `rows` is already in the right
    * order — source first, then position — so the ordering that matters is the
    * array index. This field is here to be shown, not to sort by.
+   *
+   * **Zero-based.** The first entry of a README is `0`, so anything rendering
+   * it as a rank writes `position + 1`.
    */
   position: number,
   /**
@@ -327,7 +330,21 @@ export type FrontPage = {
  */
 export declare function trendScore(
   weekly: number[],
-  opts?: { floor?: number },
+  opts?: {
+    floor?: number;
+    /**
+     * How many weeks count as "recently", i.e. the width of the window whose
+     * mean is compared against the baseline. Defaults to the 30-day window the
+     * site defaults to.
+     *
+     * It has to be a parameter because `FrontPage.climbing` asks for three
+     * orderings (7d / 30d / 1y) and one fixed window yields one. Slicing
+     * `weekly` does not substitute for it: that shortens the baseline the
+     * window is measured against, which is a different question and a worse
+     * baseline.
+     */
+    weeks?: number;
+  },
 ): number | null;
 
 /**

@@ -3,8 +3,20 @@ dist/
 dist-seo/
 dist-*/
 
-# crawled dataset, restored from the release asset in CI
-data/
+# nuxt: generated types and the static site. `dist` has no trailing slash
+# because `nuxt generate` leaves it as a symlink to .output/public, and a
+# trailing slash does not match a symlink.
+.nuxt/
+.output/
+dist
+
+# crawled dataset, restored from the release asset in CI. Anchored: unanchored
+# it also swallowed public/data/, so 2.9 MB of generated shards were invisible
+# to git without a word.
+/data/
+
+# generated shards: `pnpm shards` rebuilds them from the dataset in one second
+public/data/
 
 # generated types
 .astro/
