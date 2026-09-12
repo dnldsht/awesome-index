@@ -22,21 +22,55 @@ export type TargetWithSections = Target & {
 };
 
 /**
- * The order every listing is in: most starred first, then the rows that have no
- * stars to be sorted by, in the order the README writes them.
+ * What a row is ranked by when a list is ordered by popularity.
  *
- * `nulls last` is the whole rule. A `web` target has no star count — not zero,
- * none — so it cannot be ranked against a repository, and putting it anywhere
- * inside the ranking would be inventing a position for it. After the ranking, in
- * the curator's own order, is the one place that claims nothing: the rows land
- * on the last page of a multi-page listing together, and a reader who has
- * scrolled that far is looking at "and these, which we cannot rank" rather than
- * at a suspiciously unstarred stretch of the top 60.
+ * `stars` where there are stars, and the star equivalent of some other evidence
+ * where there are not: a crate's downloads, a Codeberg project's own stars, the
+ * stars of the repository behind a project's website. `popularity` holds that
+ * equivalent already calibrated onto the star scale, so the two coalesce into
+ * one comparable number — see src/lib/popularity.ts for why that is defensible.
+ *
+ * No row has both today — `popularity` is only ever written to rows that have no
+ * stars — so the order of the two arguments decides nothing yet. It is stated
+ * anyway, and this way round: the measured figure outranks the derived one, so if
+ * a provider ever gains both the coalesce does not silently start preferring a
+ * translation over a count.
  */
-const LISTING_ORDER = [
-  D.sql`${targetTable.stars} desc nulls last`,
-  D.asc(awesomeItemTable.position),
-];
+const RANK = D.sql`coalesce(${targetTable.stars}, ${targetTable.popularity})`;
+
+/**
+ * The order a listing is in, which the list chooses (see `ListOrder`).
+ *
+ * Ranked first, then the rows that could not be ranked at all, in the order the
+ * README writes them. `nulls last` is the whole rule, and it survives the
+ * popularity column: a row we have no evidence for cannot be ranked against one
+ * we do, and putting it anywhere inside the ranking would be inventing a
+ * position for it. After the ranking, in the curator's own order, is the one
+ * place that claims nothing — the rows land on the last page of a multi-page
+ * listing together, and a reader who has scrolled that far is looking at "and
+ * these, which we cannot rank" rather than at a suspiciously unstarred stretch
+ * of the top 60.
+ *
+ * Editorial order has one wrinkle a single-source list does not: a merged entry
+ * (JavaScript is sorrycc + uhub) holds two `position` values for the same row and
+ * neither is *the* position. Source order decides, in the order config.yaml
+ * writes the urls, so the first list's sequence runs whole before the second's
+ * begins — which is what a reader comparing the page against the README expects,
+ * and the only rule that does not interleave two curators' judgements into an
+ * order neither of them wrote.
+ */
+function listingOrder(entry: ConfigEntry) {
+  if (entry.sort === "editorial") {
+    return [
+      D.sql`case ${awesomeItemTable.listId} ${D.sql.join(
+        entry.sourceIds.map((id, index) => D.sql`when ${id} then ${index}`),
+        D.sql` `,
+      )} else ${entry.sourceIds.length} end`,
+      D.asc(awesomeItemTable.position),
+    ];
+  }
+  return [D.sql`${RANK} desc nulls last`, D.asc(awesomeItemTable.position)];
+}
 
 /**
  * The synthetic heading that entries above every real heading are filed under.
@@ -112,7 +146,7 @@ const listingColumns = {
   position: awesomeItemTable.position,
 };
 
-/** everything a config entry features, most starred first */
+/** everything a config entry features, in the order that entry chose */
 export async function targetsForList(
   entry: ConfigEntry,
 ): Promise<TargetWithSections[]> {
@@ -121,7 +155,7 @@ export async function targetsForList(
     .from(awesomeItemTable)
     .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
     .where(D.inArray(awesomeItemTable.listId, entry.sourceIds))
-    .orderBy(...LISTING_ORDER);
+    .orderBy(...listingOrder(entry));
 
   return groupSections(rows);
 }
@@ -255,7 +289,7 @@ export async function targetsForCategory(
         D.eq(awesomeItemTable.sectionSlug, sectionSlug),
       ),
     )
-    .orderBy(...LISTING_ORDER);
+    .orderBy(...listingOrder(entry));
 
   return groupSections(rows);
 }

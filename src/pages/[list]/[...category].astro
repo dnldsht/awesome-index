@@ -4,6 +4,7 @@ import Pagination from "../../components/Pagination.astro";
 import PulseBar from "../../components/PulseBar.astro";
 import TargetCard from "../../components/TargetCard.astro";
 import Base from "../../layouts/Base.astro";
+import { orderedBy } from "../../lib/config.ts";
 import {
   fullNumber,
   pulseBreakdown,
@@ -190,10 +191,17 @@ const where = bucket
   ? `listed before any heading on the awesome-${entry.slug} list`
   : `${name} ${noun} from the awesome-${entry.slug} list`;
 
-/** the half of the sentence that only a listing of repositories can promise */
+/**
+ * The half of the sentence that only a listing of repositories can promise.
+ *
+ * Two things can take the ranking away. A heading of nothing but links has no
+ * stars to order by *and* no commit to date, so both halves go. A list whose
+ * order is editorial (see `ListOrder`) still holds repositories with dates, so
+ * only the first half changes.
+ */
 const ordering = onlyLinks
   ? "in the order their curators wrote them, each with the note that came with it"
-  : "most starred first, each showing how long it has been since anyone touched it";
+  : `${orderedBy(entry.sort)}, each showing how long it has been since anyone touched it`;
 
 const description =
   page === 1

@@ -12,6 +12,7 @@ import type {
 } from "../lib/queries.ts";
 import { firstOnPage } from "../lib/pagination.ts";
 import { ogListPath } from "../lib/og.ts";
+import { orderedBy } from "../lib/config.ts";
 import { listSearchUrl } from "../lib/search.ts";
 import { absolute, githubUrl, listPagePath } from "../lib/urls.ts";
 
@@ -48,15 +49,24 @@ const range = `${fullNumber(from)}–${fullNumber(to)}`;
  * is in both the title and the description and neither is a suffix bolted onto
  * the other. Page 1 keeps the copy it was already indexed with.
  */
+/**
+ * What this page is sorted by, in the list's own terms. An `editorial` list is
+ * not "ranked", and a title saying it was would be the one claim these pages
+ * exist to avoid making.
+ */
+const ordering = orderedBy(entry.sort);
+
 const title =
   page === 1
-    ? `Awesome ${entry.name}: ${fullNumber(summary.entryCount)} projects, ranked and dated`
-    : `Awesome ${entry.name}: projects ${range} by stars, page ${page} of ${totalPages}`;
+    ? `Awesome ${entry.name}: ${fullNumber(summary.entryCount)} projects, ${
+        entry.sort === "editorial" ? "as curated" : "ranked"
+      } and dated`
+    : `Awesome ${entry.name}: projects ${range}, page ${page} of ${totalPages}`;
 
 const description =
   page === 1
-    ? `Every project on the awesome-${entry.slug} list, most starred first, across ${fullNumber(categories.length)} categories, each showing how long it has been since anyone touched it.`
-    : `Projects ${range} of ${fullNumber(summary.entryCount)} on the awesome-${entry.slug} list, most starred first, each showing how long it has been since anyone touched it.`;
+    ? `Every project on the awesome-${entry.slug} list, ${ordering}, across ${fullNumber(categories.length)} categories, each showing how long it has been since anyone touched it.`
+    : `Projects ${range} of ${fullNumber(summary.entryCount)} on the awesome-${entry.slug} list, ${ordering}, each showing how long it has been since anyone touched it.`;
 
 const path = listPagePath(entry.slug, page);
 
@@ -82,7 +92,11 @@ const jsonLd = [
     // the list is the whole list on every page; what changes is the window of
     // it this page shows, and the positions below stay absolute across pages
     numberOfItems: summary.entryCount,
-    itemListOrder: "https://schema.org/ItemListOrderDescending",
+    // "descending" is a claim about a ranking; an editorial list is in no
+    // order a consumer can reason about, and schema.org has no word for that
+    ...(entry.sort === "editorial"
+      ? {}
+      : { itemListOrder: "https://schema.org/ItemListOrderDescending" }),
     // the items point where the rows point: github.com for a repository, the
     // project's own address for the rest, since nothing on this site stands
     // between a reader and the thing itself any more
@@ -224,8 +238,8 @@ const jsonLd = [
       <h2 class="font-mono text-xs tracking-widest text-mute uppercase">
         {
           totalPages > 1
-            ? `Projects ${range} of ${fullNumber(summary.entryCount)}, most starred first`
-            : "All projects, most starred first"
+            ? `Projects ${range} of ${fullNumber(summary.entryCount)}, ${ordering}`
+            : `All projects, ${ordering}`
         }
       </h2>
 

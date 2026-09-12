@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate",
     "format": "prettier --write .",
     "crawl": "node --env-file-if-exists=.env bin/crawl.ts",
+    "popularity": "node --env-file-if-exists=.env bin/popularity.ts",
     "astro": "astro"
   },
   "dependencies": {

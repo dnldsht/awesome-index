@@ -6,6 +6,7 @@ import {
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
+import type { PopularitySource } from "../popularity.ts";
 import type { TargetKind } from "../targets.ts";
 
 /**
@@ -139,6 +140,70 @@ export const targetTable = sqliteTable(
      */
     failStreak: integer("fail_streak").notNull().default(0),
 
+    /* -- popularity, for the targets whose popularity is not a star count --- */
+
+    /**
+     * A rank comparable across the whole dataset, in stars.
+     *
+     * `stars` answers "how many people starred this repository" and is left
+     * alone: it stays null on everything that cannot be starred, which is the
+     * distinction the rest of this file and `TargetCard` are built on. This
+     * answers the different question the listings actually ask — "where does
+     * this belong in the order" — for the rows that have no star count but do
+     * have some other evidence of being wanted.
+     *
+     * Expressed as a *star equivalent* so one `order by` can rank a repository
+     * against a crate against a Codeberg project: the row's percentile inside
+     * its own population is looked up in the star distribution of the GitHub
+     * repositories *in this dataset*. That last part is the whole reason the
+     * mapping is defensible. Both populations are already "things an awesome
+     * list chose to link", so the percentiles are measured against comparable
+     * cohorts rather than against every repository on GitHub.
+     *
+     * Never rendered as a star count. 200 stars on Codeberg is the 96th
+     * percentile of Codeberg and the 37th of GitHub, so the number that sorts
+     * it correctly is not the number to show a reader; `popularityRaw` is.
+     */
+    popularity: integer("popularity"),
+    /**
+     * Where `popularity` came from, which decides how a row may state it.
+     *
+     * `inherited` and `registryRepo` resolved to a real GitHub repository, so
+     * their `popularityRaw` *is* a star count and can be shown as one, credited
+     * to the repository it belongs to. `forge` and `registryNative` did not:
+     * their raw figure is somebody else's unit — Codeberg stars, monthly
+     * downloads, MetaCPAN "++" — and has to be named.
+     */
+    popularitySource: text("popularity_source").$type<PopularitySource>(),
+    /**
+     * What the figure belongs to: "facebook/react", "crates.io/serde",
+     * "codeberg.org/forgejo/forgejo". Shown next to the number, because a
+     * count borrowed from somewhere else and presented bare is the one thing
+     * this dataset should not do.
+     */
+    popularityRef: text("popularity_ref"),
+    /**
+     * The figure as measured, in its own unit, before calibration.
+     *
+     * Kept because it is the only honest thing to display, and because
+     * `popularity` is derived from a distribution that moves: a recalibration
+     * has to be able to recompute the sort key without asking every registry
+     * again.
+     */
+    popularityRaw: integer("popularity_raw"),
+    /**
+     * The population `popularityRaw` was ranked inside, which is also the name
+     * of its unit: "codeberg.org", "crates.io:recentDownloads".
+     *
+     * Two jobs, and the second is the one that makes it a column rather than a
+     * detail of the resolver. A reader has to be told what a number counts, and
+     * "1.6M" next to a package means nothing until it says downloads. And a
+     * recalibration — the star distribution moves every crawl — has to be able
+     * to regroup the stored figures into their cohorts and remap them, which it
+     * cannot do from the figure alone.
+     */
+    popularityCohort: text("popularity_cohort"),
+
     /** when *we* last refreshed this row, drives --stale-days */
     refreshedAt: integer("refreshed_at", { mode: "timestamp" })
       .notNull()
@@ -148,6 +213,7 @@ export const targetTable = sqliteTable(
     index("target_stars_idx").on(t.stars),
     index("target_activity_idx").on(t.lastActivityAt),
     index("target_kind_idx").on(t.kind),
+    index("target_popularity_idx").on(t.popularity),
   ],
 );
 

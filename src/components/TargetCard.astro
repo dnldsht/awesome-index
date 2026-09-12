@@ -7,6 +7,7 @@ import {
   relativeTime,
 } from "../lib/format.ts";
 import type { TargetWithSections } from "../lib/queries.ts";
+import { describeRaw } from "../lib/popularity.ts";
 import { targetHost } from "../lib/targets.ts";
 
 export type Props = {
@@ -32,8 +33,28 @@ const Heading = `h${headingLevel}` as "h2" | "h3";
  * no "dormant" for a site with no commits to have: the fields simply are not
  * there, and the meta line below closes up around them. What it says instead is
  * where the link goes (the host) and whether it still answers.
+ *
+ * The one figure such a row can carry is a borrowed one, and it is shown as
+ * borrowed: the count belongs to the repository behind the site, or to the
+ * registry the package sits in, and the icon and the hover say which. The number
+ * the listings actually sort by is never shown, because it is a translation onto
+ * GitHub's scale rather than anything anybody counted — see src/lib/popularity.ts.
  */
 const repo = target.kind === "github";
+
+/** somebody else's count, on a row that has none of its own */
+const borrowed =
+  target.stars === null &&
+  target.popularityRaw !== null &&
+  target.popularitySource !== null &&
+  target.popularityCohort !== null
+    ? describeRaw(
+        target.popularitySource,
+        target.popularityCohort,
+        target.popularityRef ?? "",
+        target.popularityRaw,
+      )
+    : undefined;
 const name = repo ? (target.id.split("/")[1] ?? target.id) : target.title;
 const owner = target.ownerLogin ?? target.id.split("/")[0];
 const host = repo ? "" : targetHost(target.url);
@@ -121,6 +142,56 @@ const homepage = repo ? target.homepageUrl : null;
             </svg>
             {compactNumber(target.stars)}
             <span class="sr-only">stars</span>
+          </span>
+        )
+      }
+
+      {
+        /* a count this row did not earn, marked as such: dimmer than a real star
+           count, an icon that names the unit, and the whole sentence on hover */
+        borrowed && (
+          <span
+            title={borrowed.label}
+            class="flex items-center gap-1 font-mono text-sm text-mute tabular-nums"
+          >
+            {borrowed.shape === "stars" && (
+              <svg
+                class="size-4 shrink-0 fill-current"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.94L12 2.5z" />
+              </svg>
+            )}
+            {borrowed.shape === "downloads" && (
+              <svg
+                class="size-4 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M12 3.5v11" />
+                <path d="M7.5 10.5L12 15l4.5-4.5" />
+                <path d="M4.5 19.5h15" />
+              </svg>
+            )}
+            {borrowed.shape === "likes" && (
+              <svg
+                class="size-4 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M12 20s-7.5-4.6-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
+              </svg>
+            )}
+            {compactNumber(target.popularityRaw!)}
+            <span class="sr-only">{borrowed.label}</span>
           </span>
         )
       }

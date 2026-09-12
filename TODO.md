@@ -139,3 +139,111 @@ Three things to settle first:
   with a real last-release date (see the note above). Doing that first shrinks
   the facet and makes it more honest, so the order is: adapters, then the facet
   over whatever is left.
+
+## Ordering the entries that cannot be ranked
+
+`LISTING_ORDER` is `stars desc nulls last, position asc`, so every entry without
+stars sits after every entry with them. Measured on the full dataset:
+
+- **99% of the 12,019 link entries (11,945) sit beyond page 1 of their list
+  page.** Not "near the bottom": beyond the first sixty rows, always.
+- Where they start, on the lists that have most of them: macos **page 17 of
+  28**, angular **26 of 33**, cpp **16 of 22**, machinelearning 13 of 18, perl 13
+  of 18, vue 8 of 16, datascience 4 of 15.
+- On category pages this is close to a non-problem: **4,235 of 4,297 categories
+  hold sixty entries or fewer**, so the whole order is on one screen, and only 50
+  categories are both over the page size and mixed. Whatever gets built belongs
+  to the list pages; the category pages are already honest.
+
+The bottom is not a neutral place to put something. It is a claim: that every one
+of these entries matters less than every repository on the list, including a
+three-star toy nobody has touched since 2019. That claim is wrong about Docker,
+gtkmm, LLDB, Apache HTTP Server, Mobilizon and a few thousand others, and it is
+wrong in the one direction that matters, because it is the curator's own picks
+that are being buried.
+
+### Synthetic stars, taken seriously
+
+The idea is sound, and for a reason worth stating plainly: **the number would
+never be shown.** `TargetCard` prints no star count for a row that has none, and
+that stays true. So a synthetic value is a _sort key_, not a fact about a
+project, and the codebase already has one of those — `starsSortValue(null)`
+writes nine zeros into the Pagefind index for exactly the same reason. A sort key
+is an ordering decision; only a rendered number is a claim.
+
+What it must never do: reach `meta.stars` in the search index, the `ItemList`
+JSON-LD, or the card. If it does, it stops being an ordering and becomes a lie
+with a decimal point.
+
+**Calibration is available, and it is not a fudge factor.** Ask the dataset what
+a repository curated by N lists is typically worth:
+
+| lists curating it | repositories | median stars |   p25 |    p75 |
+| ----------------: | -----------: | -----------: | ----: | -----: |
+|                 1 |       29,121 |          342 |    76 |  1,555 |
+|                 2 |        2,375 |        2,547 |   743 |  8,144 |
+|                 3 |          259 |       11,726 | 3,968 | 34,067 |
+|                 4 |           40 |       25,473 | 9,256 | 44,790 |
+
+Cross-curation predicts prominence sharply — roughly 7x per extra curator — so a
+link picked by three lists can be placed with real confidence. The catch is
+resolution: **95.9% of link targets (11,015 of 11,491) are curated by exactly one
+list**, so a global calibration gives almost all of them the same number, 342,
+which sits above 46% of the repositories in the dataset. That is not a ranking.
+It is an _insertion point_, derived rather than invented, and worth having as the
+floor — but it cannot be the whole mechanism.
+
+**The better signal is local, and the curator already gave it to us: adjacency.**
+A link's own heading usually holds repositories too — 7,349 of 12,128 link
+entries, **61%** — and their median stars say what neighbourhood the curator put
+it in. A tool listed among 10k-star projects ranks with them; one listed at the
+tail of a thin section ranks low. So:
+
+1. the median stars of the repositories under the same heading, when there are
+   any (61% of entries);
+2. else the same by list;
+3. else the global cross-curation figure above (342 for a once-picked link);
+4. `position` breaks ties, so a section's links keep the curator's own order.
+
+Bounded, recomputed every crawl, no constant anybody has to believe. And _not_
+"nearest preceding repository", which looks similar and is not: in a heading like
+Meetups the nearest repository is the last row of the previous section, and its
+star count means nothing at all here.
+
+### What else is on the table
+
+- **Curator order for the listings where stars are already meaningless.** 28 of
+  the 87 lists are majority-link: perl 97%, haskell 94%, magictools 82%, devops
+  79%, datascience 79%, typescript 78%. Ranking 8 repositories above 299 CPAN
+  modules is not a ranking of anything; for those lists `position asc` over the
+  whole listing is both simpler and more honest than any synthetic number. The
+  cost is that the site then has two orders and each page has to say which one it
+  is in — the category pages already learned to do that (`onlyLinks`).
+- **Merge by percentile** (rank repos among repos, links among links, interleave
+  by relative position). Rejected: on a list with 1,000 repositories and 3 links
+  it puts the best link next to the best repository, which is a much stronger
+  claim than anything above.
+- **Leave it and let the reader re-sort.** The sort-control memo higher up this
+  file becomes the answer if it is ever built, since "original order" is exactly
+  what a buried link needs. It does not fix the default, which is what a search
+  engine and a first-time reader see.
+
+### Do these first, because they produce real numbers
+
+- **The homepage index.** Canonicalise `homepage_url` against the web targets and
+  **1,216 of 11,491 (10.6%) match a repository already in the dataset; 843 (7.3%)
+  are claimed by exactly one**, which is the safe subset. Those get true stars, a
+  language and a pulse, and stop being a ranking problem at all.
+- **Registry providers.** awesome-perl is 97% links because 300 of them are
+  metacpan.org; hackage is 122, CRAN 166, crates.io 81. A provider adapter turns
+  those into rows with a real last release, which is a better ordering key than
+  any estimate of importance — and it shrinks the population that needs one.
+
+### Recommendation
+
+The homepage index and one or two registry adapters first: they convert a chunk
+of the problem into real data instead of estimating it. Then the section-median
+sort key, with the cross-curation floor under it, applied to the list pages only,
+where the exile actually is. And the listing header has to stop saying "most
+starred first" and nothing else on a page that is 70% entries nobody can star —
+one clause, in the same place the category pages already qualify themselves.
