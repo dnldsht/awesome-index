@@ -5,6 +5,7 @@ import type { TrendScore } from "./contracts.ts";
 import {
   DEFAULT_FLOOR,
   MIN_BASELINE_WEEKS,
+  MIN_SPREAD,
   RECENT_WEEKS,
   minBaselineFor,
   trendScore,
@@ -35,6 +36,14 @@ function spikes(weeks: number, normal: number, spike: number): number[] {
     ...steady(weeks - RECENT_WEEKS, normal, Math.min(normal, 2)),
     ...Array(RECENT_WEEKS).fill(spike),
   ];
+}
+
+/** exactly `gained` stars spread across `weeks` weeks, remainder at the front */
+function split(gained: number, weeks = RECENT_WEEKS): number[] {
+  const each = Math.floor(gained / weeks);
+  const spread = Array(weeks).fill(each);
+  spread[0] += gained - each * weeks;
+  return spread;
 }
 
 test("a repository doing what it always does does not trend", () => {
@@ -134,7 +143,9 @@ test("a sustained spike outranks a single loud week", () => {
 });
 
 test("bigger accelerations score higher, all else equal", () => {
-  const scores = [10, 20, 40, 80].map((spike) =>
+  // each spike is a weekly rate over a four-week window, so all of these clear
+  // DEFAULT_FLOOR and the test is about the ordering rather than the gate
+  const scores = [40, 80, 160, 320].map((spike) =>
     trendScore(spikes(60, 3, spike))!,
   );
   for (let i = 1; i < scores.length; i++) {
@@ -157,7 +168,7 @@ test("the same history answers three different questions for three windows", () 
   const history = [
     ...Array(60).fill(2), // a quiet year and a bit
     ...Array(51).fill(9), // a year of steady, higher growth
-    100, // and one very loud week
+    400, // and one very loud week
   ];
   const week = trendScore(history, { weeks: 1 })!;
   const month = trendScore(history, { weeks: 4 })!;
@@ -217,11 +228,52 @@ test("a window that is not a positive whole number of weeks throws", () => {
 });
 
 test("the floor is counted over whatever window was asked for", () => {
-  // 25 stars is a month's floor and stays a year's floor unless the caller says
-  // otherwise: the argument means one thing, and the rubric decides its size
-  const year = [...Array(26).fill(0), ...Array(52).fill(0.5)];
+  // the floor is a count, not a rate: the same argument means one thing, and
+  // the rubric asking for a window decides how big that thing should be. A year
+  // that trickles past the default clears it; the four weeks inside it do not
+  const year = [...Array(26).fill(0), ...split(DEFAULT_FLOOR, 52)];
   assert.notEqual(trendScore(year, { weeks: 52 }), null);
-  assert.equal(trendScore(year, { weeks: 52, floor: 27 }), null);
+  assert.equal(trendScore(year, { weeks: 52, floor: DEFAULT_FLOOR + 1 }), null);
+  assert.equal(trendScore(year.slice(-60)), null);
+});
+
+test("a standing start does not outrank a measured climb", () => {
+  // the regression the floor was raised for, in the numbers it was raised on:
+  // at a floor of 25 these three scored 14.5, 14.25 and 13.5 and sat at ranks
+  // 9, 10 and 11 — above makeplane/plane, which gained 3,403 against a baseline
+  // of 207 a week. Fifty-eight stars from nothing is an infinite acceleration
+  // and is not a story, which is the one thing a ratio can never tell you
+  for (const gained of [58, 57, 54]) {
+    const standingStart = [...Array(56).fill(0), ...split(gained)];
+    assert.equal(
+      trendScore(standingStart),
+      null,
+      `+${gained} from a flat baseline should not be ranked at all`,
+    );
+  }
+
+  const climbing = [...steady(56, 207, 70), 851, 851, 851, 850];
+  const climb = trendScore(climbing);
+  assert.notEqual(climb, null);
+  assert.ok(climb! > 0, `a real climb should still rank, got ${climb}`);
+});
+
+test("a standing start large enough to be an event still ranks, and ranks high", () => {
+  // the other side of the same decision: +138 from nothing is the best trending
+  // content the corpus has, and a floor set high enough to exclude it would be
+  // buying its ordering by throwing away the stories
+  const event = [...Array(56).fill(0), ...split(138)];
+  const score = trendScore(event);
+  assert.notEqual(score, null);
+  assert.ok(score! > 30, `expected a top-of-page score, got ${score}`);
+});
+
+test("the floor prices the class MIN_SPREAD creates", () => {
+  // where the spread is pinned the score is exactly the rate, so the floor is
+  // not a gate in front of the ranking — it is the first rank the class can
+  // occupy. Stated as the relationship, so it survives the constant moving
+  const justOver = [...Array(56).fill(0), ...split(DEFAULT_FLOOR)];
+  assert.equal(trendScore(justOver), DEFAULT_FLOOR / RECENT_WEEKS / MIN_SPREAD);
 });
 
 test("the implementation matches the signature declared in contracts.ts", () => {

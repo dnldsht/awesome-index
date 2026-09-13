@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ROW, type Row } from "~~/src/lib/contracts";
+import { PERIOD_FIELD, type Period } from "~/utils/order";
 
 /*
  * One entry of one list, in 32 pixels.
@@ -16,7 +17,8 @@ import { ROW, type Row } from "~~/src/lib/contracts";
  * 1. `Row[ROW.TREND]` is never rendered. It is the acceleration score, it has
  *    no unit a reader could interpret, and it exists to sort. What the row
  *    shows is `d7`/`d30`/`d365` — counts of actual stars. An ordering is a
- *    decision; a printed number is a claim.
+ *    decision; a printed number is a claim. Sorting by `trending` therefore
+ *    changes the *order* of these rows and nothing that appears on any of them.
  * 2. Null is not zero. A repository we have not measured and a repository that
  *    gained nothing are different statements and get different marks.
  * 3. A `web` row is not a degraded `github` row. It has no stars, no language,
@@ -26,7 +28,13 @@ import { ROW, type Row } from "~~/src/lib/contracts";
  *    where a link points is the one durable fact we hold about it.
  */
 
-const props = defineProps<{ row: Row; open: boolean }>();
+const props = defineProps<{
+  row: Row;
+  open: boolean;
+  /* which of the three windows the delta column is showing; follows `?period=`
+   * and therefore only ever moves off 30d under the trending order */
+  period: Period;
+}>();
 defineEmits<{ toggle: [] }>();
 
 const r = computed(() => props.row);
@@ -37,11 +45,11 @@ const ownerPrefix = computed(() =>
 );
 
 /*
- * The default window is 30 days — seven days is the only window that means
- * *now* and is noise as a default, because nobody visits an index of awesome
- * lists weekly. Wave 2 E makes this follow `?period=`.
+ * The delta column follows the window. It is 30 days everywhere except under
+ * the trending order, where the reader has said which window they mean and it
+ * would be incoherent to rank by one and print another.
  */
-const d = computed(() => r.value[ROW.D30]);
+const d = computed(() => r.value[PERIOD_FIELD[props.period]] as number | null);
 
 const isArchived = computed(() => r.value[ROW.ARCHIVED] === 1);
 
@@ -59,6 +67,44 @@ const activityTitle = computed(() => {
   const state = r.value[ROW.STATE];
   return [state, at].filter(Boolean).join(" · ");
 });
+
+/* ---- the star curve ---------------------------------------------------- */
+
+/*
+ * The full history, from star-history.com's SVG (MIT, CORS-open, 24-hour edge
+ * cache), and the three rules around it are not negotiable:
+ *
+ * - **On demand only.** The `<img>` exists only while the row is open, which is
+ *   what makes the request happen on the click and not before. It is 64 KB
+ *   against somebody else's service; 2,829 of them on one page load would be
+ *   indefensible, and it is the reason DESIGN.md rules out an inline sparkline
+ *   on the row.
+ * - **Never for a `web` row.** There is no repository to ask about.
+ * - **It is allowed to fail.** It 500s on some repositories. A broken image
+ *   icon in the middle of an expanded row would read as the page being broken,
+ *   so the failure is caught and stated in one line, with the link out still
+ *   offered — the reader can go and look, which is all the image was doing.
+ *
+ * The 14 months of history the site holds never appear here. They exist only at
+ * build time, to compute the four integers the row carries; this curve goes
+ * back to 2012 and we store none of it.
+ */
+const { dark } = useTheme();
+
+const chart = computed(
+  () =>
+    `https://api.star-history.com/svg?repos=${encodeURIComponent(
+      r.value[ROW.ID],
+    )}&type=Date${dark.value ? "&theme=dark" : ""}`,
+);
+
+const failed = ref(false);
+/* the component is reused across rows as the list reorders, and a failure
+ * belongs to the repository, not to the slot it was rendered in */
+watch(
+  () => r.value[ROW.ID],
+  () => (failed.value = false),
+);
 </script>
 
 <template>
@@ -93,6 +139,9 @@ const activityTitle = computed(() => {
         up: d != null && d > 0,
         down: d != null && d < 0,
       }"
+      :title="
+        isRepo && d != null ? `${delta(d)} stars over ${period}` : undefined
+      "
       >{{ !isRepo ? "" : d == null ? "–" : delta(d) }}</span
     >
 
@@ -107,8 +156,7 @@ const activityTitle = computed(() => {
   <!--
     Expansion. Everything the 32px band had to drop: the note in full, the
     licence and language spelled out, the unrounded date, all three windows,
-    and the URL. Wave 2 E hangs the star-history SVG here, on demand and never
-    for a `web` row.
+    the URL — and, for a repository, the whole star curve.
   -->
   <div v-if="open" class="open">
     <!--
@@ -159,5 +207,30 @@ const activityTitle = computed(() => {
       target="_blank"
       >{{ r[ROW.URL] }}</a
     >
+
+    <figure v-if="isRepo" class="chart">
+      <img
+        v-if="!failed"
+        class="chart-img"
+        :src="chart"
+        :alt="`star history of ${r[ROW.ID]}`"
+        width="800"
+        height="533"
+        decoding="async"
+        @error="failed = true"
+      />
+      <figcaption class="chart-cap">
+        <template v-if="failed"
+          >no star history for this repository —
+          <a
+            :href="`https://star-history.com/#${r[ROW.ID]}&Date`"
+            rel="noopener nofollow"
+            target="_blank"
+            >try star-history.com</a
+          ></template
+        >
+        <template v-else>star history · star-history.com</template>
+      </figcaption>
+    </figure>
   </div>
 </template>

@@ -116,7 +116,8 @@ export type Row = [
   /** see `ActivityState`; null when the cohort was too small to judge */
   state: ActivityState | null,
   /**
-   * Acceleration against the repository's own baseline — see `trendScore`.
+   * Acceleration against the repository's own baseline over **30 days** — see
+   * `trendScore`. The middle of the three windows below, and the default.
    *
    * **A SORT KEY. NEVER RENDERED.** It exists so "trending" can mean what a
    * reader means by it rather than "big", and it has no unit anybody could read.
@@ -128,6 +129,38 @@ export type Row = [
    * rows sort last under a trend sort; they are not zeroes.
    */
   trend: number | null,
+  /**
+   * The same acceleration over the other two windows: 7 days and 1 year.
+   *
+   * These exist because the list page offers `?period=7d|30d|1y` under its
+   * trending order, and one score cannot answer three questions. Shipping only
+   * the 30-day score made the window control change which *figure* the row
+   * printed while leaving the order untouched — a control that does half of
+   * what it appears to do, which is worse than one that does nothing.
+   *
+   * Slicing `weekly` is not a substitute and `trendScore` says why: a shorter
+   * slice shortens the baseline the window is measured against, which asks a
+   * different and worse question. So each window is scored against the full
+   * history with its own `weeks` and its own floor.
+   *
+   * **The floors are not the front page's floors.** `FrontPage.climbing` shows
+   * a top twenty, where a floor high enough to null most of the corpus costs
+   * nothing; a list-page sort has to produce a sensible order for *every* row
+   * of a list, and a floor that nulls most of it is simply wrong there. The two
+   * sets of numbers live beside each other in `bin/shards.ts` with the
+   * measurement behind each.
+   *
+   * Null carries more weight here than on `trend`: 1y needs 78 weeks of
+   * history to be judged at all, so it is null for every repository the
+   * backfill has not reached that deep, and the page states the count rather
+   * than presenting a mostly-unordered list as a ranking.
+   *
+   * Appended rather than inserted, per the note at the top of this type: a
+   * tuple carries no names to disagree with, so appending is safe and
+   * reordering silently reinterprets every shard already built.
+   */
+  trend7: number | null,
+  trend365: number | null,
 ];
 
 /**
@@ -153,7 +186,10 @@ export const ROW = {
   D30: 12,
   D365: 13,
   STATE: 14,
+  /** the 30-day acceleration score; `TREND7`/`TREND365` are the other windows */
   TREND: 15,
+  TREND7: 16,
+  TREND365: 17,
 } as const;
 
 /**

@@ -134,19 +134,69 @@ export function minBaselineFor(weeks: number): number {
 /**
  * Stars the recent window must have gained before a row may trend at all.
  *
- * Purely relative measures have no scale, and at the bottom of the corpus the
- * absence of one is fatal: a repository whose weeks are all zeros has a
- * baseline of zero and a spread pinned at `MIN_SPREAD`, so nine stars in a
- * month would score a nine and land among the largest accelerations in the
- * dataset. Twenty-five net stars in four weeks is the point where a number
- * stops being one enthusiastic afternoon.
+ * **A hundred stars in four weeks, which is six times the median four-week
+ * gain of 17** measured across the 1,213 repositories backfilled on
+ * 2026-09-13 (`select` the last four weeks of `star_history` per repository and
+ * take the median of the sums; that is the whole recomputation). The multiple
+ * is recorded so the number can be carried to a corpus of a different size —
+ * not because it is re-derived per crawl. It must not be: this floor reorders
+ * every list page's trending sort, so it changes when somebody decides it
+ * should, not when a backfill lands. A percentile would have moved three times
+ * in two days as the corpus grew from 185 repositories to 1,213.
  *
- * Deliberately permissive: this is a noise gate, not a ranking device. Raising
- * it until only substantial repositories survive would reintroduce, through the
- * back door, precisely the "trending means big" ordering the score exists to
- * avoid — above the floor, the ordering is the score's job alone.
+ * The reason it has to be this large is `MIN_SPREAD`, and the two constants
+ * should be read together. For a repository with a flat baseline — every week
+ * zero, which is most of the corpus — the median is 0 and the spread is pinned
+ * at 1, so the score collapses to `gained / weeks`: the raw rate, with no
+ * normalisation left in it. For that whole class the floor is not a gate in
+ * front of the ranking, **it is the ranking**, because such a row enters at
+ * exactly `floor / weeks` and every one of them scores at least that.
+ *
+ * So the floor is answering one editorial question: *what is the smallest gain
+ * that may take a top slot on the strength of having come from nothing?* Ratio
+ * cannot answer it — zero to anything is an infinite acceleration — and that is
+ * precisely why an absolute number is the only thing that can.
+ *
+ * The old value of 25 answered it badly, and the damage is measurable. It
+ * admitted 533 of 1,213 repositories (44%), which is not a gate; worse, all
+ * twelve of the standing-start repositories it let through gained between 25
+ * and 60 stars, scored 6.5 to 14.3, and landed *interleaved with the real
+ * climbers* — +58, +57 and +54 from nothing sat at ranks 9, 10 and 11, above
+ * `makeplane/plane` at +3,403 against a baseline of 207 a week. Measured on the
+ * same corpus, the band from 60 to 100 contains no standing starts at all, and
+ * the first one above 100 gained 138 from a standing stop, which is a genuine
+ * story and is kept.
+ *
+ * Two independent readings put the number in the same place, which is most of
+ * why it is this one:
+ *
+ * - Six times the median gain is 102.
+ * - A standing start enters at `floor / 4` = 25, and 25 is where the *measured*
+ *   scores of repositories that have a real baseline top out (the best in the
+ *   corpus score 62.8, 27.8, 25.2, 24.7, 17.4 …, and only two of 237 exceed
+ *   25). So a row that came from nothing enters at parity with the best climb
+ *   we can actually measure, rather than above all of them.
+ *
+ * Note the direction, because it is counter-intuitive and worth not
+ * rediscovering: *raising* the floor raises where the standing-start class
+ * enters, since its minimum score is `floor / weeks`. It buys its ordering by
+ * making the class rarer, not by demoting it. That is the argument against
+ * going further — at 170 the class is empty on this corpus and the first
+ * repository to clear it later will enter at 42, above everything.
+ *
+ * Still deliberately a noise gate and not a ranking device: above it the
+ * ordering is the score's job alone, and raising it until only substantial
+ * repositories survive would reintroduce through the back door precisely the
+ * "trending means big" ordering this file exists to avoid. It nulls 80% of the
+ * backfilled corpus, against 86% at 170 and 56% at the old 25.
+ *
+ * The front page passes its own, larger floors and should: a 20-row block only
+ * has to be right about 20 rows, so it can afford to exclude everything
+ * marginal, while this default governs `Row[ROW.TREND]` and therefore a
+ * `sort=trending` that has to produce a sensible order for *every* row of all
+ * 80 lists. That is what the parameter is for.
  */
-export const DEFAULT_FLOOR = 25;
+export const DEFAULT_FLOOR = 100;
 
 /**
  * The smallest spread the denominator is allowed to take, in stars per week.
@@ -156,6 +206,11 @@ export const DEFAULT_FLOOR = 25;
  * zero, and dividing by that yields Infinity for every one of them, which is
  * not an ordering. One star a week is also the point below which the spread is
  * finer than the data it comes from, since weekly deltas are integers.
+ *
+ * It has a consequence that `DEFAULT_FLOOR` exists to price and that anyone
+ * changing either constant needs to hold in mind: where this pin binds, the
+ * score is no longer normalised at all — it is `gained / weeks`, on a different
+ * scale from every row that has a real baseline to be divided by.
  */
 export const MIN_SPREAD = 1;
 

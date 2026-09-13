@@ -78,6 +78,27 @@
   --gutter: clamp(12px, 3vw, 32px);
   --measure: 1360px;
 
+  /*
+   * The contents rail, and the gap between it and the document.
+   *
+   * 13rem holds "Command-Line Productivity" wrapped to two lines and most
+   * headings on one, which is the width at which 134 entries stay scannable.
+   * The two are a token rather than a number because three things have to
+   * agree on them: the page grid, the column-label strip in the masthead —
+   * which is a different component and has to stay lined up with the row grid
+   * underneath it — and the narrow breakpoint where the rail stops existing.
+   */
+  --toc: 13rem;
+  --toc-gap: 2rem;
+
+  /*
+   * How far under the sticky masthead an anchored heading has to land. The
+   * masthead is identity + controls + column labels, which is a little over
+   * six rems at the wide layout; this leaves a row of air above the heading so
+   * it reads as arrived-at rather than as jammed under the rule.
+   */
+  --mast-h: 7.5rem;
+
   /* ---- columns -------------------------------------------------------- */
   --col-name: minmax(9rem, 17rem);
   --col-tag: 6.5rem; /* language, or the host of a web row */

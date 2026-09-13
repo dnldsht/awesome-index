@@ -15,8 +15,9 @@
 }
 
 html {
-  /* the list is long, and #anchors land under the sticky masthead */
-  scroll-padding-top: 5rem;
+  /* the list is long, and a heading scrolled to lands under the sticky
+     masthead unless something reserves the space it occupies */
+  scroll-padding-top: var(--mast-h);
 }
 
 body {
@@ -130,6 +131,213 @@ a {
   padding-block: 0.3rem 0.25rem;
 }
 
+/* ---- the control strip ------------------------------------------------- */
+
+/*
+ * Order, window, search, count — in the masthead, above the column labels,
+ * inside the same rule the identity sits in. It is a line of words rather than
+ * a toolbar: no select, no pill, no chevron. Four orders is few enough to state
+ * all four, and stating them is also how the reader learns that "curator" is a
+ * choice somebody made rather than the absence of one.
+ */
+.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1.5rem;
+  padding-block: 0.15rem 0.4rem;
+  border-top: 1px solid var(--rule);
+}
+
+.ctl-g {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.ctl-l {
+  color: var(--ink-3);
+}
+
+/*
+ * An option is a word. The current one is set in the ink colour with a rule
+ * under it in the accent — the same two-pixel accent rule the masthead uses, at
+ * the scale of a word, so "selected" is said the same way twice on one page.
+ */
+.ctl .opt {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  line-height: 1.2;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 1px;
+  cursor: pointer;
+}
+
+.ctl .opt:hover {
+  color: var(--ink);
+}
+
+.ctl .opt.on {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.ctl-q {
+  margin-left: auto;
+}
+
+/*
+ * The search field. No box: a rule under it, like everything else here. It is
+ * the only search on the site — DESIGN.md defers a global index — so it is
+ * given the width to say what it searches rather than a magnifying glass.
+ */
+.ctl .q {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule-2);
+  padding: 1px 0;
+  width: 15rem;
+  max-width: 100%;
+}
+
+.ctl .q::placeholder {
+  color: var(--nil);
+}
+
+.ctl .q:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.ctl-n {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* "1,204 unranked" is the order admitting what it cannot place */
+.ctl-u {
+  color: var(--nil);
+}
+
+/* ---- the page: rail beside document ------------------------------------ */
+
+.list-page {
+  display: grid;
+  grid-template-columns: var(--toc) minmax(0, 1fr);
+  column-gap: var(--toc-gap);
+  align-items: start;
+}
+
+/*
+ * The column labels live in the masthead and the rows live in the document
+ * column, so the strip has to be pushed over by exactly the rail. Two
+ * components, one grid, one number — which is why the rail width is a token.
+ */
+.cols-in {
+  margin-left: calc(var(--toc) + var(--toc-gap));
+}
+
+.list-doc {
+  min-width: 0;
+}
+
+/*
+ * The table of contents, beside the document and scrolling on its own.
+ *
+ * 4,350 categories across the corpus at a median of 6 entries: a contents
+ * column, not a taxonomy. It sticks under the masthead and takes the rest of
+ * the viewport, so a 134-entry rail scrolls inside itself rather than dragging
+ * the document down with it.
+ */
+.toc {
+  position: sticky;
+  top: var(--mast-h);
+  max-height: calc(100vh - var(--mast-h) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  scrollbar-width: thin;
+}
+
+.toc-h {
+  display: flex;
+  gap: 0.5rem;
+  cursor: default;
+  list-style: none;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.toc-h::-webkit-details-marker {
+  display: none;
+}
+
+.toc-n {
+  margin-left: auto;
+  color: var(--nil);
+}
+
+/* the rail cannot say where the reader is once the rows are ranked, so it
+   stops pretending to and says what it does instead */
+.toc-note {
+  margin: 0.5rem 0 0;
+  font-size: var(--t-micro);
+  line-height: 1.45;
+  color: var(--nil);
+}
+
+.toc-l {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
+.toc-a {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  font-size: var(--t-meta);
+  line-height: 1.3;
+  color: var(--ink-3);
+  padding: 2px 0 2px calc(var(--d, 0) * 0.65rem);
+  border-left: 2px solid transparent;
+}
+
+.toc-a:hover {
+  color: var(--ink);
+}
+
+/* where the reader is, marked the same way a chosen option is */
+.toc-a.on {
+  color: var(--ink);
+  border-left-color: var(--accent);
+  padding-left: calc(var(--d, 0) * 0.65rem + 0.4rem);
+}
+
+.toc-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-c {
+  margin-left: auto;
+  color: var(--nil);
+  font-size: var(--t-micro);
+}
+
+.toc.cold .toc-a,
+.toc.cold .toc-h {
+  color: var(--nil);
+}
+
 /* ---- sections ---------------------------------------------------------- */
 
 /*
@@ -147,6 +355,17 @@ a {
 .section {
   content-visibility: auto;
   contain-intrinsic-size: auto var(--sh, 400px);
+  /* a heading scrolled to stops below the masthead, not under it */
+  scroll-margin-top: var(--mast-h);
+}
+
+/*
+ * The heading named by `?cat=`. A shared link has to *arrive* somewhere, and a
+ * page that merely happens to be scrolled to the right offset does not look
+ * like it landed anywhere. One accent rule, on the heading only.
+ */
+.section.marked > .section-head {
+  border-top-color: var(--accent);
 }
 
 .section-head {
@@ -185,6 +404,16 @@ a {
 
 .rows {
   border-top: 1px solid var(--rule);
+}
+
+/*
+ * A ranked run is cut into blocks of fifty purely so `content-visibility` still
+ * has something section-sized to skip (see `ListRun`). The blocks must not be
+ * visible: only the first rule of the run is drawn, and the rest are the row
+ * hairlines they would otherwise double.
+ */
+.list-run .section + .section > .rows {
+  border-top: 0;
 }
 
 .row,
@@ -353,6 +582,44 @@ a {
   word-break: break-all;
 }
 
+/* ---- the star curve ---------------------------------------------------- */
+
+/*
+ * star-history.com's SVG, fetched when a row opens and never before: 64 KB per
+ * request against somebody else's service, and 2,829 of them on one page load
+ * would be indefensible. It is also the reason DESIGN.md rules out an inline
+ * sparkline — the row carries four integers and nothing else from the history.
+ *
+ * `aspect-ratio` matches the 800 × 533 the service returns, so the expanded row
+ * reserves the space before the image arrives and does not jump 500 pixels
+ * under the reader's cursor a second after they click.
+ */
+.chart {
+  margin: 0.9rem 0 0;
+  max-width: 40rem;
+}
+
+.chart-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 800 / 533;
+  border: 1px solid var(--rule);
+}
+
+.chart-cap {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  color: var(--nil);
+  padding-top: 0.3rem;
+}
+
+.chart-cap a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ---- empty rubrics ----------------------------------------------------- */
 
 /*
@@ -396,13 +663,69 @@ a {
  * the row becomes 46px, which is still ~14 projects on a phone screen against
  * the six a card layout would give.
  */
+@media (max-width: 72rem) {
+  /*
+   * The rail stops being a column and becomes a disclosure above the document.
+   * A contents column needs a margin to live in, and the margin has to come
+   * from somewhere: the rail is 13rem, and taking it out of a 1,000px viewport
+   * leaves the curator’s note — the reason the page is worth reading — with
+   * about a hundred pixels. So the rail folds away above the document below
+   * 72rem rather than at the width where it merely still fits. The column
+   * labels lose their offset in the same breath; they are aligned to a rail
+   * that is no longer there.
+   */
+  .list-page {
+    display: block;
+  }
+
+  .cols-in {
+    margin-left: 0;
+  }
+
+  .toc {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-block: 0.75rem 0.5rem;
+  }
+
+  .toc-d:not([open]) .toc-h {
+    border-bottom-color: var(--rule);
+  }
+
+  .toc-h {
+    cursor: pointer;
+  }
+
+  .toc-l {
+    columns: 2;
+    column-gap: 1.5rem;
+    max-height: 14rem;
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 44rem) {
   :root {
     --row-h: 46px;
+    /* no column labels down here, so the masthead is shorter */
+    --mast-h: 6.5rem;
   }
 
   .cols {
     display: none;
+  }
+
+  .toc-l {
+    columns: 1;
+  }
+
+  .ctl-q {
+    margin-left: 0;
+  }
+
+  .ctl .q {
+    width: 11rem;
   }
 
   /* the source README's id is the first thing to go: it is provenance, and

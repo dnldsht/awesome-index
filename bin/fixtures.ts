@@ -184,7 +184,10 @@ function toRow(row: Entry): Row {
     t.license,
     t.archived ? 1 : 0,
     seconds(t.lastActivityAt),
-    // no star history exists yet; null is "not measured", never zero
+    // d7, d30, d365, state, and the three acceleration scores (30d, 7d, 1y).
+    // No star history exists here at all; null is "not measured", never zero.
+    null,
+    null,
     null,
     null,
     null,

@@ -47,7 +47,10 @@ import {
   type Row,
   type TrendScore,
 } from "../src/lib/contracts.ts";
-import { trendScore as realTrendScore } from "../src/lib/trending.ts";
+import {
+  DEFAULT_FLOOR,
+  trendScore as realTrendScore,
+} from "../src/lib/trending.ts";
 import { activityStates as realActivityStates } from "../src/lib/activity.ts";
 
 const { values: flags } = parseArgs({
@@ -88,14 +91,75 @@ const activityStates: ActivityStates = realActivityStates;
  */
 const WINDOW_WEEKS = { d7: 1, d30: 4, d365: 52 } as const;
 
+/**
+ * The absolute floors for the three acceleration scores a **row** carries.
+ *
+ * `trendScore`'s floor is the number of stars a window has to have actually
+ * gained before the row is allowed to trend at all. It is the one absolute
+ * check in a calculation that is otherwise entirely relative to each
+ * repository's own past, and it is what stops 3 → 9 stars outranking the corpus
+ * on a +200% week.
+ *
+ * **These are not `RUBRICS`' floors and must not be reconciled with them.** The
+ * front page shows a top twenty, where a floor high enough to null most of the
+ * corpus costs nothing and buys a better twenty; a list page has to produce a
+ * sensible order for *every* row of `shell` or `golang`, and a floor that nulls
+ * most of the list is simply wrong there. That asymmetry is why B chose
+ * `DEFAULT_FLOOR = 100` for the 30-day window over the 170 the front page uses.
+ *
+ * B's rule is **six times the median gain over that window**. Measured on the
+ * corpus as backfilled on 2026-09-13 — 1,213 repositories with star history,
+ * counting only those a score can actually be computed for, which is
+ * `trendScore`'s own rule and not `windowSum`'s: `weekly.length - weeks >=
+ * minBaselineFor(weeks)`, so 1y needs 78 weeks and not 52. Taking the looser
+ * population instead puts 1,181 repositories in the 1y row at a median of 298,
+ * and the floor comes out 1,788 — the two are easy to confuse and they do not
+ * agree.
+ *
+ * | window | eligible | median gain | 6× | floor |
+ * | --- | ---: | ---: | ---: | ---: |
+ * | 7d | 1,212 | 4 | 24 | 25 |
+ * | 30d | 1,212 | 17 | 102 | `DEFAULT_FLOOR` (100) |
+ * | 1y | 987 | 334 | 2,004 | 2,000 |
+ *
+ * rounded the way B rounded 102 to 100. The 30-day entry is `DEFAULT_FLOOR`
+ * itself rather than a restated 100, so the two cannot drift apart.
+ *
+ * **The multiple is provenance, not a formula to re-run.** These 1,213
+ * repositories are the two lists the backfill has reached, and they skew
+ * heavily to actively-developed consumer-facing applications; a mechanical 6×
+ * over all 34,808 would see a much quieter median and produce a *smaller*
+ * floor, which is the wrong direction. This number moves when a person decides
+ * it should, not when a backfill lands.
+ */
+const ROW_FLOORS = { d7: 25, d30: DEFAULT_FLOOR, d365: 2000 } as const;
+
 type Metrics = {
   d7: number | null;
   d30: number | null;
   d365: number | null;
+  /** the 30-day acceleration; `trend7`/`trend365` are the other two windows */
   trend: number | null;
+  trend7: number | null;
+  trend365: number | null;
+  /**
+   * The same acceleration, scored once per front-page rubric. Not shipped: it
+   * never reaches a shard row, it exists so that the three `climbing` blocks
+   * are three different orderings rather than one ordering under three labels.
+   * Defined with the rubrics it belongs to, in the front-page section below.
+   */
+  climb: Climb;
 };
 
-const NO_METRICS: Metrics = { d7: null, d30: null, d365: null, trend: null };
+const NO_METRICS: Metrics = {
+  d7: null,
+  d30: null,
+  d365: null,
+  trend: null,
+  trend7: null,
+  trend365: null,
+  climb: { "7d": null, "30d": null, "1y": null },
+};
 
 /**
  * The last `weeks` weeks summed, or null when we do not hold that many.
@@ -146,7 +210,26 @@ async function loadMetrics(): Promise<Map<string, Metrics>> {
       d7: windowSum(weekly, WINDOW_WEEKS.d7),
       d30: windowSum(weekly, WINDOW_WEEKS.d30),
       d365: windowSum(weekly, WINDOW_WEEKS.d365),
-      trend: trendScore(weekly),
+      /*
+       * Three windows, three scores, each measured against the whole history.
+       * The 30-day call is written out rather than left to `trendScore`'s
+       * defaults so the family reads as one thing — it is the same call either
+       * way, `WINDOW_WEEKS.d30` being `RECENT_WEEKS` and `ROW_FLOORS.d30` being
+       * `DEFAULT_FLOOR`.
+       */
+      trend: trendScore(weekly, {
+        weeks: WINDOW_WEEKS.d30,
+        floor: ROW_FLOORS.d30,
+      }),
+      trend7: trendScore(weekly, {
+        weeks: WINDOW_WEEKS.d7,
+        floor: ROW_FLOORS.d7,
+      }),
+      trend365: trendScore(weekly, {
+        weeks: WINDOW_WEEKS.d365,
+        floor: ROW_FLOORS.d365,
+      }),
+      climb: climbScores(weekly),
     });
   };
 
@@ -372,6 +455,8 @@ function toRow(row: Entry, derived: Derived): Row {
     m.d365,
     derived.states.get(t.id) ?? null,
     m.trend,
+    m.trend7,
+    m.trend365,
   ];
 }
 
@@ -440,6 +525,105 @@ function validate(shard: ListShard, keys: number[]) {
  */
 const TOP = 20;
 
+/** the acceleration score of one repository, once per `climbing` rubric */
+type Climb = Record<FrontPage["climbing"][number]["period"], number | null>;
+
+/**
+ * The three climbing rubrics: the window each one sums, and the floor each one
+ * gates on.
+ *
+ * **The window is the point of this table.** `FrontPage.climbing` declares 7d,
+ * 30d and 1y, and until this existed all three were ordered by one call to
+ * `trendScore(weekly)` — the default four-week window — so the 7d and 1y blocks
+ * were the 30-day ordering wearing different labels while printing a 7-day and
+ * a 365-day figure beside it. `weeks` is read from `WINDOW_WEEKS`, the same
+ * constant `windowSum` uses, so the window that is *scored* and the window that
+ * is *printed* cannot drift apart again.
+ *
+ * `1y` asks for 52 weeks and `minBaselineFor(52)` is 26, so a repository needs
+ * 78 weeks of history to be judged at all (`src/lib/trending.ts` explains why
+ * the baseline must be half the window). At the default two-page backfill every
+ * repository holds exactly 60, so the 1y block is empty until a list is
+ * backfilled three pages deep. That is a deliberate decline, not a gap: with
+ * 964 repositories now at 90 weeks it populates, and with the rest at 60 it
+ * stays quiet about them.
+ *
+ * ### The floors
+ *
+ * `trendScore`'s floor is a count of stars over the window and does not scale
+ * itself, so 25 — `DEFAULT_FLOOR`, tuned for a four-week window — is strict
+ * over seven days and meaningless over a year. The caller has to choose, and
+ * the choice matters more than it looks, because of how the score behaves at
+ * the quiet end: a repository whose baseline weeks are mostly zero has a median
+ * of 0 and a spread pinned at `MIN_SPREAD`, so its score collapses to
+ * `gained / weeks` — its raw rate. The floor is therefore the only thing
+ * standing between the front page and a ranking of small repositories that had
+ * one good week, and it is doing ranking work whether or not it is called a
+ * noise gate.
+ *
+ * Measured, at `DEFAULT_FLOOR` over 30 days on the 1,213 repositories
+ * backfilled on 2026-09-13: ranks 9, 10, 11, 14 and 18 of the block are gains
+ * of 58, 57, 54, 36 and 40 stars from flat baselines, sitting above
+ * `makeplane/plane` at +3,403 and `novuhq/novu` at +448. The reported
+ * `open-policy-agent/conftest` case (+26 in a month, ranked third) is the same
+ * failure on a smaller sample; it washed out only because a thousand more
+ * repositories arrived to outrank it, which is luck rather than a fix.
+ *
+ * So each floor is **ten times what an ordinary repository gains over that same
+ * window**, which is one rule that scales itself correctly because it reads the
+ * window's own distribution. The median gain across the backfilled corpus, per
+ * window, is 4 stars over a week, 17 over four and 334 over fifty-two — and
+ * that median is stable across window lengths as a rate (4.0, 4.3 and 6.4 stars
+ * a week) and across the two very different populations backfilled so far. Ten
+ * times ordinary, rather than the two or three times `DEFAULT_FLOOR` works out
+ * to, because the page is twenty rows drawn from tens of thousands of
+ * repositories: a gate that admits a third of the corpus (`DEFAULT_FLOOR`
+ * admits 533 of 1,212 at 30d) is not choosing anything. These admit 12-16%, and
+ * every row of all three blocks is then a number a reader would call movement.
+ *
+ * The floors are absolute constants and not percentiles computed per build,
+ * deliberately. A percentile would be recomputed against whatever happens to be
+ * backfilled and would silently move every time a list landed — measured: the
+ * 90th percentile of weekly gains read 25, then 31, then 59 as the corpus grew
+ * from 185 to 1,213 repositories over two days. A floor that drifts is a front
+ * page that reorders itself for reasons no one can see.
+ *
+ * They are also *not* relative to a list or a population, which is the other
+ * thing that was worth asking. The two backfilled populations are far apart —
+ * `awesome-selfhosted` repositories gain a median 5 stars a week against
+ * kubernetes' 2, and 15.9% of them clear the 7d floor against kubernetes' 4.9%
+ * — so an absolute floor does admit one population three times more readily
+ * than the other. That asymmetry is correct and must stay: the *score* is
+ * already relative to each repository's own history, and the floor is the one
+ * absolute check in the pipeline. Making it relative too would leave nothing
+ * anywhere in the calculation that knows the difference between forty stars and
+ * four, and a corpus of quiet repositories would promote its own quiet weeks.
+ * The visible consequence — the front page over-represents consumer-facing
+ * lists — is a fact about which projects people are starring this month, and is
+ * the front page working rather than failing.
+ *
+ * Recalibrating: recompute the median window sum over the backfilled corpus and
+ * multiply by ten. Worth doing once the corpus is fully backfilled, and not on
+ * every build.
+ */
+const RUBRICS = [
+  { period: "7d", value: ROW.D7, weeks: WINDOW_WEEKS.d7, floor: 40 },
+  { period: "30d", value: ROW.D30, weeks: WINDOW_WEEKS.d30, floor: 170 },
+  { period: "1y", value: ROW.D365, weeks: WINDOW_WEEKS.d365, floor: 3340 },
+] as const;
+
+/** one repository's acceleration under each rubric's own window and floor */
+function climbScores(weekly: number[]): Climb {
+  const climb = {} as Climb;
+  for (const rubric of RUBRICS) {
+    climb[rubric.period] = trendScore(weekly, {
+      weeks: rubric.weeks,
+      floor: rubric.floor,
+    });
+  }
+  return climb;
+}
+
 /**
  * The home page: what is climbing, what has just arrived, what has just been
  * declared finished, and the index of all 80 lists.
@@ -448,38 +632,58 @@ const TOP = 20;
  * is where that comes from:
  *
  * - `climbing` is a difference against the repository's own past, and the past
- *   is in `star_history`. It needs no snapshot; it is empty today only because
- *   the fetcher has not run yet, and it will fill in on its own.
+ *   is in `star_history`. It needs no snapshot; a block is empty only where the
+ *   backfill is not deep enough to answer that window, and it fills in on its
+ *   own as the fetcher goes deeper. See `RUBRICS`.
  * - `entered` and `archived` are differences against the previous *crawl*, and
- *   nothing in the database records what the last crawl saw — `awesome_item` is
- *   overwritten in place, and a first-seen column would have to be added by
- *   whoever owns the schema. So the previous state is the previous build's own
- *   output: the shards already in `--out` are read before they are overwritten,
- *   and a row is `entered` when its id is not in the shard we are replacing.
- *   That makes the deploy job responsible for restoring `public/data/` next to
- *   the dataset it already restores (`PLAN.md` wave 3) — one more release asset
- *   or a checkout of the published branch. Until it does, every build sees no
- *   previous state and both rubrics are empty, which is the correct answer to
- *   "what changed since a crawl we have no record of".
+ *   nothing in the database records what the last crawl saw: `awesome_item` is
+ *   overwritten in place and carries no first-seen date, and `target.archived`
+ *   is a flag with no record of when it flipped. So the previous state is read
+ *   from the previous build's own output — the shards already in `--out`, read
+ *   before they are overwritten, a row being `entered` when its id is not in
+ *   the shard it is replacing.
+ *
+ *   **That fallback is dead in CI and is known to be.** `public/data/` is
+ *   gitignored (deliberately: the shards rebuild from the dataset in a second,
+ *   and the alternative was 2.9 MB of generated JSON in every commit), so a
+ *   fresh checkout has no previous build to compare against and both rubrics
+ *   are permanently empty there. It still works locally, on a second run in a
+ *   directory that already holds shards, which is enough to exercise the code
+ *   path and not enough to build a page on.
+ *
+ *   The fix is a schema change and belongs to whoever owns the schema: a
+ *   `first_seen` column on `awesome_item`, written once when a row is first
+ *   inserted, plus the same for the archived transition — a nullable
+ *   `archived_at` on `target`, stamped when the daily refresh sees the flag go
+ *   from false to true. Both then survive in the dataset release asset that CI
+ *   already restores, and neither needs a previous build's output to exist.
+ *   `PLAN.md` wave 3 is where that lands.
  *
  * They are emitted empty rather than filled with plausible-looking rows. A
  * front page that invents a difference is a front page that lies every day
- * until somebody notices.
+ * until somebody notices. The page states the absence rather than hiding the
+ * blocks, for the same reason.
  */
-function frontPage(shards: ListShard[], previous: Map<string, PrevShard>) {
+function frontPage(
+  shards: ListShard[],
+  previous: Map<string, PrevShard>,
+  metrics: Map<string, Metrics>,
+) {
   const climbing: FrontPage["climbing"] = [];
-  for (const [period, index] of [
-    ["7d", ROW.D7],
-    ["30d", ROW.D30],
-    ["1y", ROW.D365],
-  ] as const) {
+  for (const rubric of RUBRICS) {
     const candidates: (Ref & { trend: number })[] = [];
     for (const shard of shards) {
       for (const row of shard.rows) {
-        const value = row[index];
-        const trend = row[ROW.TREND];
-        // `trend` orders and is never rendered; `value` is a count of real
-        // stars and is the only number that reaches the page
+        const value = row[rubric.value];
+        /*
+         * The score for *this* rubric's window, not `row[ROW.TREND]`. That
+         * field is one number per row and it is the 30-day ordering; reading it
+         * here is what made the 7d and 1y blocks copies of the 30-day one, and
+         * it is why the score is looked up from `metrics` instead. It orders
+         * and is never rendered either way — `value` is a count of real stars
+         * and is the only number that reaches the page.
+         */
+        const trend = metrics.get(row[ROW.ID])?.climb[rubric.period] ?? null;
         if (trend === null || value === null) continue;
         candidates.push({
           listSlug: shard.slug,
@@ -491,7 +695,7 @@ function frontPage(shards: ListShard[], previous: Map<string, PrevShard>) {
       }
     }
     candidates.sort((a, b) => b.trend - a.trend);
-    climbing.push({ period, rows: best(candidates) });
+    climbing.push({ period: rubric.period, rows: best(candidates) });
   }
 
   const entered: Ref[] = [];
@@ -660,7 +864,7 @@ for (const entry of entries) {
 
 const front = await write(
   path.join(flags.out, "front-page.json"),
-  frontPage(shards, previous),
+  frontPage(shards, previous, derived.metrics),
 );
 
 sizes.sort((a, b) => b.gz - a.gz);
