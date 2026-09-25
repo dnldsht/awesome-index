@@ -24,7 +24,10 @@ export function useTheme() {
   if (import.meta.client && !bound) {
     bound = true;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    system.value = mq.matches;
+    /* after hydration, not now: the server rendered `false`, and setting it
+     * during setup puts the toggle's icon and title out of step with the HTML
+     * it is hydrating — which Vue, in production, does not patch */
+    onNuxtReady(() => (system.value = mq.matches));
     mq.addEventListener("change", (e) => (system.value = e.matches));
   }
 
