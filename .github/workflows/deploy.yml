@@ -68,11 +68,30 @@ jobs:
         # burst every seventh night into a rolling weekly sweep
         run: pnpm crawl --stale-days=1 --max-links=1200
 
-      # Star history is NOT refreshed here yet. `pnpm history --refresh` is one
-      # page per repository — nearly free in quota, because an unchanged
-      # repository answers 304 and a 304 costs nothing, but still 35,000 round
-      # trips at the pace the secondary limits allow, which is hours of a job
-      # capped at six. It is run by hand until it is split across nights.
+      # One nightly slice of star history, which is two passes because they
+      # cost differently.
+      #
+      # The ids are cheap and corpus-wide: ~350 GraphQL requests with 100
+      # aliases each, four minutes, and `--refresh` silently skips any
+      # repository that has not got one — so this has to run first or the
+      # second pass does nothing on everything it has not seen.
+      #
+      # The history itself is capped, and `--max-repos` takes the least
+      # recently fetched first, so the cap is a rotation rather than a
+      # truncation: 4,000 a night cycles the whole corpus in nine, and a
+      # repository already backfilled has its page 1 revalidated on the same
+      # cycle — usually a 304, which costs no quota at all.
+      #
+      # One page is 30 weeks, which is enough for the 7d and 30d windows and
+      # not for the 1y one (that needs 78). So nightly coverage grows the short
+      # windows first, and depth past page 1 stays a deliberate, manual run.
+      - name: Refresh the star history
+        if: github.event_name != 'push' && inputs.crawl != false
+        env:
+          GITHUB_TOKEN: ${{ secrets.CRAWL_GITHUB_TOKEN || github.token }}
+        run: |
+          pnpm history --ids-only
+          pnpm history --refresh --skip-ids --max-repos=4000
 
       - name: Publish the dataset
         if: github.event_name != 'push' && inputs.crawl != false
