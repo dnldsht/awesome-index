@@ -1,9 +1,8 @@
 # Design
 
 The decisions behind the v2 rewrite, and the reasoning that is not recoverable
-from the code. Settled 2026-09-12. `TODO.md` describes the site this replaces;
-most of what that file agonises over stops being a problem here, and the section
-at the end says which parts of it survive.
+from the code. Settled 2026-09-12. Most of what the old site's memos agonised
+over stops being a problem here; the section at the end says what is still open.
 
 ## The one change everything else follows from
 
@@ -15,8 +14,8 @@ into `reposForList()`, cuts it into 60-row slices, and emits a page per slice.
 Every feature anyone has wanted since then (sort by activity, sort by curator
 order, filter by language, show what is trending) collides with that shape,
 because each one multiplies the page count and needs its own canonical and its
-own `noindex`. The four-option memo at the top of `TODO.md` is four ways to work
-around a constraint that only exists because the order is decided at build time.
+own `noindex`. The old memo on this listed four ways to work around a constraint
+that only exists because the order is decided at build time.
 
 It does not have to be. Measured on this dataset:
 
@@ -98,7 +97,7 @@ paths because a static host 404s on an unprerendered path, and this way there is
 nothing to 404.
 
 **Default order is the curator's**, not stars. It is the entry's editorial
-position, it is what `TODO.md` calls "original", and it is the one order the
+position, it is what the old memos call "original", and it is the one order the
 current site cannot produce.
 
 **Prerendered HTML is a skeleton for now**; rows arrive from the JSON. This is a
@@ -282,19 +281,36 @@ homelab · renaming the domain · ecosyste.ms.
 None is precluded. The endpoint pages backwards, so deepening history later costs
 only the additional pages; prerendering rows is a configuration change.
 
-## What survives from `TODO.md`
+## Still open
 
-- **The sorting memo** (four options, page-count arithmetic, canonicals): gone.
-  It was a workaround for build-time ordering.
-- **The "ordering entries that cannot be ranked" analysis**: still true and still
-  useful, but no longer urgent — the default order is now the curator's, so the
-  11,945 link entries that used to sit beyond page 1 of their list are back where
-  the curator put them.
-- **The homepage index** (canonicalise `homepage_url` against web targets; 843
-  match exactly one repository): still the cheapest real win available, and still
-  worth doing before anything that estimates importance.
-- **The host facet analysis**: still the right thinking, still gated on adapters.
-- **"Read a full crawl before trusting the parser"**: still not done.
+`TODO.md` held the memos for the site this replaces and has been deleted: most
+of it described a build-time-ordering problem that no longer exists, and the
+rest is restated here so it is not carried around in a file about a dead
+architecture. Recoverable from git if the measurements are ever wanted in full.
+
+- **The homepage index.** 14,212 crawled repositories carry a `homepage_url`.
+  Canonicalise both sides the way `targets.ts` does and **1,216 of the 11,491
+  web targets (10.6%) match a repository already in the dataset; 843 (7.3%) are
+  claimed by exactly one**, which is the safe subset. Those rows get real stars,
+  a language and a pulse for zero extra API calls, and stop being an ordering
+  problem at all. Two guards it needs, from the false positives the same sample
+  threw: only when exactly one repository claims that canonical URL, and never
+  on an aggregator host — a YouTube playlist matched `reduxjs/redux-devtools`
+  because some repository lists it as its homepage. Still the cheapest real win
+  available, and worth doing before anything that estimates importance.
+- **A host facet.** The 11,491 web targets span **6,524 distinct hosts**, and
+  the tail is what a facet would be for: the top 20 are 22% of them, and 164
+  hosts with five or more cover 38%. What makes it worth building is that those
+  hosts are *kinds* of entry — registries, forges, reading, video, people —
+  which is the classification this dataset deliberately does not store. Gated on
+  the registry and forge adapters, which would shrink it first.
+- **Read a full crawl before trusting the parser.** `looksLikeEntry` in
+  `readme.ts` was written against 5 lists. The other 82 will have shapes it gets
+  wrong in both directions. `pnpm crawl --only=<slug> --dry-run` prints the
+  counts; nobody has yet read a few hundred of the rows it produces.
+- **Notes still keep their licence tags** on the lists that write them in square
+  brackets ("A very compact compression library for data streams. [zlib]"),
+  because `dropTrailingTags` only knows the backticked form.
 
 ## Provenance
 

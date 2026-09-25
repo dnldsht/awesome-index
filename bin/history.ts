@@ -28,6 +28,7 @@
  */
 import * as D from "drizzle-orm";
 import { parseArgs } from "node:util";
+import PQueue from "p-queue";
 import { loadConfig } from "../src/lib/config.ts";
 import { db } from "../src/lib/db/client.ts";
 import {
@@ -52,6 +53,7 @@ const { values: flags } = parseArgs({
     refresh: { type: "boolean", default: false },
     "id-batch": { type: "string", default: "100" },
     rps: { type: "string", default: "1.4" },
+    concurrency: { type: "string", default: "1" },
     "max-repos": { type: "string" },
     "skip-ids": { type: "boolean", default: false },
     "ids-only": { type: "boolean", default: false },
@@ -70,7 +72,8 @@ if (flags.help) {
   --skip-ids               assume database_id is already harvested
   --ids-only               only pass 1, the numeric ids (also finds deleted repos)
   --id-batch=N             aliases per GraphQL request (default 100, the node limit)
-  --rps=N                  requests per second (default 1.4, i.e. the hourly quota)
+  --rps=N                  requests per second (default 1.4; see the note on quota)
+  --concurrency=N          repositories in flight at once (default 1)
   --dry-run                print the projected cost and call nothing
 `);
   process.exit(0);
@@ -91,6 +94,24 @@ const DRY_RUN = flags["dry-run"];
  * accounts multiplies the budget, and then `--rps` is the flag that spends it.
  */
 const GAP_MS = 1000 / (Number(flags.rps) || 1.4);
+
+/*
+ * How many repositories are in flight at once, and why the default is one.
+ *
+ * `pace()` puts a floor under the gap between requests, but requests are
+ * awaited, so a single chain is capped at one round trip at a time — about
+ * 4/s against this API however high `--rps` is set. Raising `--rps` alone does
+ * nothing past that, which is exactly what it looked like: 79 repositories a
+ * minute at `--rps=8`.
+ *
+ * The default stays 1 because that is the polite shape for an unattended
+ * nightly job. A backfill run by hand is a different case: measured, this
+ * endpoint does **not** consume the core quota at all — five calls to it move
+ * `used` by zero while five ordinary repo calls move it by five — so the only
+ * ceiling is the secondary limit, which is 900 points a minute, i.e. 15/s.
+ * Eight in flight at 12/s sits under it with room.
+ */
+const CONCURRENCY = Math.max(1, Number(flags.concurrency) || 1);
 
 /** sqlite caps bound parameters per statement; a page is 30 rows of 3 */
 const INSERT_CHUNK = 400;
@@ -400,59 +421,71 @@ async function fetchHistory(repos: Repo[]) {
   let weeksStored = 0;
   let gone = 0;
 
+  /*
+   * One task per repository, N in flight. The pages of a single repository
+   * stay sequential inside its task: page 2 is only worth fetching if page 1
+   * did not turn out to be the last, and `persistPage` writes the cursor after
+   * each one, so a run killed mid-repository resumes mid-repository.
+   */
+  const queue = new PQueue({ concurrency: CONCURRENCY });
+
   for (const { repo, pages } of work) {
-    for (const page of pages) {
-      // only page 1 has an ETag worth sending; the rest are immutable and
-      // were never fetched twice in the first place
-      const etag = page === 1 ? repo.etagPage1 : null;
-      await pace();
-      requests++;
+    void queue.add(async () => {
+      for (const page of pages) {
+        // only page 1 has an ETag worth sending; the rest are immutable and
+        // were never fetched twice in the first place
+        const etag = page === 1 ? repo.etagPage1 : null;
+        await pace();
+        requests++;
 
-      let result;
-      try {
-        result = await fetchHistoryPage(repo.databaseId!, page, etag);
-      } catch (error: any) {
-        console.warn(`[skip] ${repo.id} page ${page}: ${error?.message}`);
-        break;
+        let result;
+        try {
+          result = await fetchHistoryPage(repo.databaseId!, page, etag);
+        } catch (error: any) {
+          console.warn(`[skip] ${repo.id} page ${page}: ${error?.message}`);
+          break;
+        }
+
+        if (result.kind === "gone") {
+          markGone(repo.id);
+          gone++;
+          break;
+        }
+        if (result.kind === "notModified") {
+          // page 1 is unchanged, which says nothing about the pages behind it:
+          // carry on rather than break, so a deepening run that happens to
+          // start at page 1 does not stop at the first thing that did not move
+          notModified++;
+          touch(repo.id);
+          continue;
+        }
+
+        persistPage(repo.id, page, result.weeks, result.etag);
+        weeksStored += result.weeks.length;
+
+        // the repository is younger than the depth asked for: `Link` says which
+        // page is the last, and there is nothing past it to come back for
+        if (result.lastPage !== null && page >= result.lastPage) break;
+        if (result.weeks.length < WEEKS_PER_PAGE) break;
       }
 
-      if (result.kind === "gone") {
-        markGone(repo.id);
-        gone++;
-        break;
+      done++;
+      if (done % 100 === 0 || done === work.length) {
+        const elapsed = (Date.now() - startedAt) / 1000;
+        const left = Math.max(projected - requests, 0);
+        console.log(
+          `[history] ${done}/${work.length} repos, ${requests} requests ` +
+            `(${notModified} unchanged), ${weeksStored} weeks, ${gone} gone, ` +
+            `${Math.round(elapsed)}s elapsed, ~${hours(left)} left` +
+            (Number.isFinite(quota.remaining)
+              ? ` (${quota.remaining} quota left)`
+              : ""),
+        );
       }
-      if (result.kind === "notModified") {
-        // page 1 is unchanged, which says nothing about the pages behind it:
-        // carry on rather than break, so a deepening run that happens to
-        // start at page 1 does not stop at the first thing that did not move
-        notModified++;
-        touch(repo.id);
-        continue;
-      }
-
-      persistPage(repo.id, page, result.weeks, result.etag);
-      weeksStored += result.weeks.length;
-
-      // the repository is younger than the depth asked for: `Link` says which
-      // page is the last, and there is nothing past it to come back for
-      if (result.lastPage !== null && page >= result.lastPage) break;
-      if (result.weeks.length < WEEKS_PER_PAGE) break;
-    }
-
-    done++;
-    if (done % 100 === 0 || done === work.length) {
-      const elapsed = (Date.now() - startedAt) / 1000;
-      const left = Math.max(projected - requests, 0);
-      console.log(
-        `[history] ${done}/${work.length} repos, ${requests} requests ` +
-          `(${notModified} unchanged), ${weeksStored} weeks, ${gone} gone, ` +
-          `${Math.round(elapsed)}s elapsed, ~${hours(left)} left` +
-          (Number.isFinite(quota.remaining)
-            ? ` (${quota.remaining} quota left)`
-            : ""),
-      );
-    }
+    });
   }
+
+  await queue.onIdle();
 
   return { requests, notModified, weeksStored, gone };
 }
