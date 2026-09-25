@@ -42,10 +42,8 @@ const n = new Intl.NumberFormat("en-US");
     </ul>
 
     <p class="ix-foot">
-      Ordered by size. The second figure is how many of a list's entries are
-      GitHub repositories; the rest are sites, papers, videos and books that
-      carry no popularity signal at all, and they keep the curator's order
-      because it is the only honest information anybody holds about them.
+      Ordered by size. The second figure counts GitHub repositories; the rest
+      are sites, papers and books, kept in the curator's order.
     </p>
   </section>
 </template>

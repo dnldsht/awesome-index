@@ -241,6 +241,14 @@ useHead({
               target="_blank"
               >{{ s.id }}</a
             >
+            <a
+              class="btn src-link"
+              href="https://github.com/dnldsht/awesome-index"
+              rel="noopener"
+              aria-label="source on GitHub"
+              title="source on GitHub"
+              ><span class="px" style="--px: var(--px-github)"
+            /></a>
             <ThemeToggle />
           </div>
         </div>

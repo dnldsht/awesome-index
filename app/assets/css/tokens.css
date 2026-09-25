@@ -118,7 +118,7 @@
    * work identically in a pseudo-element and in markup, so the disclosure caret
    * and the theme button use one mechanism; `background: currentColor` through
    * a mask inherits the ink the way a glyph would, which stops an icon from
-   * becoming a colour decision; and seven icons inlined are smaller than the
+   * becoming a colour decision; and eight icons inlined are smaller than the
    * dependency that would ship a thousand.
    *
    * **They are drawn on a 24-unit grid with one-unit features, so they are only
@@ -138,6 +138,7 @@
   --px-search: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M22%2022h-2v-2h2zm-2-2h-2v-2h2zm-6-2H6v-2h8zm4%200h-2v-2h2zM6%2016H4v-2h2zm10%200h-2v-2h2zM4%2014H2V6h2zm14%200h-2V6h2zM6%206H4V4h2zm10%200h-2V4h2zm-2-2H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
   --px-close: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M7%2019H5v-2h2zm12%200h-2v-2h2zM9%2015v2H7v-2zm8%202h-2v-2h2zm-6-2H9v-2h2zm4%200h-2v-2h2zm-2-2h-2v-2h2zm-2-2H9V9h2zm4%200h-2V9h2zM9%209H7V7h2zm8%200h-2V7h2zM7%207H5V5h2zm12%200h-2V5h2z%22%2F%3E%3C%2Fsvg%3E");
   --px-arrow-left: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M20%2011v2H4v-2zM8%2013v2H6v-2zm2%202v2H8v-2zm2%202v2h-2v-2zm-4-6V9H6v2z%22%2F%3E%3Cpath%20d%3D%22M10%2015V7H8v8zm2%202V5h-2v12z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --px-github: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M5%202h4v2H7v2H5V2Zm0%2010H3V6h2v6Zm2%202H5v-2h2v2Zm2%202v-2H7v2H3v-2H1v2h2v2h4v4h2v-4h2v-2H9Zm0%200v2H7v-2h2Zm6-12v2H9V4h6Zm4%202h-2V4h-2V2h4v4Zm0%206V6h2v6h-2Zm-2%202v-2h2v2h-2Zm-2%202v-2h2v2h-2Zm0%202h-2v-2h2v2Zm0%200h2v4h-2v-4Z%22%2F%3E%3C%2Fsvg%3E");
 
   /* ---- light: newsprint, tinted toward the accent --------------------- */
 

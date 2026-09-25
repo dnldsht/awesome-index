@@ -141,7 +141,8 @@ a {
    than a baseline nudged by hand a pixel at a time */
 .ctl-l,
 .ctl-x,
-.theme-b {
+.theme-b,
+.src-link {
   display: inline-flex;
   align-items: center;
 }

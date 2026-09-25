@@ -35,6 +35,14 @@ const when = computed(() =>
   <header class="np">
     <div class="np-line">
       <h1 class="np-title">awesome index</h1>
+      <a
+        class="btn src-link"
+        href="https://github.com/dnldsht/awesome-index"
+        rel="noopener"
+        aria-label="source on GitHub"
+        title="source on GitHub"
+        ><span class="px" style="--px: var(--px-github)"
+      /></a>
       <ThemeToggle />
     </div>
     <p class="np-deck">

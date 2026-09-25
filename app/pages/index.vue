@@ -65,23 +65,33 @@ const d30 = climbing("30d");
 const d365 = climbing("1y");
 
 /*
+ * Ten rows a rubric until asked for all twenty. One switch for the whole band
+ * rather than one per rubric, so the three columns stay the same height and
+ * their rows keep lining up across the page.
+ */
+const FOLD = 10;
+const more = ref(false);
+const fold = (rows: FrontRef[]) => (more.value ? rows : rows.slice(0, FOLD));
+const folds = computed(() =>
+  [d7, d30, d365].some((rows) => rows.value.length > FOLD),
+);
+
+/*
  * A rubric short of its twenty rows is not broken either — it means the window
  * asked for more history than the backfill holds behind most of the index — so
  * it says so rather than trailing off. Silent on a full block.
  */
 const short = (rows: FrontRef[], why: string) =>
   rows.length > 0 && rows.length < TOP
-    ? `Only ${rows.length} ${rows.length === 1 ? "project clears" : "projects clear"} this window today. ${why}`
+    ? `Only ${rows.length} today. ${why}`
     : "";
 
 const BACKFILL =
-  "The star-history backfill is still working through the index; this fills " +
-  "in on its own as it reaches more of it.";
+  "The star history is still backfilling; this fills in on its own.";
 
 const DEPTH =
-  "A year-long comparison needs seventy-eight weeks of history — a year to " +
-  "measure, and half a year to measure it against — and most of the index " +
-  "holds sixty. Nothing is claimed about a year until the backfill goes deeper.";
+  "A year needs seventy-eight weeks of history and most of the index holds " +
+  "sixty, so this waits for the backfill.";
 </script>
 
 <template>
@@ -106,12 +116,9 @@ const DEPTH =
         <section class="band">
           <h2 class="band-head kicker">Climbing</h2>
           <p class="standfirst">
-            Ordered by how far each project's recent weeks sit above its own
-            normal week — not by size, so the figure beside the first row is
-            often smaller than the one below it. A project that usually gains
-            three stars a week and gained forty has moved; one that gains four
-            hundred every week and gained four hundred has not. The figure is
-            the stars it actually gained.
+            Ordered by how far a project's recent weeks sit above its normal
+            week, not by size — so the first figure is often smaller than the
+            next. The figure is the stars actually gained.
           </p>
 
           <!--
@@ -126,26 +133,35 @@ const DEPTH =
             <FrontRubric
               title="Seven days"
               window="1 week"
-              :rows="d7"
+              :rows="fold(d7)"
               :short="short(d7, BACKFILL)"
-              :empty="`Nothing has both the history this window needs and a week worth reporting. ${BACKFILL}`"
+              :empty="`Nothing to report yet. ${BACKFILL}`"
             />
             <FrontRubric
               lead
               title="Thirty days"
               window="4 weeks"
-              :rows="d30"
+              :rows="fold(d30)"
               :short="short(d30, BACKFILL)"
-              :empty="`Nothing has both the history this window needs and a month worth reporting. ${BACKFILL}`"
+              :empty="`Nothing to report yet. ${BACKFILL}`"
             />
             <FrontRubric
               title="One year"
               window="52 weeks"
-              :rows="d365"
+              :rows="fold(d365)"
               :short="short(d365, DEPTH)"
               :empty="DEPTH"
             />
           </div>
+          <button
+            v-if="folds"
+            class="btn more"
+            type="button"
+            :aria-expanded="more"
+            @click="more = !more"
+          >
+            {{ more ? "show ten" : "show all twenty" }}
+          </button>
         </section>
 
         <section class="band">
@@ -155,21 +171,16 @@ const DEPTH =
               title="Just entered"
               figure="stars"
               :rows="front?.entered ?? []"
-              empty="Nothing yet: the index does not record when an entry first
-                appeared in a list, so there is no honest way to say which of
-                them are new. The date is being added. Until it exists this
-                says nothing rather than guessing, because a front page that
-                invents a difference lies every day until somebody notices."
+              empty="Nothing yet: the index does not record when an entry
+                joined a list. The date is being added; until then this stays
+                empty rather than guessing."
             />
             <FrontRubric
               title="Just archived"
               figure="stars"
               :rows="front?.archived ?? []"
-              empty="Nothing yet, and for the same reason: the index knows that
-                a project's author has declared it finished, but not when they
-                did, so it cannot tell this week's from last year's. An author
-                archiving their own work is the one abandonment nobody has to
-                guess at, and it is worth reporting properly or not at all."
+              empty="Nothing yet: the index knows a project is archived, but
+                not when. Same fix, same wait."
             />
           </div>
         </section>
@@ -180,14 +191,11 @@ const DEPTH =
 
         <footer class="colophon">
           <p>
-            Stars, languages and activity come from GitHub and are refreshed
-            daily. The weekly star history behind the three climbing rubrics
-            reaches back fourteen months and never leaves the build — the page
-            carries the counts, not the curve. The score that produces the order
-            is deliberately not shown: an ordering is a decision, and a printed
-            number is a claim.
+            Stars, languages and activity come from GitHub, refreshed daily. The
+            climbing order comes from fourteen months of weekly star history;
+            the score behind it is deliberately not shown.
           </p>
-          <p class="made">
+          <p class="made kicker">
             Made with <span class="heart" aria-hidden="true">♥</span
             ><span class="sr">love</span> by
             <a href="https://donld.me" rel="me">Donald</a> and Opus
@@ -199,8 +207,12 @@ const DEPTH =
 </template>
 
 <style scoped>
-.made {
-  margin-top: 0.9rem;
+/* the credit at the far end of the rule, set as the list pages set it */
+.colophon .made {
+  font-size: var(--t-micro);
+  margin-left: auto;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .band {
@@ -215,6 +227,10 @@ const DEPTH =
 .band-head {
   margin: 0 0 0.55rem;
   color: var(--ink);
+}
+
+.more {
+  margin-top: 0.8rem;
 }
 
 .standfirst {
@@ -244,6 +260,10 @@ const DEPTH =
 
 /* the rule runs the full measure; the prose sits on a readable one inside it */
 .colophon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.9rem 1.5rem;
   margin: 2.4rem 0 3.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--rule-2);
