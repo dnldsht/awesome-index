@@ -15,6 +15,34 @@
       "when": 1786974923186,
       "tag": "0001_great_tenebrous",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787076075724,
+      "tag": "0002_targets",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787095578060,
+      "tag": "0003_purple_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787096184036,
+      "tag": "0004_petite_ironclad",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789238676613,
+      "tag": "0005_remarkable_white_tiger",
+      "breakpoints": true
     }
   ]
 }

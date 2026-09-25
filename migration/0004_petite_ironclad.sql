@@ -1,0 +1,1 @@
+ALTER TABLE `target` ADD `popularity_cohort` text;

@@ -1,9 +1,42 @@
-import { z } from "astro/zod";
+import { z } from "zod";
 import * as fs from "node:fs/promises";
 import YAML from "yaml";
 import { slugify } from "./slug.ts";
 
 export const GITHUB_PREFIX = "https://github.com/";
+
+/**
+ * The two orders a listing can be in.
+ *
+ * `popularity` ranks by stars, and by the star equivalent of whatever else a row
+ * could be measured by (see src/lib/popularity.ts). `editorial` keeps the order
+ * the README writes, which is a real answer and not a fallback: a list whose
+ * entries are products with their own websites, or tutorials and books, has
+ * nothing to be ranked by, and ordering it by the quarter of its rows that
+ * happen to live on GitHub would put the other three quarters at the bottom and
+ * call that a ranking.
+ *
+ * Chosen per list rather than globally, because the lists genuinely differ:
+ * awesome-perl is 296 CPAN distributions and ranks cleanly, awesome-mac is 588
+ * commercial applications and never will.
+ */
+export const LIST_ORDERS = ["popularity", "editorial"] as const;
+
+export type ListOrder = (typeof LIST_ORDERS)[number];
+
+/**
+ * How a list's order is described to a reader, mid-sentence.
+ *
+ * Defined once because five places state it (the page title, the meta
+ * description, the heading above the rows, and the same three on category
+ * pages), and a page whose heading and description disagree about what it is
+ * sorted by is worse than either wording alone.
+ */
+export function orderedBy(sort: ListOrder): string {
+  return sort === "editorial"
+    ? "in the order their curators wrote them"
+    : "most starred first";
+}
 
 const ConfigSchema = z.object({
   repos: z.array(
@@ -16,6 +49,11 @@ const ConfigSchema = z.object({
       icon: z.string().optional(),
       /** other entries to surface first in the "more lists" rail */
       related: z.array(z.string()).default([]),
+      /**
+       * How this list's pages are ordered. Absent means `popularity`, which is
+       * what most lists want; the entries that say `editorial` say why.
+       */
+      sort: z.enum(LIST_ORDERS).default("popularity"),
     }),
   ),
 });

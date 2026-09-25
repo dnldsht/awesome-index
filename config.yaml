@@ -54,6 +54,8 @@ repos:
   - name: TailwindCSS
     url: https://github.com/aniftyco/awesome-tailwindcss
     icon: 🌬️
+    # 47% of its entries can be ranked; the rest are commercial component kits
+    sort: editorial
   - name: Elixir
     url: https://github.com/h4cc/awesome-elixir
     icon: ⚗️
@@ -117,9 +119,13 @@ repos:
   - name: NextJS
     url: https://github.com/unicodeveloper/awesome-nextjs
     icon: ▲
+    # 47% of its entries can be ranked; the rest are templates and blog posts
+    sort: editorial
   - name: TypeScript
     url: https://github.com/semlinker/awesome-typescript
     icon: 🔷
+    # 24% of its entries can be ranked; the rest are guides, playgrounds and articles rather than packages
+    sort: editorial
   - name: Deno
     url: https://github.com/denolib/awesome-deno
     icon: 🦕
@@ -137,9 +143,13 @@ repos:
   - name: Elm
     url: https://github.com/sporto/awesome-elm
     icon: 🌳
+    # 43% of its entries can be ranked; the rest are guides and packages off GitHub
+    sort: editorial
   - name: C
     url: https://github.com/oz123/awesome-c
     icon: 🔩
+    # 45% of its entries can be ranked; the rest are 224 library sites, 40 documentation pages, 16 on forges that publish no counter
+    sort: editorial
   - name: Lua
     url: https://github.com/LewisJEllis/awesome-lua
     icon: 🌙
@@ -163,12 +173,18 @@ repos:
   - name: GameDev
     url: https://github.com/ellisonleao/magictools
     icon: 🕹️
+    # 28% of its entries can be ranked; the rest are 248 tools and asset shops on their own domains
+    sort: editorial
   - name: Blender
     url: https://github.com/agmmnn/awesome-blender
     icon: 🧊
+    # 30% of its entries can be ranked; the rest are 284 addon sites, 111 video links, 65 paid products
+    sort: editorial
   - name: DevOps
     url: https://github.com/wmariuss/awesome-devops
     icon: ♾️
+    # 42% of its entries can be ranked; the rest are hosted services, which are sold rather than starred
+    sort: editorial
   - name: Kubernetes
     url: https://github.com/tomhuang12/awesome-k8s-resources
     icon: ☸️
@@ -181,6 +197,8 @@ repos:
   - name: Ansible
     url: https://github.com/ansible-community/awesome-ansible
     icon: 📕
+    # 44% of its entries can be ranked; the rest are roles and documentation pages
+    sort: editorial
   - name: Nix
     url: https://github.com/nix-community/awesome-nix
     icon: ❄️
@@ -199,6 +217,8 @@ repos:
   - name: RaspberryPi
     url: https://github.com/thibmaek/awesome-raspberry-pi
     icon: 🍓
+    # 33% of its entries can be ranked; the rest are magazines, shops and hardware projects
+    sort: editorial
   - name: Arduino
     url: https://github.com/Lembed/Awesome-arduino
     icon: 🔌
@@ -214,9 +234,13 @@ repos:
   - name: WebAssembly
     url: https://github.com/mbasso/awesome-wasm
     icon: 🕸️
+    # 37% of its entries can be ranked; the rest are specifications, write-ups and demos
+    sort: editorial
   - name: CSS
     url: https://github.com/awesome-css-group/awesome-css
     icon: 🎨
+    # 29% of its entries can be ranked; the rest are articles and demos, which have readers rather than stars
+    sort: editorial
   - name: GraphQL
     url: https://github.com/chentsulin/awesome-graphql
     icon: 🔺
@@ -226,12 +250,16 @@ repos:
   - name: DataScience
     url: https://github.com/academic/awesome-datascience
     icon: 📊
+    # 26% of its entries can be ranked; the rest are 374 product sites, 132 social and video links, 79 books
+    sort: editorial
   - name: DataEngineering
     url: https://github.com/igorbarinov/awesome-data-engineering
     icon: 🛢️
   - name: LLM
     url: https://github.com/Hannibal046/Awesome-LLM
     icon: 🧠
+    # 49% of its entries can be ranked; the rest are papers and hosted models
+    sort: editorial
   - name: Bioinformatics
     url: https://github.com/danielecook/Awesome-Bioinformatics
     icon: 🧬

@@ -1,0 +1,982 @@
+/*
+ * Everything shared: the reset, the page frame, the rules, and the row.
+ *
+ * The row lives here rather than scoped inside `ListRow.vue` on purpose. There
+ * are 2,829 of them on `avelino/awesome-go`; a scoped style would stamp a
+ * `data-v-*` attribute on every element of every one of them for no benefit,
+ * and the row's geometry has to agree with the column-label strip above it,
+ * which is a different component. One grid definition, two users.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* the list is long, and a heading scrolled to lands under the sticky
+     masthead unless something reserves the space it occupies */
+  scroll-padding-top: var(--mast-h);
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: var(--w-body);
+  font-size: var(--t-note);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- the frame --------------------------------------------------------- */
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---- masthead ---------------------------------------------------------- */
+
+/*
+ * The running head: identity on one line, column labels on the next, stuck to
+ * the top. A reader 2,000 rows down still knows which list they are in and
+ * which column the figures belong to: the newspaper's answer to being deep
+ * inside a long document, and the reason this page needs no breadcrumb.
+ */
+.mast {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--ground);
+  /* no border: `.mast-rule` directly below is the accent rule that terminates
+     the masthead, and the two together read as one very heavy line */
+}
+
+.mast-in {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  min-height: 2.6rem;
+  padding-block: 0.45rem;
+}
+
+.mast-title {
+  font-family: var(--font-serif);
+  font-weight: var(--w-mast);
+  font-size: var(--t-head);
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+/* the emoji from config.yaml is part of the masthead, not decoration */
+.mast-icon {
+  font-size: 1.05em;
+  margin-right: 0.3rem;
+}
+
+.mast-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mast-rule {
+  height: 1px;
+  background: var(--accent);
+}
+
+/* ---- pixel icons -------------------------------------------------------- */
+
+/*
+ * One rule for every icon on the page. `currentColor` through a mask, so an
+ * icon takes the ink of whatever it sits in and never becomes a second colour
+ * decision; 12px because the source grid is 24 and only 1:1 and 1:2 stay crisp.
+ */
+.px {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  mask: var(--px) center / 12px 12px no-repeat;
+  -webkit-mask: var(--px) center / 12px 12px no-repeat;
+  flex: none;
+}
+
+/* whatever holds an icon is a flex row that centres it on the text, rather
+   than a baseline nudged by hand a pixel at a time */
+.ctl-l,
+.ctl-x,
+.theme-b,
+.src-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---- the column-label strip -------------------------------------------- */
+
+/*
+ * A newspaper's table has a head. It also earns its place: it is the only
+ * thing that says the fourth column is stars and the fifth is a change, and
+ * with every delta currently unmeasured it is what keeps the gap legible.
+ */
+.cols {
+  border-top: 1px solid var(--rule);
+  padding-block: 0.3rem 0.25rem;
+}
+
+/* ---- the control strip ------------------------------------------------- */
+
+/*
+ * Order, window, search, count: in the masthead, above the column labels,
+ * inside the same rule the identity sits in. It is a line of words rather than
+ * a toolbar: no select, no pill, no chevron. Four orders is few enough to state
+ * all four, and stating them is also how the reader learns that "curator" is a
+ * choice somebody made rather than the absence of one.
+ */
+.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 2.25rem;
+  padding-block: 0.7rem 0.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+/*
+ * A group is a label and its words. It was legible but airless: at 0.55rem the
+ * options crowded their own label, so "order curator stars trending activity"
+ * read as one string of five words rather than as a label and four choices.
+ */
+.ctl-g {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+
+.ctl-l {
+  color: var(--nil);
+  padding-right: 0.15rem;
+}
+
+/*
+ * An option is a word. The current one is set in the ink colour with a rule
+ * under it in the accent. It is the same two-pixel accent rule the masthead uses, at
+ * the scale of a word, so "selected" is said the same way twice on one page.
+ */
+.ctl .opt {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  line-height: 1.2;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 3px;
+  cursor: pointer;
+}
+
+.ctl .opt:hover {
+  color: var(--ink);
+}
+
+.ctl .opt.on {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.ctl-q {
+  margin-left: auto;
+  align-items: center;
+  position: relative;
+}
+
+/* the magnifier and the clear cross sit inside the field, one at each end,
+   so the field reads as one control rather than three things in a row */
+.ctl-q .ctl-l,
+.ctl-q .ctl-x {
+  position: absolute;
+  padding: 0;
+  border: 0;
+}
+
+.ctl-q .ctl-l {
+  left: 8px;
+  pointer-events: none;
+}
+
+.ctl-q .ctl-x {
+  right: 7px;
+}
+
+.ctl-q:focus-within .ctl-l {
+  color: var(--accent);
+}
+/*
+ * A rule under a word is right for an option, which is one word wide and only
+ * ever read. It was wrong here: an empty 15rem underline with grey placeholder
+ * text in it does not look like somewhere to type, it looks like a field that
+ * failed to render. This is the only search on the site, so it gets a shape
+ * (the sunk ground the open row uses, a hairline, and enough padding to read as
+ * an input) while still owning no box of its own in the broadsheet sense.
+ */
+.ctl .q {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink);
+  background: var(--sunk);
+  border: 1px solid var(--rule-2);
+  border-radius: 2px;
+  padding: 4px 26px;
+  width: 17rem;
+  max-width: 100%;
+}
+
+.ctl .q::placeholder {
+  color: var(--nil);
+}
+
+/* the browser's own cancel cross would sit beside ours */
+.ctl .q::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.ctl .q:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ctl-n {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* "1,204 unranked" is the order admitting what it cannot place */
+.ctl-u {
+  color: var(--nil);
+}
+
+/* ---- the page: rail beside document ------------------------------------ */
+
+.list-page {
+  display: grid;
+  grid-template-columns: var(--toc) minmax(0, 1fr);
+  column-gap: var(--toc-gap);
+  align-items: start;
+}
+
+/*
+ * The column labels live in the masthead and the rows live in the document
+ * column, so the strip has to be pushed over by exactly the rail. Two
+ * components, one grid, one number, which is why the rail width is a token.
+ */
+.cols-in {
+  margin-left: calc(var(--toc) + var(--toc-gap));
+}
+
+.list-doc {
+  min-width: 0;
+}
+
+/*
+ * The table of contents, beside the document and scrolling on its own.
+ *
+ * 4,350 categories across the corpus at a median of 6 entries: a contents
+ * column, not a taxonomy. It sticks under the masthead and takes the rest of
+ * the viewport, so a 134-entry rail scrolls inside itself rather than dragging
+ * the document down with it.
+ */
+.toc {
+  position: sticky;
+  top: var(--mast-h);
+  max-height: calc(100vh - var(--mast-h) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  scrollbar-width: thin;
+}
+
+.toc-h {
+  display: flex;
+  gap: 0.5rem;
+  cursor: default;
+  list-style: none;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.toc-h::-webkit-details-marker {
+  display: none;
+}
+
+.toc-n {
+  margin-left: auto;
+  color: var(--nil);
+}
+
+/* the rail cannot say where the reader is once the rows are ranked, so it
+   stops pretending to and says what it does instead */
+.toc-note {
+  margin: 0.5rem 0 0;
+  font-size: var(--t-micro);
+  line-height: 1.45;
+  color: var(--nil);
+}
+
+.toc-l {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
+.toc-a {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  font-size: var(--t-meta);
+  line-height: 1.3;
+  color: var(--ink-3);
+  padding: 2px 0 2px calc(var(--d, 0) * 0.65rem);
+  border-left: 2px solid transparent;
+}
+
+.toc-a:hover {
+  color: var(--ink);
+}
+
+/*
+ * Where the reader is, marked the same way a chosen option is.
+ *
+ * The indent must not change: the border is already the mark, and adding to
+ * the padding as well made the current entry step to the right of the column
+ * it belongs to, which read as a rendering fault rather than as emphasis.
+ */
+.toc-a.on {
+  color: var(--ink);
+  font-weight: 500;
+  border-left-color: var(--accent);
+}
+
+.toc-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-c {
+  margin-left: auto;
+  color: var(--nil);
+  font-size: var(--t-micro);
+}
+
+.toc.cold .toc-a,
+.toc.cold .toc-h {
+  color: var(--nil);
+}
+
+/* ---- sections ---------------------------------------------------------- */
+
+/*
+ * The reason the rows are not virtualised.
+ *
+ * `content-visibility: auto` lets the browser skip style, layout and paint for
+ * a section that is off-screen while every row of it stays in the DOM, so
+ * Ctrl+F still finds a project 2,400 rows down, which on an index of projects
+ * is the feature people actually use. `contain-intrinsic-size: auto <h>` is
+ * what stops the scrollbar from lurching: `--sh` is set inline per section to
+ * the exact height its rows will occupy (header + n × row), and `auto` tells
+ * the browser to remember the real measurement once it has one, which is how
+ * an expanded row inside a skipped section stops being a lie.
+ */
+.section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--sh, 400px);
+  /* a heading scrolled to stops below the masthead, not under it */
+  scroll-margin-top: var(--mast-h);
+}
+
+/*
+ * The heading named by `?cat=`. A shared link has to *arrive* somewhere, and a
+ * page that merely happens to be scrolled to the right offset does not look
+ * like it landed anywhere. One accent rule, on the heading only.
+ */
+.section.marked > .section-head {
+  border-top-color: var(--accent);
+}
+
+/*
+ * A section break has to be louder than a row rule, or the document reads as
+ * one undifferentiated run and the contents rail is pointing at nothing the eye
+ * can find. It was a hairline the same weight as the 32px rows it separated,
+ * set 0.55rem clear of them; now it takes real space above, a heavier rule, and
+ * a tinted band, so a heading is a place rather than a line of small caps.
+ */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  height: 2.5rem;
+  margin-top: 1.6rem;
+  padding: 0.85rem 0.5rem 0;
+  background: var(--sunk);
+  border-top: 1px solid var(--rule-2);
+}
+
+/* the run has no headings, so nothing needs separating */
+.list-run .section-head {
+  margin-top: 0;
+}
+
+.section-head h2 {
+  font: inherit;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* a nested heading path reads "PARENT / CHILD", the parent dimmed */
+.section-head .up {
+  color: var(--ink-3);
+}
+
+.section-head .n {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+/* ---- the row ----------------------------------------------------------- */
+
+.rows {
+  border-top: 1px solid var(--rule);
+}
+
+/*
+ * A ranked run is cut into blocks of fifty purely so `content-visibility` still
+ * has something section-sized to skip (see `ListRun`). The blocks must not be
+ * visible: only the first rule of the run is drawn, and the rest are the row
+ * hairlines they would otherwise double.
+ */
+.list-run .section + .section > .rows {
+  border-top: 0;
+}
+
+.row,
+.cols-in {
+  display: grid;
+  /*
+   * Name, note, stars, change, activity.
+   *
+   * Licence and language were columns and are not any more. Both were
+   * five-eighths of a word, neither is ever the reason somebody scans a list,
+   * and between them they took 11.25rem off the only column that carries the
+   * curator's voice. So the note was clipped mid-sentence on almost every row
+   * while two columns of "MIT" and "TypeScript" sat beside it at full width.
+   * Both are still on the row, one click down, spelled out in full.
+   *
+   * A web row has no language, and the host it had instead is the only durable
+   * fact it carries, so the host moved into the name's own dimmed slot where a
+   * repository writes its owner. Same column, same role: who this belongs to.
+   */
+  grid-template-columns:
+    var(--col-name) minmax(0, 1fr)
+    var(--col-num) var(--col-num) var(--col-act);
+  column-gap: 1.1rem;
+  align-items: baseline;
+  /* a gutter for the disclosure caret. `.row` must keep `overflow: hidden`
+     (it is what guarantees the 32px band), so the caret cannot hang outside */
+  padding-left: 1rem;
+}
+
+.cols-in {
+  line-height: 1.25;
+}
+
+.row {
+  height: var(--row-h);
+  /*
+   * Fixed height, baseline alignment, and the top padding tuned so the 14px
+   * serif name and the 11.5px mono figures sit on one optical line inside a
+   * 32px band. `overflow: hidden` is the guarantee: a note that wraps, an
+   * emoji in a title, a language nobody expected: none of them can push a row
+   * taller than the band, which is what keeps `contain-intrinsic-size` honest
+   * and the scrollbar still.
+   */
+  line-height: 1.25;
+  padding-block: 5px 0;
+  border-bottom: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.row:hover {
+  background: var(--sunk);
+}
+
+.row.is-open {
+  background: var(--sunk);
+  border-bottom-color: transparent;
+}
+
+/* the name: owner dimmed, repository emphasised, on one baseline */
+.nm {
+  font-size: var(--t-name);
+  font-weight: var(--w-name);
+  letter-spacing: -0.006em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nm .ow {
+  font-weight: var(--w-body);
+  color: var(--ink-3);
+}
+
+/*
+ * A repository's owner already carries its own "/" separator. A host does not,
+ * and a trailing space inside the span collapses, so `veloren.net` ran straight
+ * into `Veloren`. Margin rather than a punctuation mark: the host is not a
+ * namespace the title hangs off, it is where the thing lives.
+ */
+.nm .ow.host {
+  margin-right: 0.45em;
+}
+
+/*
+ * The row does two things and used to advertise neither: the name opens the
+ * project in a new tab, the rest of the band opens the panel underneath. A
+ * reader clicked a row expecting one and got the other.
+ *
+ * So each says which it is on hover. The name gains the accent underline it
+ * already had plus an arrow that only appears when it is the thing under the
+ * cursor; the band gains a caret in its left margin that turns when the panel
+ * is open. Two affordances, no extra column, nothing shown at rest.
+ */
+.nm:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 2px;
+}
+
+.nm::after {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 0.3em;
+  /* sunk one pixel so the glyph's optical centre sits on the x-height of the
+     14px serif beside it rather than on its baseline */
+  vertical-align: -2px;
+  background: var(--accent);
+  mask: var(--px-external-link) center / 12px 12px no-repeat;
+  -webkit-mask: var(--px-external-link) center / 12px 12px no-repeat;
+  opacity: 0;
+}
+
+.nm:hover::after {
+  opacity: 1;
+}
+
+.row {
+  position: relative;
+  cursor: pointer;
+}
+
+.row::before {
+  content: "";
+  position: absolute;
+  left: 0.05rem;
+  top: 9px;
+  width: 14px;
+  height: 14px;
+  background: var(--ink-3);
+  /* the filled chevron, not the stepped one: at 12px the stepped variant is
+     four separate two-pixel blocks and reads as dust rather than as a control */
+  mask: var(--px-chevron-right-2) center / 14px 14px no-repeat;
+  -webkit-mask: var(--px-chevron-right-2) center / 14px 14px no-repeat;
+  opacity: 0;
+  transition: transform 0.12s ease;
+}
+
+.row:hover::before {
+  opacity: 1;
+}
+
+.row.is-open::before {
+  opacity: 1;
+  transform: rotate(90deg);
+}
+
+/* the curator's prose. 73 bytes on average, so this truncates rarely */
+.nt {
+  font-size: var(--t-note);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tg,
+.lc,
+.ac {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st,
+.dl {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-feature-settings: "tnum" 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.st {
+  color: var(--ink);
+}
+
+.dl.up {
+  color: var(--pos);
+}
+
+.dl.down {
+  color: var(--neg);
+}
+
+/*
+ * Two different silences, and they must not look the same.
+ *
+ * `.nil` is "we have not measured this yet": a repository whose star history
+ * the fetcher has not reached. It holds a dim figure dash, because something
+ * belongs there and is coming.
+ *
+ * A `web` row gets nothing at all in the numeric columns: a website cannot be
+ * starred, has no pulse, and will never have either. Rendering a dash there
+ * would promise a number that is not owed. 260 of golang's 2,829 rows are in
+ * this state permanently; see DESIGN.md on the 88% of non-GitHub targets that
+ * carry no popularity signal at all.
+ */
+.nil {
+  color: var(--nil);
+}
+
+.archived {
+  color: var(--neg);
+}
+
+/* a web row: the host is the only fact we hold, so it takes the tag column */
+.tg.host {
+  font-style: normal;
+  color: var(--ink-3);
+  opacity: 0.85;
+}
+
+/* ---- the expanded row -------------------------------------------------- */
+
+/* the panel hangs off the row, so it keeps the row's caret gutter. Without it
+   every line of the panel sat 1rem to the left of the row it belongs to */
+.open {
+  background: var(--sunk);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.1rem 0 0.75rem 1rem;
+}
+
+.open-note {
+  font-size: var(--t-note);
+  color: var(--ink);
+  max-width: 62ch;
+  margin: 0 0 0.5rem;
+}
+
+.open-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+}
+
+.open-grid b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.open-url {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--accent);
+  word-break: break-all;
+}
+
+/* ---- the star curve ---------------------------------------------------- */
+
+/*
+ * star-history.com's SVG, fetched when a row opens and never before: 64 KB per
+ * request against somebody else's service, and 2,829 of them on one page load
+ * would be indefensible. It is also the reason DESIGN.md rules out an inline
+ * sparkline: the row carries four integers and nothing else from the history.
+ *
+ * `aspect-ratio` matches the 800 × 533 the service returns, so the expanded row
+ * reserves the space before the image arrives and does not jump 500 pixels
+ * under the reader's cursor a second after they click.
+ */
+.chart {
+  margin: 0.9rem 0 0;
+  max-width: 40rem;
+}
+
+.chart-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 800 / 533;
+  border: 1px solid var(--rule);
+}
+
+.chart-cap {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  color: var(--nil);
+  padding-top: 0.3rem;
+}
+
+.chart-cap a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- empty rubrics ----------------------------------------------------- */
+
+/*
+ * Three of the front page's rubrics are empty until the star-history fetcher
+ * lands, and "empty" has to read as a stated fact rather than as a page that
+ * failed to load. A rule, a sentence, and the same silence the rows use.
+ */
+.empty {
+  border-top: 1px solid var(--rule);
+  padding: 1.1rem 0 1.3rem;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+}
+
+/* ---- buttons ----------------------------------------------------------- */
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+.btn:hover {
+  color: var(--accent);
+}
+
+/*
+ * The credit. The heart is the one ornament on the site, so it is also the one
+ * place the accent is spent on something that is not structure, which is
+ * allowed exactly once and here, at the very bottom, after everything.
+ *
+ * `aria-hidden` on the glyph and a visually-hidden "love" beside it: a screen
+ * reader announcing "black heart suit" mid-sentence is worse than the word.
+ */
+.heart {
+  color: var(--accent);
+}
+
+.made a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-2);
+  text-underline-offset: 2px;
+}
+
+.made a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- narrow ------------------------------------------------------------ */
+
+/*
+ * A phone gets the two facts that survive the loss of the grid: the name and
+ * the stars. The note moves to a second line rather than disappearing (it is
+ * the curator's judgement and it is most of why the page is worth reading), so
+ * the row becomes 46px, which is still ~14 projects on a phone screen against
+ * the six a card layout would give.
+ */
+@media (max-width: 72rem) {
+  /*
+   * The rail stops being a column and becomes a disclosure above the document.
+   * A contents column needs a margin to live in, and the margin has to come
+   * from somewhere: the rail is 13rem, and taking it out of a 1,000px viewport
+   * leaves the curator’s note, the reason the page is worth reading, with
+   * about a hundred pixels. So the rail folds away above the document below
+   * 72rem rather than at the width where it merely still fits. The column
+   * labels lose their offset in the same breath; they are aligned to a rail
+   * that is no longer there.
+   */
+  .list-page {
+    display: block;
+  }
+
+  .cols-in {
+    margin-left: 0;
+  }
+
+  .toc {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-block: 0.75rem 0.5rem;
+  }
+
+  .toc-d:not([open]) .toc-h {
+    border-bottom-color: var(--rule);
+  }
+
+  .toc-h {
+    cursor: pointer;
+  }
+
+  .toc-l {
+    columns: 2;
+    column-gap: 1.5rem;
+    max-height: 14rem;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 44rem) {
+  :root {
+    --row-h: 46px;
+    /* no column labels down here, so the masthead is shorter */
+    --mast-h: 6.5rem;
+  }
+
+  .cols {
+    display: none;
+  }
+
+  .toc-l {
+    columns: 1;
+  }
+
+  .ctl-q {
+    margin-left: 0;
+  }
+
+  .ctl .q {
+    width: 11rem;
+  }
+
+  /* the source README's id is the first thing to go: it is provenance, and
+     provenance belongs at the foot of the page on a screen this narrow */
+  .mast .src {
+    display: none;
+  }
+
+  .mast-title {
+    white-space: nowrap;
+  }
+
+  .mast-in {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) 4.25rem;
+    grid-template-rows: auto auto;
+    column-gap: 0.6rem;
+    row-gap: 1px;
+    padding-block: 6px;
+    align-items: baseline;
+  }
+
+  .nm {
+    grid-area: 1 / 1;
+  }
+  .st {
+    grid-area: 1 / 2;
+  }
+  .nt {
+    grid-area: 2 / 1 / 2 / 3;
+    font-size: 12px;
+  }
+  .tg,
+  .lc,
+  .dl,
+  .ac {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}

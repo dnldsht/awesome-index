@@ -1,0 +1,269 @@
+/*
+ * The design system, entire.
+ *
+ * Broadsheet with a terminal graft (DESIGN.md, "Visual direction"): the data is
+ * long lists and numbers, and the airy one-column newsletter default handles
+ * long lists worst: a roomy card per entry shows eight projects on a list of
+ * three thousand. So: no cards, no shadows, no boxes. Rules. Density, and a
+ * hierarchy strong enough to survive it.
+ *
+ * Two families and no third. The real contrast on this page is prose against
+ * figure, so prose is a serif and every figure is a monospace; a third family
+ * would read as disorder rather than as editing.
+ *
+ * Dark is designed, not inverted. The two blocks at the bottom are not each
+ * other's negatives: the ground is charcoal rather than black, the ink is a
+ * warm off-white rather than #fff, and the serif is set ~20 units heavier
+ * because a serif on a dark ground thins out: the light halation around
+ * light-on-dark strokes eats the thin ones, which is exactly where a
+ * transitional serif keeps its contrast.
+ */
+
+:root {
+  /* ---- families ------------------------------------------------------- */
+
+  /*
+   * Source Serif 4 for the mastheads and the project names. It was drawn for
+   * screen text at small sizes, which is the whole job here: a project name is
+   * 14px in a 32px row, and the more fashionable editorial serifs (Playfair,
+   * Fraunces at low softness, anything with real display contrast) lose their
+   * hairlines at that size and turn the list into grey. It is also variable on
+   * weight, which is how dark mode gets its heavier serif from the same file
+   * rather than from a second download.
+   */
+  --font-serif:
+    "Source Serif 4 Variable", "Source Serif 4", Charter, "Iowan Old Style",
+    Georgia, "Times New Roman", serif;
+
+  /*
+   * IBM Plex Mono for every number and every label. Monospaced, so the figures
+   * are tabular by construction and the star column lines up without
+   * `font-variant-numeric` having to be trusted. Plex over JetBrains Mono
+   * because JetBrains reads as a code editor's chrome; Plex has a grotesque
+   * spine that sits beside a transitional serif without arguing with it, and
+   * its 1/l/0/O are unambiguous, which matters when the figures are the claim.
+   */
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+
+  /* ---- type scale ----------------------------------------------------- */
+
+  /*
+   * Small, and deliberately so. Six steps, and the two the reader spends all
+   * their time in (--t-name, --t-note) are two thirds of a pixel apart in cap
+   * height rather than a whole step, because in a row the serif name and the
+   * serif note have to read as one line of text with one of them emphasised,
+   * not as a heading with a subtitle.
+   */
+  --t-micro: 10px; /* column labels, kickers */
+  --t-meta: 11.5px; /* mono metadata inside a row */
+  --t-note: 13px; /* the curator's prose */
+  --t-name: 14px; /* project name */
+  --t-section: 11.5px; /* section kicker */
+  --t-lede: 15px;
+  --t-head: 19px;
+  --t-mast: clamp(28px, 5.5vw, 42px);
+
+  /* ---- rhythm --------------------------------------------------------- */
+
+  /*
+   * 32px. Twenty-five projects per screen on a 1000px viewport, which is the
+   * number the whole visual direction is in service of: at twelve the reader
+   * sees a twentieth of `awesome-go` and leaves. The curator's note averages
+   * 73 bytes on this list, so it fits on the same line nearly always and the
+   * ones that do not are truncated rather than allowed to set the height.
+   */
+  --row-h: 32px;
+  --gutter: clamp(12px, 3vw, 32px);
+  --measure: 1360px;
+
+  /*
+   * The contents rail, and the gap between it and the document.
+   *
+   * 13rem holds "Command-Line Productivity" wrapped to two lines and most
+   * headings on one, which is the width at which 134 entries stay scannable.
+   * The two are a token rather than a number because three things have to
+   * agree on them: the page grid, the column-label strip in the masthead
+   * (which is a different component and has to stay lined up with the row grid
+   * underneath it), and the narrow breakpoint where the rail stops existing.
+   */
+  --toc: 13rem;
+  --toc-gap: 2rem;
+
+  /*
+   * How far under the sticky masthead an anchored heading has to land. The
+   * masthead is identity + controls + column labels, which is a little over
+   * six rems at the wide layout; this leaves a row of air above the heading so
+   * it reads as arrived-at rather than as jammed under the rule.
+   */
+  --mast-h: 7.5rem;
+
+  /* ---- columns -------------------------------------------------------- */
+  --col-name: minmax(9rem, 17rem);
+  --col-num: 4.5rem;
+  --col-act: 4.5rem;
+
+  /* ---- serif weights, redefined on dark ------------------------------- */
+  --w-body: 400;
+  --w-name: 600;
+  --w-mast: 620;
+
+  /* ---- pixelarticons ---------------------------------------------------- */
+
+  /*
+   * Pixelarticons (MIT, Gerrit Halfmann), inlined as CSS masks.
+   *
+   * Masks rather than an icon component or a runtime, for three reasons: they
+   * work identically in a pseudo-element and in markup, so the disclosure caret
+   * and the theme button use one mechanism; `background: currentColor` through
+   * a mask inherits the ink the way a glyph would, which stops an icon from
+   * becoming a colour decision; and eight icons inlined are smaller than the
+   * dependency that would ship a thousand.
+   *
+   * **They are drawn on a 24-unit grid with one-unit features, so they are only
+   * crisp at 24px or 12px**, a 1:1 or 1:2 mapping. At 16px a stroke lands on
+   * two thirds of a pixel and goes soft. Everything below is 12px; anything
+   * added later picks one of those two sizes or accepts the blur.
+   *
+   * They belong to the terminal half of the design (DESIGN.md, "Visual
+   * direction"): controls, affordances, state. Never beside the curator's prose
+   * or inside a project name, where a pixel grid would argue with the serif.
+   */
+  --px-external-link: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M11%205H5v2h6zM5%207H3v12h2zm12%2012H5v2h12zm2-6h-2v6h2zm-8%200H9v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v8h2z%22%2F%3E%3Cpath%20d%3D%22M21%203h-8v2h8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --px-chevron-right: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M16%2013v-2h-2v2zm-2-2V9h-2v2zm0%204v-2h-2v2zm-2-6V7h-2v2zm0%208v-2h-2v2zM10%207V5H8v2zm0%2012v-2H8v2z%22%2F%3E%3C%2Fsvg%3E");
+  --px-chevron-right-2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M9%2017h2v-2h2v-2h2v-2h-2V9h-2V7H9z%22%2F%3E%3C%2Fsvg%3E");
+  --px-sun: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M13%2022h-2v-3h2zm-6-3H5v-2h2zm12%200h-2v-2h2zm-4-2H9v-2h6zm-6-2H7V9h2zm8%200h-2V9h2zM5%2013H2v-2h3zm17%200h-3v-2h3zm-7-4H9V7h6zM7%207H5V5h2zm12%200h-2V5h2zm-6-2h-2V2h2z%22%2F%3E%3C%2Fsvg%3E");
+  --px-moon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M18%2022H8v-2h10zM8%2020H6v-2h2zm12%200h-2v-2h2zM6%2018H4v-2h2zm16%200h-2v-4h-2v-2h2v-2h2zM4%2016H2V6h2zm14%200h-6v-2h6zm-6-2h-2v-2h2zm-2-2H8V6h2zM6%206H4V4h2zm8-2h-2v2h-2V4H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
+  --px-search: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M22%2022h-2v-2h2zm-2-2h-2v-2h2zm-6-2H6v-2h8zm4%200h-2v-2h2zM6%2016H4v-2h2zm10%200h-2v-2h2zM4%2014H2V6h2zm14%200h-2V6h2zM6%206H4V4h2zm10%200h-2V4h2zm-2-2H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
+  --px-close: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M7%2019H5v-2h2zm12%200h-2v-2h2zM9%2015v2H7v-2zm8%202h-2v-2h2zm-6-2H9v-2h2zm4%200h-2v-2h2zm-2-2h-2v-2h2zm-2-2H9V9h2zm4%200h-2V9h2zM9%209H7V7h2zm8%200h-2V7h2zM7%207H5V5h2zm12%200h-2V5h2z%22%2F%3E%3C%2Fsvg%3E");
+  --px-arrow-left: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M20%2011v2H4v-2zM8%2013v2H6v-2zm2%202v2H8v-2zm2%202v2h-2v-2zm-4-6V9H6v2z%22%2F%3E%3Cpath%20d%3D%22M10%2015V7H8v8zm2%202V5h-2v12z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --px-github: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M5%202h4v2H7v2H5V2Zm0%2010H3V6h2v6Zm2%202H5v-2h2v2Zm2%202v-2H7v2H3v-2H1v2h2v2h4v4h2v-4h2v-2H9Zm0%200v2H7v-2h2Zm6-12v2H9V4h6Zm4%202h-2V4h-2V2h4v4Zm0%206V6h2v6h-2Zm-2%202v-2h2v2h-2Zm-2%202v-2h2v2h-2Zm0%202h-2v-2h2v2Zm0%200h2v4h-2v-4Z%22%2F%3E%3C%2Fsvg%3E");
+
+  /* ---- light: newsprint, tinted toward the accent --------------------- */
+
+  /*
+   * The neutrals share the accent's hue family rather than opposing it.
+   *
+   * They used to be warm olive (the paper at hue 48, the ink a brown-black),
+   * which was right beside a vermilion and wrong beside an oxblood: two warm
+   * families that do not resolve into one temperature. Everything here now sits
+   * between hue 340 and 20 at very low saturation, so the page reads as one
+   * ink-and-paper decision with a second ink in it, which is what a two-colour
+   * broadsheet actually is. Measured, not asserted: every ratio below is
+   * against `--ground` first and `--sunk` second.
+   */
+  --ground: #faf7f5; /* paper, with the accent's undertone rather than yellow */
+  --sunk: #f2e9e7; /* the expanded row, the rail, the section bands */
+  --ink: #1a1214; /* 17.3 : 15.4 */
+  --ink-2: #5b474b; /* the curator's note, 8.0 : 7.2 */
+  --ink-3: #71595f; /* mono metadata, 6.0 : 5.3 */
+  --rule: #e8dedd; /* the hairline between rows */
+  --rule-2: #cfbfc1; /* between sections */
+  --rule-3: #1f1618; /* the masthead rule, and under column labels */
+
+  /*
+   * One accent, an oxblood, spent only on structure: the masthead rule, the
+   * section marks, the current option, focus. Nothing decorative is this
+   * colour, which is what lets it mean something when it appears.
+   *
+   * Dark rather than bright on purpose: at this density a saturated red rule
+   * shouts, while an oxblood reads as a second ink. The cost is measured and
+   * real: it is 11.5:1 against the paper, which is what a rule needs, but only
+   * **1.5:1 against `--ink`**, so where it touches type rather than sitting on
+   * the ground (the arrow beside a hovered name, a hovered link), it reads as
+   * a warm black rather than as a colour. Lighten it to ~#7a2e3f if that
+   * matters more than the quiet.
+   */
+  --accent: #5a2230;
+  --pos: #3f6b47; /* a gain, 5.8 : 5.2 */
+  --neg: #a8452c; /* a loss. Kept at hue 15 so it cannot be read as the accent */
+  --selection: #ecd4d9;
+
+  /*
+   * The mark for "not measured yet". Subordinate to everything else on the
+   * row and still legible as a mark, because it has to be distinguishable
+   * from the genuinely empty cell of a `web` row two lines below it.
+   */
+  --nil: #bcabae;
+}
+
+/* ---- dark: charcoal, designed ----------------------------------------- */
+
+/*
+ * Built to the published guidance rather than by eye, because the first attempt
+ * was wrong in the way dark themes usually are.
+ *
+ * It ran a near-white ink on a near-black ground at **14.0:1**, which is inside
+ * the band where light-on-dark type *halates*: the glow that blooms around
+ * each letter and closes up the counters. It is not a preference: the effect is
+ * worst for readers with astigmatism, who see the strokes smear, and extreme
+ * contrast is separately harder for dyslexic readers. Material's own rule is
+ * the same one: never pure white on pure black, use an off-white (#E0E0E0) on a
+ * dark grey (#121212) rather than the extremes.
+ *
+ * So, deliberately, three moves:
+ *
+ * 1. **The ink comes down to 11.2:1.** Still comfortably past WCAG AAA, which
+ *    is 7:1; the ceiling matters here, not the floor.
+ * 2. **The ground goes up, to roughly twice the luminance of #121212.** This
+ *    page is 25 rows of small type per screen; a reading surface should not be
+ *    a hole with text glowing out of it, and the extra light is what stops the
+ *    rules and the section bands from disappearing into the ground.
+ * 3. **Saturation stays low everywhere.** A saturated colour on a dark ground
+ *    vibrates against it; the accent is the same hue as the light theme's
+ *    oxblood, lifted in lightness and held down in chroma.
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --w-body: 420;
+    --w-name: 620;
+    --w-mast: 640;
+
+    --ground: #1e1b1c;
+    --sunk: #2b2629; /* 1.15 against the ground, so a band reads as a band */
+    --ink: #d6d0cf; /* 11.2 : 9.8, under the halation band, over AAA */
+    --ink-2: #a8a0a2; /* 6.7 : 5.8 */
+    --ink-3: #948c8e; /* 5.2 : 4.5 */
+    --rule: #332e30;
+    --rule-2: #332e30;
+
+    --rule-3: #cbc4c3;
+
+    /*
+     * The same oxblood cannot survive here: #5a2230 on this ground is 1.4:1,
+     * an invisible rule. So dark gets a sibling rather than the same swatch:
+     * the hue is held and the lightness raised until it clears the ground
+     * (5.3 : 4.6), which also buys back what light mode gives up: 2.1:1
+     * against the ink, so the accent reads *as a colour* beside type here.
+     */
+    --accent: #cd7588;
+    --pos: #77b98a; /* 7.4 : 6.4 */
+    --neg: #dd9070; /* 6.8 : 5.9, hue 15, so a loss is never the accent */
+    --selection: #4d2f38;
+    --nil: #5a5255;
+  }
+}
+
+:root[data-theme="dark"] {
+  --w-body: 420;
+  --w-name: 620;
+  --w-mast: 640;
+
+  --ground: #1e1b1c;
+  --sunk: #2b2629;
+  --ink: #d6d0cf;
+  --ink-2: #a8a0a2;
+  --ink-3: #948c8e;
+  --rule: #332e30;
+  --rule-2: #332e30;
+
+  --rule-3: #cbc4c3;
+
+  --accent: #cd7588;
+  --pos: #77b98a;
+  --neg: #dd9070;
+  --selection: #4d2f38;
+  --nil: #5a5255;
+}

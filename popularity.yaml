@@ -1,0 +1,154 @@
+# Hand corrections to `pnpm popularity`, the pass that gives a rank to the rows
+# that have no stars of their own (see src/lib/popularity.ts).
+#
+# Everything in here exists because one rule cannot be inferred: whether a
+# domain and a repository are actually the same project. The resolver finds
+# candidates by matching a link's host against the "Website" field of the
+# repositories we already hold, which is right about 92% of the time and
+# confidently wrong the rest, and no cheap heuristic separates the two. Two were
+# tried and thrown away: requiring a shared word between host and repository id
+# rejects `code.visualstudio.com` -> `microsoft/vscode`, and requiring the
+# repository's own website to be the bare domain rejects `signal.org` ->
+# `signalapp/Signal-Desktop`. What works is a person reading the list.
+#
+# The resolver drops a domain automatically when two or more repositories claim
+# it (854 of them, led by npmjs.com with 250 claimants). This file is for the
+# ones only a single repository claims, where the count cannot tell.
+
+# A repository named its "Website" here, but the site belongs to a platform,
+# a shop or somebody's social account rather than to that repository. Inheriting
+# through these hands one arbitrary project's stars to every link on the host.
+sharedHosts:
+  # link shorteners: the destination is unknowable from the host
+  - amzn.to
+  - bit.ly
+  - buff.ly
+  - dub.sh
+  - goo.gl
+  - ow.ly
+  - tinyurl.com
+  # shops and course platforms
+  - amazon.com
+  - leanpub.com
+  - oreilly.com
+  - shop.oreilly.com
+  # social, chat and video
+  - discord.com
+  - discord.gg
+  - facebook.com
+  - forms.gle
+  - linkedin.com
+  - open.spotify.com
+  - reddit.com
+  - slack.com
+  - slideshare.net
+  - speakerdeck.com
+  - t.me
+  - telegram.me
+  - zhihu.com
+  # app stores and cloud consoles
+  - apps.apple.com
+  - itunes.apple.com
+  - play.google.com
+  - aws.amazon.com
+  - azure.microsoft.com
+  - cloud.google.com
+  - docs.cloud.google.com
+  - docs.google.com
+  - groups.google.com
+  - microsoft.com
+  # reference works and other people's forges, which are resolved on their own
+  # terms by the forge pass rather than inherited through a homepage match
+  - bitbucket.org
+  - developer.mozilla.org
+  - en.wikipedia.org
+  - gist.github.com
+  - github.io
+  - gitlab.com
+  - mozilla.org
+  - sourceforge.net
+  - stackoverflow.com
+  - wikipedia.org
+
+# The host is genuinely the project's, but the repository the match landed on is
+# not the project: a binding, an SDK, one implementation of a format, a skeleton,
+# an `awesome-*` list, or an unrelated repository by the same author. Reviewed by
+# hand over the rows above `minInheritedStars`; `why` is kept so the next person
+# reviewing does not have to work it out again.
+rejected:
+  - host: studygolang.com
+    repo: polaris1119/The-Golang-Standard-Library-by-Example
+    why: the site is the StudyGolang forum, the repo a book by the same author
+  - host: appcenter.ms
+    repo: microsoft/react-native-code-push
+    why: App Center is the product, code-push one component of it
+  - host: fly.io
+    repo: h2non/imaginary
+    why: unrelated, imaginary merely deploys to Fly
+  - host: mythx.io
+    repo: ConsenSysDiligence/mythril
+    why: MythX is the SaaS, Mythril a different open source tool
+  - host: dynobase.dev
+    repo: RafalWilinski/express-status-monitor
+    why: same author, unrelated product
+  - host: parquet.apache.org
+    repo: apache/parquet-java
+    why: the domain is the format's, the repo one implementation of it
+  - host: vuejsfeed.com
+    repo: Vuedo/vuedo
+    why: a newsfeed, not the Vuedo project
+  - host: avocode.com
+    repo: nachos-ui/nachos-ui
+    why: Avocode is the product, nachos-ui a side UI kit
+  - host: slimframework.com
+    repo: slimphp/Slim-Skeleton
+    why: right owner, wrong repo; the framework is slimphp/Slim
+  - host: jumpstartrails.com
+    repo: excid3/gorails-app-template
+    why: a template, not the Jumpstart product
+  - host: datahub.io
+    repo: datasets/covid-19
+    why: the domain is the platform's, the repo a single dataset on it
+  - host: emacsredux.com
+    repo: bbatsov/crux
+    why: a personal blog paired with one of the author's packages
+  - host: cycle.js.org
+    repo: cyclejs-community/awesome-cyclejs
+    why: an awesome-* list rather than cyclejs/cyclejs
+  - host: onesignal.com
+    repo: OneSignal/OneSignal-Flutter-SDK
+    why: right owner, one SDK among many
+  - host: tenderly.co
+    repo: Tenderly/tenderly-cli
+    why: right owner, only the CLI
+  - host: openssl.org
+    repo: kassane/openssl-zig
+    why: a Zig port, not openssl/openssl
+  - host: zlib.net
+    repo: andrewrk/libz
+    why: a port, not the reference implementation
+  - host: unsplash.com
+    repo: hbagdi/go-unsplash
+    why: a Go client for the API, not Unsplash
+  - host: backstage.io
+    repo: shano/awesome-backstage
+    why: an awesome-* list rather than backstage/backstage
+  - host: tio.run
+    repo: trizen/sidef
+    why: one of the languages the site runs, not the site
+  - host: permit.io
+    repo: authorizon/fastapi_websocket_rpc
+    why: a library by the same company, not the product
+
+# Below this many stars, a homepage match is not worth inheriting.
+#
+# Not a quality bar but a floor under the error rate. The matches divide sharply:
+# above it, ~2% are wrong (13 rows of 582, reviewed above); below it, an
+# estimated 35-40% are wrong, because a small repository is far likelier to be
+# somebody's port, client or personal site that happens to share a domain. The
+# 82 rows it excludes are worth 19,832 stars against the 9.69M above it, so the
+# floor buys a large drop in error for 0.2% of the evidence.
+#
+# Lower it after reviewing those 82 rows and listing the bad ones under
+# `rejected`; `pnpm popularity --report` prints them.
+minInheritedStars: 500
