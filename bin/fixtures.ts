@@ -25,7 +25,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { gzipSync } from "node:zlib";
 import { parseArgs } from "node:util";
-import { loadConfig, type ConfigEntry } from "../src/lib/config.ts";
+import { byShelf, loadConfig, type ConfigEntry } from "../src/lib/config.ts";
 import { db } from "../src/lib/db/client.ts";
 import { awesomeItemTable, targetTable } from "../src/lib/db/schema.ts";
 import { targetHost } from "../src/lib/targets.ts";
@@ -246,10 +246,11 @@ async function frontPage(entries: ConfigEntry[]): Promise<FrontPage> {
       slug: entry.slug,
       name: entry.name,
       icon: entry.icon ?? "",
+      group: entry.group,
       ...total,
     });
   }
-  lists.sort((a, b) => b.entries - a.entries);
+  lists.sort(byShelf);
 
   return {
     generatedAt: Math.floor(Date.now() / 1000),

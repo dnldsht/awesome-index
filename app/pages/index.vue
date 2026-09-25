@@ -7,7 +7,7 @@ import { SITE } from "~/utils/site";
  *
  * DESIGN.md is explicit that this is a front page and not an index: what is
  * climbing, what has just entered a list, what has just been archived, and the
- * index of all eighty lists below. It is the only part of the site that changes
+ * index of every list below. It is the only part of the site that changes
  * on its own every day, which is the whole difference between a reference
  * somebody consults once and a site they come back to, so it carries more
  * editorial weight than its size suggests, and the weight is spent on two
@@ -34,7 +34,7 @@ const { data: front, error } = useAsyncData<FrontPage>(
 );
 
 const description =
-  "Eighty awesome lists, refreshed daily: which projects are gaining " +
+  "Eighty-five awesome lists, refreshed daily: which projects are gaining " +
   "stars, which were archived, and the lists themselves.";
 
 useSeoMeta({

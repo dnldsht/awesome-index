@@ -38,6 +38,37 @@ export function orderedBy(sort: ListOrder): string {
     : "most starred first";
 }
 
+/**
+ * The shelves the home page files the lists under, in the order it shows them.
+ *
+ * Eighty-odd lists sorted only by size put Zig next to HomeAssistant because
+ * they happen to be the same length, which tells a reader nothing about what
+ * the index holds. A closed set rather than a free string, so a typo in
+ * config.yaml fails the parse instead of quietly opening an eleventh shelf.
+ */
+export const LIST_GROUPS = [
+  "Languages",
+  "Web",
+  "Infra & DevOps",
+  "Mobile & desktop",
+  "Data & AI",
+  "Editors & CLI",
+  "Games & 3D",
+  "Security",
+  "Hardware",
+  "Other",
+] as const;
+
+/** shelf order first, then the larger list first; how every list index sorts */
+export function byShelf(
+  a: { group: string; entries: number },
+  b: { group: string; entries: number },
+): number {
+  const shelf = (group: string) =>
+    (LIST_GROUPS as readonly string[]).indexOf(group);
+  return shelf(a.group) - shelf(b.group) || b.entries - a.entries;
+}
+
 const ConfigSchema = z.object({
   repos: z.array(
     z.object({
@@ -47,6 +78,7 @@ const ConfigSchema = z.object({
         .union([z.string(), z.array(z.string())])
         .transform((u) => (Array.isArray(u) ? u : [u])),
       icon: z.string().optional(),
+      group: z.enum(LIST_GROUPS),
       /** other entries to surface first in the "more lists" rail */
       related: z.array(z.string()).default([]),
       /**

@@ -1,283 +1,385 @@
 repos:
   - name: Rust
+    group: Languages
     url: https://github.com/rust-unofficial/awesome-rust
     icon: 🦀
   - name: Golang
+    group: Languages
     url: https://github.com/avelino/awesome-go
     icon: 🐹
   - name: JavaScript
+    group: Languages
     url:
       - https://github.com/sorrycc/awesome-javascript
       - https://github.com/uhub/awesome-javascript
     icon: 🟨
   - name: NodeJS
+    group: Web
     url: https://github.com/sindresorhus/awesome-nodejs
     icon: 🟩
   - name: iOS
+    group: Mobile & desktop
     url: https://github.com/vsouza/awesome-ios
     icon: 🍏
-  - name: Xamarin
-    url: https://github.com/XamSome/awesome-xamarin
-    icon: 📱
+  - name: Capacitor
+    group: Mobile & desktop
+    url: https://github.com/riderx/awesome-capacitor
+    icon: 🔋
   - name: Python
+    group: Languages
     url: https://github.com/vinta/awesome-python
     icon: 🐍
   - name: Vue
+    group: Web
     url: https://github.com/vuejs/awesome-vue
     icon: 🖖
   - name: Flutter
+    group: Mobile & desktop
     url: https://github.com/Solido/awesome-flutter
     icon: 🐦
   - name: CPP
+    group: Languages
     url: https://github.com/fffaraz/awesome-cpp
     icon: ➕
   - name: Java
+    group: Languages
     url: https://github.com/akullpp/awesome-java
     icon: ☕
   - name: Swift
+    group: Languages
     url: https://github.com/matteocrippa/awesome-swift
     icon: 🐦
   - name: dotNET
+    group: Languages
     url:
       - https://github.com/quozd/awesome-dotnet
       - https://github.com/thangchung/awesome-dotnet-core
     icon: 🎯
   - name: Ruby
+    group: Languages
     url: https://github.com/markets/awesome-ruby
     icon: 💎
   - name: TensorFlow
+    group: Data & AI
     url: https://github.com/jtoy/awesome-tensorflow
     icon: 🤖
   - name: NeoVim
+    group: Editors & CLI
     url: https://github.com/rockerBOO/awesome-neovim
     icon: 📝
   - name: TailwindCSS
+    group: Web
     url: https://github.com/aniftyco/awesome-tailwindcss
     icon: 🌬️
     # 47% of its entries can be ranked; the rest are commercial component kits
     sort: editorial
   - name: Elixir
+    group: Languages
     url: https://github.com/h4cc/awesome-elixir
     icon: ⚗️
   - name: Laravel
+    group: Web
     url: https://github.com/chiraggude/awesome-laravel
     icon: 🛠️
   - name: Kotlin
+    group: Languages
     url: https://github.com/mcxiaoke/awesome-kotlin
     icon: 🅺
   - name: Scala
+    group: Languages
     url:
       - https://github.com/lauris/awesome-scala
       - https://github.com/uhub/awesome-scala
     icon: ⚙️
   - name: Selfhosted
+    group: Infra & DevOps
     url: https://github.com/awesome-selfhosted/awesome-selfhosted
     icon: 🖥️
   - name: Shell
+    group: Languages
     url:
       - https://github.com/alebcay/awesome-shell
       - https://github.com/awesome-lists/awesome-bash
     icon: 🐚
   - name: MacOS
+    group: Mobile & desktop
     url:
       - https://github.com/serhii-londar/open-source-mac-os-apps
       - https://github.com/jaywcjlove/awesome-mac
     icon: 🍏
   - name: Zig
+    group: Languages
     url: https://github.com/zigcc/awesome-zig
     icon: 🧩
   - name: TinyJS
+    group: Web
     url: https://github.com/thoughtspile/awesome-tiny-js
     icon: 🌟
   - name: MachineLearning
+    group: Data & AI
     url: https://github.com/josephmisiti/awesome-machine-learning
     icon: 🤖
   - name: PHP
+    group: Languages
     url: https://github.com/ziadoz/awesome-php
     icon: 🐘
   - name: Django
+    group: Web
     url: https://github.com/wsvincent/awesome-django
     icon: 🎸
   - name: Flask
+    group: Web
     url: https://github.com/humiaozuzu/awesome-flask
     icon: 🍶
   - name: FastAPI
+    group: Web
     url: https://github.com/mjhea0/awesome-fastapi
     icon: ⚡
   - name: React
+    group: Web
     url: https://github.com/enaqx/awesome-react
     icon: ⚛️
   - name: ReactNative
+    group: Mobile & desktop
     url: https://github.com/jondot/awesome-react-native
     icon: 📲
   - name: Angular
+    group: Web
     url: https://github.com/PatrickJS/awesome-angular
     icon: 🅰️
   - name: Svelte
+    group: Web
     url: https://github.com/TheComputerM/awesome-svelte
     icon: 🧡
   - name: NextJS
+    group: Web
     url: https://github.com/unicodeveloper/awesome-nextjs
     icon: ▲
     # 47% of its entries can be ranked; the rest are templates and blog posts
     sort: editorial
   - name: TypeScript
+    group: Languages
     url: https://github.com/semlinker/awesome-typescript
     icon: 🔷
     # 24% of its entries can be ranked; the rest are guides, playgrounds and articles rather than packages
     sort: editorial
   - name: Deno
+    group: Web
     url: https://github.com/denolib/awesome-deno
     icon: 🦕
   - name: Rails
+    group: Web
     url: https://github.com/gramantin/awesome-rails
     icon: 🚂
   - name: Haskell
+    group: Languages
     url:
       - https://github.com/krispo/awesome-haskell
       - https://github.com/uhub/awesome-haskell
     icon: λ
   - name: Clojure
+    group: Languages
     url: https://github.com/razum2um/awesome-clojure
     icon: 🌀
   - name: Elm
+    group: Languages
     url: https://github.com/sporto/awesome-elm
     icon: 🌳
     # 43% of its entries can be ranked; the rest are guides and packages off GitHub
     sort: editorial
   - name: C
+    group: Languages
     url: https://github.com/oz123/awesome-c
     icon: 🔩
     # 45% of its entries can be ranked; the rest are 224 library sites, 40 documentation pages, 16 on forges that publish no counter
     sort: editorial
   - name: Lua
+    group: Languages
     url: https://github.com/LewisJEllis/awesome-lua
     icon: 🌙
   - name: Perl
+    group: Languages
     url:
       - https://github.com/hachiojipm/awesome-perl
       - https://github.com/uhub/awesome-perl
     icon: 🐪
   - name: PowerShell
+    group: Languages
     url: https://github.com/janikvonrotz/awesome-powershell
     icon: 🪟
   - name: RStats
+    group: Languages
     url: https://github.com/qinwf/awesome-R
     icon: 📈
   - name: Godot
+    group: Games & 3D
     url: https://github.com/godotengine/awesome-godot
     icon: 👾
   - name: Unity
+    group: Games & 3D
     url: https://github.com/insthync/awesome-unity3d
     icon: 🎮
   - name: GameDev
+    group: Games & 3D
     url: https://github.com/ellisonleao/magictools
     icon: 🕹️
     # 28% of its entries can be ranked; the rest are 248 tools and asset shops on their own domains
     sort: editorial
   - name: Blender
+    group: Games & 3D
     url: https://github.com/agmmnn/awesome-blender
     icon: 🧊
     # 30% of its entries can be ranked; the rest are 284 addon sites, 111 video links, 65 paid products
     sort: editorial
   - name: DevOps
+    group: Infra & DevOps
     url: https://github.com/wmariuss/awesome-devops
     icon: ♾️
     # 42% of its entries can be ranked; the rest are hosted services, which are sold rather than starred
     sort: editorial
   - name: Kubernetes
+    group: Infra & DevOps
     url: https://github.com/tomhuang12/awesome-k8s-resources
     icon: ☸️
   - name: Docker
+    group: Infra & DevOps
     url: https://github.com/veggiemonk/awesome-docker
     icon: 🐳
   - name: Terraform
+    group: Infra & DevOps
     url: https://github.com/shuaibiyy/awesome-tf
     icon: 🏗️
   - name: Ansible
+    group: Infra & DevOps
     url: https://github.com/ansible-community/awesome-ansible
     icon: 📕
     # 44% of its entries can be ranked; the rest are roles and documentation pages
     sort: editorial
   - name: Nix
+    group: Infra & DevOps
     url: https://github.com/nix-community/awesome-nix
     icon: ❄️
   - name: SysAdmin
+    group: Infra & DevOps
     url: https://github.com/awesome-foss/awesome-sysadmin
     icon: 🧰
   - name: CLI
+    group: Editors & CLI
     url: https://github.com/agarrharr/awesome-cli-apps
     icon: 📟
   - name: Emacs
+    group: Editors & CLI
     url: https://github.com/emacs-tw/awesome-emacs
     icon: 🦬
   - name: Vim
+    group: Editors & CLI
     url: https://github.com/akrawchyk/awesome-vim
     icon: ⌨️
   - name: RaspberryPi
+    group: Hardware
     url: https://github.com/thibmaek/awesome-raspberry-pi
     icon: 🍓
     # 33% of its entries can be ranked; the rest are magazines, shops and hardware projects
     sort: editorial
   - name: Arduino
+    group: Hardware
     url: https://github.com/Lembed/Awesome-arduino
     icon: 🔌
   - name: HomeAssistant
+    group: Hardware
     url: https://github.com/frenck/awesome-home-assistant
     icon: 🏠
   - name: Android
+    group: Mobile & desktop
     url: https://github.com/JStumpp/awesome-android
     icon: 🤖
   - name: Electron
+    group: Mobile & desktop
     url: https://github.com/sindresorhus/awesome-electron
     icon: 💠
   - name: WebAssembly
+    group: Web
     url: https://github.com/mbasso/awesome-wasm
     icon: 🕸️
     # 37% of its entries can be ranked; the rest are specifications, write-ups and demos
     sort: editorial
   - name: CSS
+    group: Web
     url: https://github.com/awesome-css-group/awesome-css
     icon: 🎨
     # 29% of its entries can be ranked; the rest are articles and demos, which have readers rather than stars
     sort: editorial
   - name: GraphQL
+    group: Web
     url: https://github.com/chentsulin/awesome-graphql
     icon: 🔺
   - name: Postgres
+    group: Infra & DevOps
     url: https://github.com/dhamaniasad/awesome-postgres
     icon: 🗄️
   - name: DataScience
+    group: Data & AI
     url: https://github.com/academic/awesome-datascience
     icon: 📊
     # 26% of its entries can be ranked; the rest are 374 product sites, 132 social and video links, 79 books
     sort: editorial
   - name: DataEngineering
+    group: Data & AI
     url: https://github.com/igorbarinov/awesome-data-engineering
     icon: 🛢️
   - name: LLM
+    group: Data & AI
     url: https://github.com/Hannibal046/Awesome-LLM
     icon: 🧠
     # 49% of its entries can be ranked; the rest are papers and hosted models
     sort: editorial
   - name: Bioinformatics
+    group: Data & AI
     url: https://github.com/danielecook/Awesome-Bioinformatics
     icon: 🧬
-  - name: Solidity
-    url: https://github.com/bkrem/awesome-solidity
-    icon: ⛓️
+  - name: MCP
+    group: Data & AI
+    url: https://github.com/punkpeye/awesome-mcp-servers
+    icon: 🔗
+  - name: AIAgents
+    group: Data & AI
+    url: https://github.com/e2b-dev/awesome-ai-agents
+    icon: 🦾
+    # 11% of its entries can be ranked; the rest are the product sites of agent startups
+    sort: editorial
+  - name: PyTorch
+    group: Data & AI
+    url: https://github.com/bharathgs/Awesome-pytorch-list
+    icon: 🔥
+  - name: NLP
+    group: Data & AI
+    url: https://github.com/keon/awesome-nlp
+    icon: 💬
+  - name: MLOps
+    group: Data & AI
+    url: https://github.com/kelvins/awesome-mlops
+    icon: 🏭
+  - name: Skills
+    group: Data & AI
+    url: https://github.com/sickn33/agentic-awesome-skills
+    icon: 🪄
   - name: Security
+    group: Security
     url: https://github.com/sbilly/awesome-security
     icon: 🛡️
   - name: Pentest
+    group: Security
     url: https://github.com/enaqx/awesome-pentest
     icon: 🕵️
   - name: Privacy
+    group: Security
     url: https://github.com/pluja/awesome-privacy
     icon: 🔒
   - name: Beginners
+    group: Other
     url: https://github.com/MunGell/awesome-for-beginners
     icon: 🌱
   - name: Awesome
+    group: Other
     url: https://github.com/sindresorhus/awesome
     icon: 🆒

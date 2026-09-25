@@ -7,9 +7,10 @@ import type { FrontPage } from "~~/src/lib/contracts";
  * Not an afterthought under the rubrics: there is no global cross-list search
  * (DESIGN.md, "Architecture": `q` filters within a loaded list, and a global
  * index is a later addition), so for most readers this is the way in. Eighty
- * rows is small enough to scan and too many to read, which is what multiple
- * columns are for; they also flow down rather than across, so the ranking by
- * size survives the layout.
+ * rows sorted only by size was a wall a reader could not see into, so they are
+ * filed under shelves (`LIST_GROUPS` in `config.ts`) and ranked by size within
+ * each. The rows arrive already in that order; this only cuts them where the
+ * group changes.
  *
  * Two figures per row, and the gap between them is the point. `entries` is
  * every row the list holds and `repos` is how many of those are repositories:
@@ -18,9 +19,29 @@ import type { FrontPage } from "~~/src/lib/contracts";
  * the page cannot deliver. Both numbers are counted off the shards themselves,
  * so the index cannot promise a figure the page then contradicts.
  */
-defineProps<{ lists: FrontPage["lists"] }>();
+const props = defineProps<{ lists: FrontPage["lists"] }>();
+
+const shelves = computed(() => {
+  const out: { name: string; id: string; lists: FrontPage["lists"] }[] = [];
+  for (const list of props.lists) {
+    if (out.at(-1)?.name !== list.group) {
+      const id = `shelf-${list.group.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+      out.push({ name: list.group, id, lists: [] });
+    }
+    out.at(-1)!.lists.push(list);
+  }
+  return out;
+});
 
 const n = new Intl.NumberFormat("en-US");
+
+/*
+ * A shelf this short is one column tall, so it takes one cell of the grid and
+ * the short shelves pack side by side; a longer one runs the full measure in
+ * columns of its own. Without this, three rows of Hardware would sit alone
+ * across the whole page.
+ */
+const SHORT = 7;
 </script>
 
 <template>
@@ -30,20 +51,39 @@ const n = new Intl.NumberFormat("en-US");
       <span class="ix-labels mono">entries · repositories</span>
     </h2>
 
-    <ul class="ix-rows">
-      <li v-for="list in lists" :key="list.slug">
-        <NuxtLink :to="`/${list.slug}`" class="ix-row">
-          <span class="ix-icon" aria-hidden="true">{{ list.icon }}</span>
-          <span class="ix-name">{{ list.name }}</span>
-          <span class="ix-n mono">{{ n.format(list.entries) }}</span>
-          <span class="ix-r mono">{{ n.format(list.repos) }}</span>
-        </NuxtLink>
-      </li>
-    </ul>
+    <nav class="ix-jump kicker" aria-label="Shelves">
+      <a v-for="shelf in shelves" :key="shelf.id" :href="`#${shelf.id}`">{{
+        shelf.name
+      }}</a>
+    </nav>
+
+    <div class="ix-shelves">
+      <section
+        v-for="shelf in shelves"
+        :id="shelf.id"
+        :key="shelf.id"
+        class="ix-shelf"
+        :class="{ wide: shelf.lists.length > SHORT }"
+      >
+        <h3 class="ix-shelf-head kicker">
+          {{ shelf.name }} <span class="mono">{{ shelf.lists.length }}</span>
+        </h3>
+        <ul class="ix-rows">
+          <li v-for="list in shelf.lists" :key="list.slug">
+            <NuxtLink :to="`/${list.slug}`" class="ix-row">
+              <span class="ix-icon" aria-hidden="true">{{ list.icon }}</span>
+              <span class="ix-name">{{ list.name }}</span>
+              <span class="ix-n mono">{{ n.format(list.entries) }}</span>
+              <span class="ix-r mono">{{ n.format(list.repos) }}</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </section>
+    </div>
 
     <p class="ix-foot">
-      Sorted by size. The second number counts GitHub repositories; the other
-      entries are sites, papers and books.
+      Sorted by size within each shelf. The second number counts GitHub
+      repositories; the other entries are sites, papers and books.
     </p>
   </section>
 </template>
@@ -71,9 +111,46 @@ const n = new Intl.NumberFormat("en-US");
   color: var(--ink-3);
 }
 
+.ix-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+  margin: 0.6rem 0 1.4rem;
+}
+
+.ix-jump a:hover {
+  color: var(--ink);
+}
+
 /*
- * Multi-column rather than one long column: eighty rows in a single file is a
- * screen and a half of scrolling for something a reader means to scan. The
+ * `dense` lets the short shelves fill the cells left beside one another even
+ * when a wide shelf sits between them in the order, which is what keeps the
+ * tail of the index to a row or two instead of one ragged row per shelf.
+ */
+.ix-shelves {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-auto-flow: dense;
+  gap: 1.6rem 2.5rem;
+}
+
+.ix-shelf.wide {
+  grid-column: 1 / -1;
+}
+
+.ix-shelf-head {
+  margin: 0 0 0.2rem;
+  color: var(--ink);
+}
+
+.ix-shelf-head .mono {
+  color: var(--ink-3);
+  margin-left: 0.3rem;
+}
+
+/*
+ * Multi-column rather than one long column: a shelf of twenty-four in a single
+ * file is a screen of scrolling for something a reader means to scan. The
  * rows stay on the 32px band so this page and the list pages keep one rhythm.
  */
 .ix-rows {

@@ -318,11 +318,15 @@ export type FrontPage = {
    * between the two is the part of the list that has no stars and no pulse,
    * large enough on some lists (awesome-mac is half) that stating it is the
    * honest thing to do.
+   *
+   * Ordered by `group` in `LIST_GROUPS` order, then by size within a group, so
+   * the index can file them under their shelves by walking the array once.
    */
   lists: {
     slug: string;
     name: string;
     icon: string;
+    group: string;
     entries: number;
     repos: number;
   }[];

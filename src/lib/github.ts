@@ -205,7 +205,12 @@ export async function fetchAwesomeList(id: string): Promise<FetchedList> {
     repo: repo!,
   });
 
-  const markdown = Buffer.from(data.content, "base64").toString("utf-8");
+  // past 1 MB the contents API leaves `content` empty (awesome-mcp-servers is
+  // 1.8 MB), which would parse to zero items and be stored as if that were the
+  // list; the raw download has no such cap
+  const markdown = data.content
+    ? Buffer.from(data.content, "base64").toString("utf-8")
+    : await (await fetch(data.download_url!)).text();
   return {
     // the blob sha alone would keep an unchanged README on a stale parse, see
     // PARSER_VERSION

@@ -29,7 +29,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { gzipSync } from "node:zlib";
 import { parseArgs } from "node:util";
-import { loadConfig, type ConfigEntry } from "../src/lib/config.ts";
+import { byShelf, loadConfig, type ConfigEntry } from "../src/lib/config.ts";
 import { db } from "../src/lib/db/client.ts";
 import {
   awesomeItemTable,
@@ -626,7 +626,7 @@ function climbScores(weekly: number[]): Climb {
 
 /**
  * The home page: what is climbing, what has just arrived, what has just been
- * declared finished, and the index of all 80 lists.
+ * declared finished, and the index of every list, by shelf.
  *
  * Two of the three rubrics are differences against a *previous state*, and this
  * is where that comes from:
@@ -729,10 +729,11 @@ function frontPage(
     slug: shard.slug,
     name: shard.name,
     icon: shard.icon,
+    group: config.find((e) => e.slug === shard.slug)!.group,
     entries: shard.rows.length,
     repos: shard.rows.filter((row) => row[ROW.KIND] === "github").length,
   }));
-  lists.sort((a, b) => b.entries - a.entries);
+  lists.sort(byShelf);
 
   return {
     generatedAt: Math.floor(Date.now() / 1000),
