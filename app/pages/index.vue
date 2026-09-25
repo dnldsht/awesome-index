@@ -38,8 +38,8 @@ useHead({
     {
       name: "description",
       content:
-        "Eighty curated awesome lists, indexed and kept current: what is " +
-        "climbing this week, what has just been archived, and every list.",
+        "Eighty awesome lists, refreshed daily: which projects are gaining " +
+        "stars, which were archived, and the lists themselves.",
     },
   ],
 });
@@ -83,15 +83,13 @@ const folds = computed(() =>
  */
 const short = (rows: FrontRef[], why: string) =>
   rows.length > 0 && rows.length < TOP
-    ? `Only ${rows.length} today. ${why}`
+    ? `Only ${rows.length} so far. ${why}`
     : "";
 
-const BACKFILL =
-  "The star history is still backfilling; this fills in on its own.";
+const BACKFILL = "Star history is still backfilling.";
 
 const DEPTH =
-  "A year needs seventy-eight weeks of history and most of the index holds " +
-  "sixty, so this waits for the backfill.";
+  "A year needs 78 weeks of star history. Most lists have 60 so far.";
 </script>
 
 <template>
@@ -108,17 +106,17 @@ const DEPTH =
 
     <main class="wrap">
       <p v-if="error" class="empty">
-        <code>/data/front-page.json</code> did not load, so this page has
-        nothing to report. The lists themselves are unaffected.
+        Couldn't load <code>/data/front-page.json</code>. The list pages still
+        work.
       </p>
 
       <template v-else>
         <section class="band">
           <h2 class="band-head kicker">Climbing</h2>
           <p class="standfirst">
-            Ordered by how far a project's recent weeks sit above its normal
-            week, not by size — so the first figure is often smaller than the
-            next. The figure is the stars actually gained.
+            Each project is ranked against its own usual week, so a small repo
+            having a big week can sit above a large one having a normal week.
+            The number is stars gained in the window.
           </p>
 
           <!--
@@ -135,7 +133,7 @@ const DEPTH =
               window="1 week"
               :rows="fold(d7)"
               :short="short(d7, BACKFILL)"
-              :empty="`Nothing to report yet. ${BACKFILL}`"
+              :empty="`Nothing here yet. ${BACKFILL}`"
             />
             <FrontRubric
               lead
@@ -143,7 +141,7 @@ const DEPTH =
               window="4 weeks"
               :rows="fold(d30)"
               :short="short(d30, BACKFILL)"
-              :empty="`Nothing to report yet. ${BACKFILL}`"
+              :empty="`Nothing here yet. ${BACKFILL}`"
             />
             <FrontRubric
               title="One year"
@@ -171,16 +169,15 @@ const DEPTH =
               title="Just entered"
               figure="stars"
               :rows="front?.entered ?? []"
-              empty="Nothing yet: the index does not record when an entry
-                joined a list. The date is being added; until then this stays
-                empty rather than guessing."
+              empty="Empty for now. The index doesn't record when an entry
+                was added to a list yet."
             />
             <FrontRubric
               title="Just archived"
               figure="stars"
               :rows="front?.archived ?? []"
-              empty="Nothing yet: the index knows a project is archived, but
-                not when. Same fix, same wait."
+              empty="Empty for now. The index knows which projects are
+                archived, but not when."
             />
           </div>
         </section>
@@ -191,9 +188,8 @@ const DEPTH =
 
         <footer class="colophon">
           <p>
-            Stars, languages and activity come from GitHub, refreshed daily. The
-            climbing order comes from fourteen months of weekly star history;
-            the score behind it is deliberately not shown.
+            Stars, languages and activity come from GitHub and refresh daily.
+            The climbing order uses fourteen months of weekly star history.
           </p>
           <p class="made kicker">
             Made with <span class="heart" aria-hidden="true">♥</span

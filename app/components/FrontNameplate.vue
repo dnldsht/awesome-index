@@ -46,7 +46,7 @@ const when = computed(() =>
       <ThemeToggle />
     </div>
     <p class="np-deck">
-      <span class="mono">{{ num(lists) }}</span> curated lists ·
+      <span class="mono">{{ num(lists) }}</span> lists ·
       <span class="mono">{{ num(entries) }}</span> entries ·
       <span class="mono">{{ num(repos) }}</span> repositories
     </p>

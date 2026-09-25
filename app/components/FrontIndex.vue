@@ -42,8 +42,8 @@ const n = new Intl.NumberFormat("en-US");
     </ul>
 
     <p class="ix-foot">
-      Ordered by size. The second figure counts GitHub repositories; the rest
-      are sites, papers and books, kept in the curator's order.
+      Sorted by size. The second number counts GitHub repositories; the other
+      entries are sites, papers and books.
     </p>
   </section>
 </template>
