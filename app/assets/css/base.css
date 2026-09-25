@@ -119,6 +119,24 @@ a {
   background: var(--accent);
 }
 
+/* ---- pixel icons -------------------------------------------------------- */
+
+/*
+ * One rule for every icon on the page. `currentColor` through a mask, so an
+ * icon takes the ink of whatever it sits in and never becomes a second colour
+ * decision; 12px because the source grid is 24 and only 1:1 and 1:2 stay crisp.
+ */
+.px {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  mask: var(--px) center / 12px 12px no-repeat;
+  -webkit-mask: var(--px) center / 12px 12px no-repeat;
+  vertical-align: -1px;
+  flex: none;
+}
+
 /* ---- the column-label strip -------------------------------------------- */
 
 /*
@@ -548,12 +566,15 @@ a {
 }
 
 .nm::after {
-  content: "↗";
-  font-family: var(--font-mono);
-  font-size: 9px;
-  vertical-align: 2px;
-  margin-left: 0.3em;
-  color: var(--accent);
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 0.35em;
+  vertical-align: 0;
+  background: var(--accent);
+  mask: var(--px-external-link) center / 10px 10px no-repeat;
+  -webkit-mask: var(--px-external-link) center / 10px 10px no-repeat;
   opacity: 0;
 }
 
@@ -567,11 +588,15 @@ a {
 }
 
 .row::before {
-  content: "›";
+  content: "";
   position: absolute;
-  left: 0.15rem;
-  font-family: var(--font-mono);
-  color: var(--nil);
+  left: 0.1rem;
+  top: 10px;
+  width: 12px;
+  height: 12px;
+  background: var(--nil);
+  mask: var(--px-chevron-right) center / 12px 12px no-repeat;
+  -webkit-mask: var(--px-chevron-right) center / 12px 12px no-repeat;
   opacity: 0;
   transition: transform 0.12s ease;
 }

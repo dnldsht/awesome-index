@@ -138,7 +138,9 @@ const unranked = computed(() => props.shown - props.rankable);
     </div>
 
     <div class="ctl-g ctl-q">
-      <label class="kicker ctl-l" for="q">find</label>
+      <label class="kicker ctl-l" for="q" aria-label="find">
+        <span class="px" style="--px: var(--px-search)" />
+      </label>
       <input
         id="q"
         v-model="text"
@@ -148,8 +150,15 @@ const unranked = computed(() => props.shown - props.rankable);
         spellcheck="false"
         placeholder="name, owner, note, language"
       />
-      <button v-if="text" class="opt" type="button" @click="clear">
-        clear
+      <button
+        v-if="text"
+        class="opt ctl-x"
+        type="button"
+        aria-label="clear the search"
+        title="clear the search"
+        @click="clear"
+      >
+        <span class="px" style="--px: var(--px-close)" />
       </button>
     </div>
 

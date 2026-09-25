@@ -228,7 +228,10 @@ useHead({
             </NuxtLink>
           </h1>
           <div class="mast-meta">
-            <NuxtLink to="/" class="kicker mast-up">← all lists</NuxtLink>
+            <NuxtLink to="/" class="kicker mast-up"
+              ><span class="px" style="--px: var(--px-arrow-left)" />all
+              lists</NuxtLink
+            >
             <a
               v-for="s in shard?.sources ?? []"
               :key="s.id"
@@ -347,6 +350,9 @@ useHead({
 /* the way back. First in the meta row, because leaving is a likelier want than
    opening the source README, and it is the only exit the page had none of */
 .mast-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   color: var(--ink-3);
 }
 
