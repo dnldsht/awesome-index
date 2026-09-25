@@ -159,33 +159,58 @@
 
 /* ---- dark: charcoal, designed ----------------------------------------- */
 
+/*
+ * Built to the published guidance rather than by eye, because the first attempt
+ * was wrong in the way dark themes usually are.
+ *
+ * It ran a near-white ink on a near-black ground at **14.0:1**, which is inside
+ * the band where light-on-dark type *halates* — the glow that blooms around
+ * each letter and closes up the counters. It is not a preference: the effect is
+ * worst for readers with astigmatism, who see the strokes smear, and extreme
+ * contrast is separately harder for dyslexic readers. Material's own rule is
+ * the same one: never pure white on pure black, use an off-white (#E0E0E0) on a
+ * dark grey (#121212) rather than the extremes.
+ *
+ * So, deliberately, three moves:
+ *
+ * 1. **The ink comes down to 11.2:1.** Still comfortably past WCAG AAA, which
+ *    is 7:1 — the ceiling matters here, not the floor.
+ * 2. **The ground goes up, to roughly twice the luminance of #121212.** This
+ *    page is 25 rows of small type per screen; a reading surface should not be
+ *    a hole with text glowing out of it, and the extra light is what stops the
+ *    rules and the section bands from disappearing into the ground.
+ * 3. **Saturation stays low everywhere.** A saturated colour on a dark ground
+ *    vibrates against it; the accent is the same hue as the light theme's
+ *    oxblood, lifted in lightness and held down in chroma.
+ */
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --w-body: 420;
     --w-name: 620;
     --w-mast: 640;
 
-    --ground: #1b1719;
-    --sunk: #242023;
-    --ink: #eae3e2; /* 14.0 : 12.7 */
-    --ink-2: #aa9da0; /* 6.8 : 6.2 */
-    --ink-3: #988b8e; /* 5.4 : 4.9 */
-    --rule: #302b2d;
-    --rule-2: #403a3d;
-    --rule-3: #cfc6c5;
+    --ground: #1e1b1c;
+    --sunk: #2b2629; /* 1.15 against the ground, so a band reads as a band */
+    --ink: #d6d0cf; /* 11.2 : 9.8 — under the halation band, over AAA */
+    --ink-2: #a8a0a2; /* 6.7 : 5.8 */
+    --ink-3: #948c8e; /* 5.2 : 4.5 */
+    --rule: #332e30;
+    --rule-2: #453f42;
+    --rule-3: #cbc4c3;
 
     /*
-     * The same oxblood cannot survive here — #5a2230 on charcoal is 1.2:1, an
-     * invisible rule. So dark gets a sibling rather than the same swatch:
+     * The same oxblood cannot survive here — #5a2230 on this ground is 1.4:1,
+     * an invisible rule. So dark gets a sibling rather than the same swatch:
      * the hue is held and the lightness raised until it clears the ground
-     * (5.1 : 4.6), which also buys back what light mode loses — 2.8:1 against
-     * the ink, so the accent is legible *as a colour* beside type here.
+     * (5.3 : 4.6), which also buys back what light mode gives up — 2.1:1
+     * against the ink, so the accent reads *as a colour* beside type here.
      */
-    --accent: #d0697a;
-    --pos: #7fbe8e;
-    --neg: #e0946e;
-    --selection: #4a2b33;
-    --nil: #524b4e;
+    --accent: #cd7588;
+    --pos: #77b98a; /* 7.4 : 6.4 */
+    --neg: #dd9070; /* 6.8 : 5.9 — hue 15, so a loss is never the accent */
+    --selection: #4d2f38;
+    --nil: #5a5255;
   }
 }
 
@@ -194,18 +219,18 @@
   --w-name: 620;
   --w-mast: 640;
 
-  --ground: #1b1719;
-  --sunk: #242023;
-  --ink: #eae3e2;
-  --ink-2: #aa9da0;
-  --ink-3: #988b8e;
-  --rule: #302b2d;
-  --rule-2: #403a3d;
-  --rule-3: #cfc6c5;
+  --ground: #1e1b1c;
+  --sunk: #2b2629;
+  --ink: #d6d0cf;
+  --ink-2: #a8a0a2;
+  --ink-3: #948c8e;
+  --rule: #332e30;
+  --rule-2: #453f42;
+  --rule-3: #cbc4c3;
 
-  --accent: #d0697a;
-  --pos: #7fbe8e;
-  --neg: #e0946e;
-  --selection: #4a2b33;
-  --nil: #524b4e;
+  --accent: #cd7588;
+  --pos: #77b98a;
+  --neg: #dd9070;
+  --selection: #4d2f38;
+  --nil: #5a5255;
 }
