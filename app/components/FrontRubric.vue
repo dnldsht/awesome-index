@@ -245,14 +245,17 @@ const href = (ref: FrontRef) =>
   max-width: 40ch;
 }
 
-/* the list column is the first thing to go when there is no room for it */
+/* no room for a column, but the row is 46px down here, so the list takes the
+   second line under the name rather than disappearing: the door still matters */
 @media (max-width: 44rem) {
   .ru-row {
     grid-template-columns: 1.5rem minmax(0, 1fr) 4.25rem;
+    row-gap: 1px;
   }
 
   .ru-list {
-    display: none;
+    grid-area: 2 / 2;
+    max-width: none;
   }
 }
 </style>

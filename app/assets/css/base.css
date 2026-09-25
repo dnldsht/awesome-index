@@ -450,9 +450,12 @@ a {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  height: 2.5rem;
+  /* a minimum, not a height: on a phone "ARCHIVING AND DIGITAL PRESERVATION"
+     wraps, and a fixed band let the second line spill over the first row.
+     The bottom padding is what keeps one line at exactly 2.5rem */
+  min-height: 2.5rem;
   margin-top: 1.6rem;
-  padding: 0.85rem 0.5rem 0;
+  padding: 0.85rem 0.5rem 0.4rem;
   background: var(--sunk);
   border-top: 1px solid var(--rule-2);
 }
@@ -645,6 +648,14 @@ a {
 .row.is-open::before {
   opacity: 1;
   transform: rotate(90deg);
+}
+
+/* a touch screen has no hover, so the caret that says "this opens" was never
+   seen at all; there it stays on at rest, dimmed until the row is open */
+@media (hover: none) {
+  .row::before {
+    opacity: 0.45;
+  }
 }
 
 /* the curator's prose. 73 bytes on average, so this truncates rarely */

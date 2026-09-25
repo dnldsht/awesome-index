@@ -214,17 +214,16 @@ watch(
         decoding="async"
         @error="failed = true"
       />
-      <figcaption class="chart-cap">
-        <template v-if="failed"
-          >no star history for this repository;
-          <a
-            :href="`https://star-history.com/#${r[ROW.ID]}&Date`"
-            rel="noopener nofollow"
-            target="_blank"
-            >try star-history.com</a
-          ></template
+      <!-- a caption only for the failure: the chart carries its own
+           star-history.com mark, and a line repeating it was noise -->
+      <figcaption v-if="failed" class="chart-cap">
+        no star history for this repository;
+        <a
+          :href="`https://star-history.com/#${r[ROW.ID]}&Date`"
+          rel="noopener nofollow"
+          target="_blank"
+          >try star-history.com</a
         >
-        <template v-else>star history · star-history.com</template>
       </figcaption>
     </figure>
   </div>
