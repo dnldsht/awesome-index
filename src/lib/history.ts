@@ -137,12 +137,22 @@ async function request(
        * `core` barely touched while a backfill runs — five calls to
        * `/stargazers/history` move `used` by zero where five ordinary repo
        * calls move it by five — and it is tempting to conclude the endpoint is
-       * free and pace accordingly. It is not. The 403 it eventually returns
-       * carries `x-ratelimit-remaining: 0` and `x-ratelimit-resource: core`
-       * while `/rate_limit` reports 4,922 of 5,000 left on that same name: the
-       * endpoint draws on a budget of its own, roughly 5,000 an hour, that the
-       * reporting endpoint does not expose. Running it at four in flight
-       * emptied that budget in minutes and bought a 27-minute wait.
+       * free and pace accordingly. It is not.
+       *
+       * Read in the same second, the two disagree completely:
+       *
+       *   403 from /stargazers/history   limit 5000  used 5000  reset …842
+       *   GET /rate_limit                limit 5000  used   82  reset …148
+       *
+       * Both are labelled `core`, and their resets are eleven minutes apart —
+       * they are two separate buckets wearing one name, and `/rate_limit`
+       * reports only the one this endpoint does not spend. A plain
+       * `GET /repos/{owner}/{repo}` answers 200 throughout, which is the other
+       * half of the proof. GitHub documents none of this, so the endpoint's own
+       * response headers are the only place its budget is observable.
+       *
+       * Running it at four repositories in flight emptied that invisible
+       * budget in minutes and bought a 27-minute wait.
        *
        * So the honest pace is still about 1.4 requests a second, and this
        * branch only catches the genuine burst limit.
