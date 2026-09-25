@@ -96,7 +96,7 @@ export default defineNuxtConfig({
     "~/assets/css/base.css",
   ],
 
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   telemetry: false,
 
   runtimeConfig: {

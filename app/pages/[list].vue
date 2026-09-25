@@ -329,6 +329,11 @@ useHead({
             {{ n.format(shard.rows.length - repos) }} links ·
             {{ shard.sections.length }} sections · crawled
             {{ isoDate(shard.crawledAt) }}
+            <span class="made"
+              >Made with <span class="heart" aria-hidden="true">♥</span
+              ><span class="sr">love</span> by
+              <a href="https://donld.me" rel="me">Donald</a> and Opus</span
+            >
           </footer>
         </main>
       </template>
@@ -372,7 +377,15 @@ useHead({
 }
 
 .colophon {
-  border-top: 1px solid var(--rule-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  border-top: 1px solid var(--rule-2);
   padding: 0.9rem 0 3rem;
+}
+
+/* pushed to the far end of the rule, so the counts stay the first thing read */
+.made {
+  margin-left: auto;
 }
 </style>

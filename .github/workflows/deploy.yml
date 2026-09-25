@@ -68,6 +68,12 @@ jobs:
         # burst every seventh night into a rolling weekly sweep
         run: pnpm crawl --stale-days=1 --max-links=1200
 
+      # Star history is NOT refreshed here yet. `pnpm history --refresh` is one
+      # page per repository — nearly free in quota, because an unchanged
+      # repository answers 304 and a 304 costs nothing, but still 35,000 round
+      # trips at the pace the secondary limits allow, which is hours of a job
+      # capped at six. It is run by hand until it is split across nights.
+
       - name: Publish the dataset
         if: github.event_name != 'push' && inputs.crawl != false
         env:
@@ -79,11 +85,16 @@ jobs:
             || gh release create "$DATASET_TAG" --title "Dataset" --notes "Crawled dataset, replaced on every refresh."
           gh release upload "$DATASET_TAG" "data/$DATASET_FILE" --clobber
 
-      - run: pnpm build
+      # the shards are the site's data and are gitignored: one second to build
+      # them from the dataset, and `nuxt generate` reads front-page.json to know
+      # which 80 routes to prerender, so this has to come first
+      - run: pnpm shards
+
+      - run: pnpm generate
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: dist
+          path: .output/public
 
   deploy:
     needs: build

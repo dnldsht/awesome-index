@@ -794,6 +794,39 @@ a {
   color: var(--accent);
 }
 
+/*
+ * The credit. The heart is the one ornament on the site, so it is also the one
+ * place the accent is spent on something that is not structure — which is
+ * allowed exactly once and here, at the very bottom, after everything.
+ *
+ * `aria-hidden` on the glyph and a visually-hidden "love" beside it: a screen
+ * reader announcing "black heart suit" mid-sentence is worse than the word.
+ */
+.heart {
+  color: var(--accent);
+}
+
+.made a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-2);
+  text-underline-offset: 2px;
+}
+
+.made a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ---- narrow ------------------------------------------------------------ */
 
 /*

@@ -187,6 +187,11 @@ const DEPTH =
             is deliberately not shown: an ordering is a decision, and a printed
             number is a claim.
           </p>
+          <p class="made">
+            Made with <span class="heart" aria-hidden="true">♥</span
+            ><span class="sr">love</span> by
+            <a href="https://donld.me" rel="me">Donald</a> and Opus
+          </p>
         </footer>
       </template>
     </main>
@@ -194,6 +199,10 @@ const DEPTH =
 </template>
 
 <style scoped>
+.made {
+  margin-top: 0.9rem;
+}
+
 .band {
   margin-block: 1.9rem 2.6rem;
 }
