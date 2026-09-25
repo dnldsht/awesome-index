@@ -7,7 +7,7 @@
  * for a C library that does one thing and has done it since 2014. A fixed
  * threshold does not get this slightly wrong for a few repositories; it gets it
  * systematically wrong for entire families of languages at once, and it gets it
- * wrong in the direction that is hardest to forgive — telling a reader that
+ * wrong in the direction that is hardest to forgive: telling a reader that
  * finished work is abandoned.
  *
  * Measured on this dataset (34,808 repositories, days since `pushed_at`, taken
@@ -22,7 +22,7 @@
  *
  * One number cannot serve that table. So the thresholds are **percentiles
  * inside the repository's own language cohort**, recomputed from the population
- * handed in — which is the mechanism `popularity.ts` already defends for star
+ * handed in. That is the mechanism `popularity.ts` already defends for star
  * counts across forges, applied to a problem with the same shape: rank a value
  * inside the only population it is comparable with, rather than compare
  * incomparable units. "Stalled" means in the bottom quartile of activity
@@ -40,13 +40,13 @@
  *   is why it can be tested at all.
  * - Archived repositories are labelled but do not vote. They are dead by
  *   declaration, and leaving them in the sample would drag every cohort's
- *   thresholds toward staleness — the more of a language's projects have been
+ *   thresholds toward staleness: the more of a language's projects have been
  *   retired, the easier it would become for the survivors to look active.
  *
  * The weak link is `pushed_at` itself, and `DESIGN.md` records it as such: it
  * cannot tell a README typo from forty commits by six people, and a dependabot
- * run moves it unaided. The cohort percentile absorbs a good deal of that —
- * whatever inflates one repository's `pushed_at` inflates its neighbours' — but
+ * run moves it unaided. The cohort percentile absorbs a good deal of that
+ * (whatever inflates one repository's `pushed_at` inflates its neighbours'), but
  * not all of it. If the "stalled" label ever causes an argument, that is where
  * to look first, not here.
  */
@@ -68,7 +68,7 @@ import type { ActivityState } from "./contracts.ts";
  *
  * Measured cost of the choice: 44 of 146 languages keep their labels, and the
  * 349 repositories in the other 102 (1.1% of the corpus) go unlabelled rather
- * than judged on noise — which is the state every row is in today anyway.
+ * than judged on noise, which is the state every row is in today anyway.
  */
 export const MIN_COHORT = 20;
 
@@ -77,7 +77,7 @@ export const MIN_COHORT = 20;
  * whatever its cohort thinks.
  *
  * This is the one absolute number in the file and it is not a judgement about
- * abandonment — the cohort keeps sole authority over that. It is about what the
+ * abandonment; the cohort keeps sole authority over that. It is about what the
  * word means. "Active" is a claim in the present tense, and a purely relative
  * scale will happily make it about a repository that has not been touched in
  * five years, because half of Objective-C has not been touched in five years.
@@ -98,7 +98,7 @@ export const ACTIVE_CEILING_DAYS = 365;
  *
  * `archived` is a required boolean and that is load-bearing. In the database
  * the column is `integer | null` and it is **null for all 11,491 `web`
- * targets** — a website cannot be archived, so there is nothing to know — which
+ * targets** (a website cannot be archived, so there is nothing to know), which
  * means a caller who hands this function a mixed population cannot get past the
  * compiler without stopping to decide what a null means. Deciding it means
  * `false` is how a website becomes a project with a pulse.
@@ -121,8 +121,8 @@ export type ActivityInput = {
  *
  * Midrank, exactly as in `popularity.ts`: the smallest member of a cohort
  * scores its own half-share rather than a flat zero, and ties share their
- * midpoint. Push timestamps tie rarely, but when they do — two repositories
- * pushed in the same second by the same bot — they must come out equal rather
+ * midpoint. Push timestamps tie rarely, but when they do (two repositories
+ * pushed in the same second by the same bot), they must come out equal rather
  * than in whatever order the array happened to hold them, because one of those
  * orders would put one of them in a different quartile from the other.
  */
@@ -144,7 +144,7 @@ function percentileOf(sorted: number[], value: number): number {
  * one: the bottom quartile of its language is **stalled** (`DESIGN.md`), the
  * rest of the bottom half is **slow**, and the top half is **active** unless
  * `ACTIVE_CEILING_DAYS` says the word would be a lie. `archived: true`
- * short-circuits to **archived** whatever the dates say — it is the one state
+ * short-circuits to **archived** whatever the dates say: it is the one state
  * the author declared rather than the one we inferred, which is also why it is
  * the only one stated plainly.
  *
@@ -153,8 +153,8 @@ function percentileOf(sorted: number[], value: number): number {
  * push date. `Row`'s `state` is null for those, and the row still shows the
  * date, which is the fact the label was only ever an interpretation of.
  *
- * A repository with no language at all — 1,016 of them, mostly data and
- * documentation repositories — is left unlabelled rather than pooled into a
+ * A repository with no language at all (1,016 of them, mostly data and
+ * documentation repositories) is left unlabelled rather than pooled into a
  * cohort of its own. Pooling them would be the one thing this file exists to
  * refuse: "has no detectable language" describes how GitHub read a file tree,
  * not a shared release culture, and a dataset repository updated annually is

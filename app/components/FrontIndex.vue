@@ -5,14 +5,14 @@ import type { FrontPage } from "~~/src/lib/contracts";
  * The index of every list.
  *
  * Not an afterthought under the rubrics: there is no global cross-list search
- * (DESIGN.md, "Architecture" — `q` filters within a loaded list, and a global
+ * (DESIGN.md, "Architecture": `q` filters within a loaded list, and a global
  * index is a later addition), so for most readers this is the way in. Eighty
  * rows is small enough to scan and too many to read, which is what multiple
  * columns are for; they also flow down rather than across, so the ranking by
  * size survives the layout.
  *
  * Two figures per row, and the gap between them is the point. `entries` is
- * every row the list holds and `repos` is how many of those are repositories —
+ * every row the list holds and `repos` is how many of those are repositories:
  * on `awesome-mac` half the entries are neither starred nor starrable, and a
  * single "1,929 entries" would quietly promise a list of ranked projects that
  * the page cannot deliver. Both numbers are counted off the shards themselves,

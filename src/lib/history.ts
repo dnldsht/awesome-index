@@ -59,7 +59,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /**
  * What the last response said about the budget, for the progress line.
  *
- * Not authoritative — a 304 leaves it untouched, which is the point of a 304 —
+ * Not authoritative (a 304 leaves it untouched, which is the point of a 304),
  * but it is the only view of the quota that costs nothing to obtain.
  */
 export const quota = { remaining: Number.NaN, limit: Number.NaN, resetAt: 0 };
@@ -83,7 +83,7 @@ function readQuota(headers: Headers) {
  * because one unreachable repository must not end a thirteen-hour backfill.
  *
  * `expect` lists the statuses the caller wants handed back rather than retried
- * or thrown — 304 and 404 are outcomes here, not errors.
+ * or thrown: 304 and 404 are outcomes here, not errors.
  */
 async function request(
   label: string,
@@ -128,15 +128,15 @@ async function request(
       }
 
       /*
-       * A 403 that still reports budget left is a *secondary* limit — too many
-       * requests too fast — and it clears in a minute or two, so it must not
+       * A 403 that still reports budget left is a *secondary* limit (too many
+       * requests too fast), and it clears in a minute or two, so it must not
        * fall through to the hourly-reset branch below and sleep out an hour.
        *
        * It is worth being precise about the budget this endpoint spends,
        * because the obvious measurement is misleading. `GET /rate_limit` shows
-       * `core` barely touched while a backfill runs — five calls to
+       * `core` barely touched while a backfill runs (five calls to
        * `/stargazers/history` move `used` by zero where five ordinary repo
-       * calls move it by five — and it is tempting to conclude the endpoint is
+       * calls move it by five), and it is tempting to conclude the endpoint is
        * free and pace accordingly. It is not.
        *
        * Read in the same second, the two disagree completely:
@@ -144,7 +144,7 @@ async function request(
        *   403 from /stargazers/history   limit 5000  used 5000  reset …842
        *   GET /rate_limit                limit 5000  used   82  reset …148
        *
-       * Both are labelled `core`, and their resets are eleven minutes apart —
+       * Both are labelled `core`, and their resets are eleven minutes apart:
        * they are two separate buckets wearing one name, and `/rate_limit`
        * reports only the one this endpoint does not spend. A plain
        * `GET /repos/{owner}/{repo}` answers 200 throughout, which is the other
@@ -206,7 +206,7 @@ async function request(
  * `databaseId` for a batch of `<owner>/<name>` ids, through GraphQL.
  *
  * A hundred aliases resolve for one rate limit point, so the whole corpus of
- * 34,808 repositories costs ~350 requests — 7% of an hour's budget for the
+ * 34,808 repositories costs ~350 requests, 7% of an hour's budget for the
  * thing that makes every later request addressable by an id that survives a
  * rename. Two hundred aliases exceeds the node limit; a hundred with this
  * single field does not.
@@ -279,7 +279,7 @@ const WEEK_SECONDS = 7 * 24 * 60 * 60;
 
 /**
  * One week as GitHub sends it. `total` is the *net gain* for that week, not a
- * running total — it is the sum of `days`, and it is what `star_history.delta`
+ * running total; it is the sum of `days`, and it is what `star_history.delta`
  * stores. The cumulative curve is reconstructed from `target.stars` backwards
  * when something needs it, which is why nothing here keeps one.
  */
@@ -298,7 +298,7 @@ export type HistoryPage =
     }
   /** the ETag matched: the page is unchanged, and this cost no quota */
   | { kind: "notModified" }
-  /** 404 or 451 — deleted, made private, or taken down. Stop asking. */
+  /** 404 or 451: deleted, made private, or taken down. Stop asking. */
   | { kind: "gone" };
 
 function linkLastPage(link: string | null): number | null {
@@ -352,7 +352,7 @@ export async function fetchHistoryPage(
  * How many pages a repository of this age can possibly have.
  *
  * The history begins at the repository's creation, so its length is known
- * before a single request is sent — which is what makes `--dry-run` an exact
+ * before a single request is sent, which is what makes `--dry-run` an exact
  * projection rather than a guess, and what stops a `--pages=6` run from
  * spending five requests discovering that a repository is four months old.
  * Cost here is driven by age, never by star count: a repository with 144,000

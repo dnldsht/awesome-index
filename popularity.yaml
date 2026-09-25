@@ -102,7 +102,7 @@ rejected:
     why: Avocode is the product, nachos-ui a side UI kit
   - host: slimframework.com
     repo: slimphp/Slim-Skeleton
-    why: right owner, wrong repo — the framework is slimphp/Slim
+    why: right owner, wrong repo; the framework is slimphp/Slim
   - host: jumpstartrails.com
     repo: excid3/gorails-app-template
     why: a template, not the Jumpstart product
@@ -142,7 +142,7 @@ rejected:
 
 # Below this many stars, a homepage match is not worth inheriting.
 #
-# Not a quality bar — a floor under the error rate. The matches divide sharply:
+# Not a quality bar but a floor under the error rate. The matches divide sharply:
 # above it, ~2% are wrong (13 rows of 582, reviewed above); below it, an
 # estimated 35-40% are wrong, because a small repository is far likelier to be
 # somebody's port, client or personal site that happens to share a domain. The

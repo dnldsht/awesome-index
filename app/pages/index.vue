@@ -8,7 +8,7 @@ import type { FrontPage, Ref as FrontRef } from "~~/src/lib/contracts";
  * climbing, what has just entered a list, what has just been archived, and the
  * index of all eighty lists below. It is the only part of the site that changes
  * on its own every day, which is the whole difference between a reference
- * somebody consults once and a site they come back to — so it carries more
+ * somebody consults once and a site they come back to, so it carries more
  * editorial weight than its size suggests, and the weight is spent on two
  * things that are easy to get wrong:
  *
@@ -77,8 +77,8 @@ const folds = computed(() =>
 );
 
 /*
- * A rubric short of its twenty rows is not broken either — it means the window
- * asked for more history than the backfill holds behind most of the index — so
+ * A rubric short of its twenty rows is not broken either. It means the window
+ * asked for more history than the backfill holds behind most of the index, so
  * it says so rather than trailing off. Silent on a full block.
  */
 const short = (rows: FrontRef[], why: string) =>
@@ -120,12 +120,12 @@ const DEPTH =
           </p>
 
           <!--
-            Seven, thirty, a year — in that order, with the thirty-day block
+            Seven, thirty, a year: in that order, with the thirty-day block
             set as the lead in the middle column. Thirty days is the window the
             site defaults to (DESIGN.md, "Trending"): seven days is the only
             window that means *now* and is noise as a default, because nobody
             visits an index of awesome lists weekly, and a year answers the
-            other question — whether a thing is still growing or has stalled.
+            other question: whether a thing is still growing or has stalled.
           -->
           <div class="climb">
             <FrontRubric
@@ -242,7 +242,7 @@ const DEPTH =
 
 /*
  * Three columns, the lead in the middle and wider. A broadsheet sets its lead
- * larger rather than in its own box — no cards, rules instead of borders — so
+ * larger rather than in its own box (no cards, rules instead of borders), so
  * the hierarchy here is column width and type size and nothing else.
  */
 .climb {

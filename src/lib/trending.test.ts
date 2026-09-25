@@ -133,7 +133,7 @@ test("a hole in the history is not a number of stars", () => {
 
 test("a sustained spike outranks a single loud week", () => {
   // the window is four weeks, so one week at sixty is a quarter of the signal
-  // of four weeks at sixty — which is the smoothing the 30d default is for
+  // of four weeks at sixty, which is the smoothing the 30d default is for
   const four = trendScore(spikes(60, 5, 60))!;
   const one = trendScore([...steady(56, 5, 2), 5, 5, 5, 60])!;
   assert.ok(
@@ -163,7 +163,7 @@ test("the score is rounded to two decimals, because it ships in every row", () =
 
 test("the same history answers three different questions for three windows", () => {
   // `FrontPage.climbing` asks for 7d, 30d and 1y over one series, and the three
-  // orderings have to be three orderings — a window that is accepted and then
+  // orderings have to be three orderings: a window that is accepted and then
   // ignored is the silent-wrong-answer version of this whole file
   const history = [
     ...Array(60).fill(2), // a quiet year and a bit
@@ -240,7 +240,7 @@ test("the floor is counted over whatever window was asked for", () => {
 test("a standing start does not outrank a measured climb", () => {
   // the regression the floor was raised for, in the numbers it was raised on:
   // at a floor of 25 these three scored 14.5, 14.25 and 13.5 and sat at ranks
-  // 9, 10 and 11 — above makeplane/plane, which gained 3,403 against a baseline
+  // 9, 10 and 11, above makeplane/plane, which gained 3,403 against a baseline
   // of 207 a week. Fifty-eight stars from nothing is an infinite acceleration
   // and is not a story, which is the one thing a ratio can never tell you
   for (const gained of [58, 57, 54]) {
@@ -270,7 +270,7 @@ test("a standing start large enough to be an event still ranks, and ranks high",
 
 test("the floor prices the class MIN_SPREAD creates", () => {
   // where the spread is pinned the score is exactly the rate, so the floor is
-  // not a gate in front of the ranking — it is the first rank the class can
+  // not a gate in front of the ranking; it is the first rank the class can
   // occupy. Stated as the relationship, so it survives the constant moving
   const justOver = [...Array(56).fill(0), ...split(DEFAULT_FLOOR)];
   assert.equal(trendScore(justOver), DEFAULT_FLOOR / RECENT_WEEKS / MIN_SPREAD);

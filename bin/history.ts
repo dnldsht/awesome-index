@@ -1,5 +1,5 @@
 /**
- * Fills `star_history` — weekly star deltas — from GitHub, resumably.
+ * Fills `star_history` (weekly star deltas) from GitHub, resumably.
  *
  * Two passes:
  *
@@ -8,9 +8,9 @@
  *    numeric id because a rename otherwise splits a repository's series in
  *    two, so this pass is a precondition rather than an optimisation. The
  *    repositories GitHub no longer serves come back `null` in the same batch
- *    and are written down as `history_fetch.gone` — free dead-repo detection.
+ *    and are written down as `history_fetch.gone`: free dead-repo detection.
  * 2. `GET /repositories/{id}/stargazers/history`, 30 weeks to a page, newest
- *    page first, two pages deep by default (~14 months — see `DESIGN.md`).
+ *    page first, two pages deep by default (~14 months; see `DESIGN.md`).
  *
  * The binding constraint is quota, not the network: 5,000 requests an hour,
  * and a full backfill of the corpus is ~68,750 of them. Unthrottled that burns
@@ -89,7 +89,7 @@ const DRY_RUN = flags["dry-run"];
  * The gap between two requests.
  *
  * 1.4/s is 5,040 an hour, which is the authenticated budget with nothing to
- * spare — the point is not politeness, it is that going faster buys nothing
+ * spare. The point is not politeness, it is that going faster buys nothing
  * except a 403 and an hour of sleeping. A pool of tokens for different
  * accounts multiplies the budget, and then `--rps` is the flag that spends it.
  */
@@ -99,7 +99,7 @@ const GAP_MS = 1000 / (Number(flags.rps) || 1.4);
  * How many repositories are in flight at once, and why the default is one.
  *
  * `pace()` puts a floor under the gap between requests, but requests are
- * awaited, so a single chain is capped at one round trip at a time — about 4/s
+ * awaited, so a single chain is capped at one round trip at a time, about 4/s
  * however high `--rps` is set. That is what concurrency is for.
  *
  * It does **not** buy a faster backfill against one token, and it is worth
@@ -108,7 +108,7 @@ const GAP_MS = 1000 / (Number(flags.rps) || 1.4);
  * untouched while a backfill runs, and the 403 the backfill eventually gets
  * carries `x-ratelimit-remaining: 0` for `core` all the same. Four in flight
  * reached 238 repositories a minute, emptied the invisible budget in minutes,
- * and earned a 27-minute wait — a net loss against the steady 1.4/s that
+ * and earned a 27-minute wait: a net loss against the steady 1.4/s that
  * spends exactly what the hour allows.
  *
  * Concurrency is therefore for the case `--rps` cannot help with on its own:
@@ -169,7 +169,7 @@ type Repo = {
  *
  * `--only` matches `bin/crawl.ts`: config entry slugs, resolved to the source
  * READMEs behind them, and then to everything those READMEs link. The source
- * lists themselves are in scope too — an awesome list is a repository with a
+ * lists themselves are in scope too: an awesome list is a repository with a
  * star count like any other, and the site shows it.
  *
  * The `inArray` is over source ids (87 at most) rather than over target ids
@@ -266,7 +266,7 @@ function markGone(targetId: string) {
  * its fourth page keeps four, and the cost of the finer granularity is a
  * transaction that was going to happen anyway.
  *
- * `total` is stored as `delta` unchanged — it is already the week's net gain,
+ * `total` is stored as `delta` unchanged: it is already the week's net gain,
  * not a running total, and the cumulative curve is `target.stars` walked
  * backwards through these. `pages_done` is a `max()` rather than an
  * assignment because `--refresh` writes page 1 over repositories that are two
@@ -390,7 +390,7 @@ async function harvestIds(repos: Repo[]) {
  *
  * `--refresh` is always exactly page 1: everything deeper has already happened
  * and cannot change. Otherwise it is `pagesDone + 1 … depth`, capped by what
- * the repository's age makes possible — a project four months old has one page
+ * the repository's age makes possible: a project four months old has one page
  * of history and asking for a second is a request spent to be told so.
  */
 function pagesOwed(repo: Repo): number[] {

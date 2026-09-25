@@ -2,8 +2,8 @@
  * Writes the fixtures the front end is built against, from the current
  * dataset.
  *
- * The page work does not need a crawl, a token or any star history to start —
- * it needs one realistic shard and one front page, in exactly the shape
+ * The page work does not need a crawl, a token or any star history to start.
+ * It needs one realistic shard and one front page, in exactly the shape
  * `src/lib/contracts.ts` describes. This emits them, so that the four strands
  * of the rewrite can run at once instead of queueing behind the pipeline.
  *
@@ -69,8 +69,8 @@ type Entry = {
  *
  * Inner join, so an entry pointing at a repository GitHub has since deleted is
  * dropped: it has no url, no name and nothing to render, and it never got a
- * `target` row in the first place. The gap is not small — awesome-go writes
- * 3,044 entries and 2,829 of them resolve — and it is the same gap the old site
+ * `target` row in the first place. The gap is not small (awesome-go writes
+ * 3,044 entries and 2,829 of them resolve), and it is the same gap the old site
  * had, for the same reason.
  */
 async function shardFor(entry: ConfigEntry): Promise<ListShard> {
@@ -110,8 +110,8 @@ async function shardFor(entry: ConfigEntry): Promise<ListShard> {
    * `sorrycc/awesome-javascript` both scatter their headingless entries through
    * the README, and `lauris/awesome-scala` writes two headings that slugify to
    * "misc". Those lists would get the same slug twice in their table of
-   * contents. Grouping instead keeps the contract — each slug once, each
-   * section a contiguous slice — and moves at most a handful of rows out of
+   * contents. Grouping instead keeps the contract (each slug once, each
+   * section a contiguous slice) and moves at most a handful of rows out of
    * strict README order, inside a list that has already told us it does not
    * care where they go.
    */
@@ -163,7 +163,7 @@ function toRow(row: Entry): Row {
   const t = row.target;
   const github = t.kind === "github";
   /*
-   * A repository is named by its id — the owner sits in the id, the name is
+   * A repository is named by its id: the owner sits in the id, the name is
    * what the row prints beside it, and that is the form you type into a package
    * manager. Anything else has only what the curator called it, and failing
    * that its host: "https://gtkmm.org/en" is an address, not a name.
@@ -199,8 +199,8 @@ function toRow(row: Entry): Row {
 /**
  * The front page, with the three rubrics that need star history left empty.
  *
- * `climbing`, `entered` and `archived` are all differences — against last week,
- * against the previous crawl — and nothing here has a previous state to be
+ * `climbing`, `entered` and `archived` are all differences (against last week,
+ * against the previous crawl), and nothing here has a previous state to be
  * different from yet. They are emitted as empty rather than filled with
  * plausible-looking rows: a fixture that invents figures is a fixture somebody
  * ends up shipping. The list index below them is real, and is most of the page.
@@ -210,8 +210,8 @@ async function frontPage(entries: ConfigEntry[]): Promise<FrontPage> {
    * Counted as rows, not as distinct projects, which is the one thing this
    * number has to get right: it is a promise about the page it links to. A
    * shard holds one row per *appearance*, so a target filed under two headings
-   * is two rows there and has to be two here — five of them in awesome-go
-   * alone. The old site counted distinct targets because its list page
+   * is two rows there and has to be two here (five of them in awesome-go
+   * alone). The old site counted distinct targets because its list page
    * deduplicated them; this one does not.
    */
   const counts = await db

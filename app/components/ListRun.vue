@@ -5,8 +5,8 @@ import type { Period } from "~/utils/order";
 /*
  * The list when it is no longer a document.
  *
- * Under any order but the curator's the headings are gone — a ranked run draws
- * its rows from all over the README and there is no heading it is under — so
+ * Under any order but the curator's the headings are gone (a ranked run draws
+ * its rows from all over the README and there is no heading it is under), so
  * this renders one continuous band of rows instead of `ListSection`'s grouped
  * ones.
  *
@@ -17,12 +17,12 @@ import type { Period } from "~/utils/order";
  * skipping them is most of the page. Flattening 2,829 rows into one container
  * would put every one of them in a single containment block, the browser would
  * lay out all of them at once, and the ~600 ms Wave 1 D moved off page load
- * would come straight back — on *every sort*, not once.
+ * would come straight back, on *every sort*, not once.
  *
  * So the run is cut into fixed blocks that stand in for the sections. Fifty
  * rows gives `avelino/awesome-go` 57 blocks against its 134 sections: the same
  * order of granularity, arrived at from the other direction. The blocks are
- * invisible — no heading, no rule, nothing to see — and every row stays in the
+ * invisible (no heading, no rule, nothing to see), and every row stays in the
  * DOM, so `Ctrl+F` still reaches the bottom of a sorted list exactly as it does
  * an unsorted one.
  */

@@ -13,7 +13,7 @@ export type Theme = "auto" | "light" | "dark";
  * called from the app root, the toggle and every expanded row, and a listener
  * per caller would be a slow leak on a page that can open a thousand rows. The
  * flag is module scope and that is safe *because it is only ever set on the
- * client* — on the server the block below never runs, and `useState` keeps the
+ * client*: on the server the block below never runs, and `useState` keeps the
  * value itself per-request. */
 let bound = false;
 

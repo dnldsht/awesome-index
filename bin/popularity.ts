@@ -11,19 +11,19 @@
  *
  * Three passes, cheapest first:
  *
- * 1. inherited — offline, no network at all. A link's host is matched against
+ * 1. inherited: offline, no network at all. A link's host is matched against
  *    the "Website" field of the repositories we already hold, so `react.dev`
  *    finds `facebook/react` and takes its stars. 722 rows, and the only pass
  *    whose input is entirely local.
- * 2. registries — a package page is asked which repository it was built from
+ * 2. registries: a package page is asked which repository it was built from
  *    (`crates.io/crates/serde` -> `serde-rs/serde`), and told its own download
  *    or favourite count when it has no repository to give. ~670 rows.
- * 3. forges — GitLab, Codeberg, Gitea and Gitee are asked for their own star
+ * 3. forges: GitLab, Codeberg, Gitea and Gitee are asked for their own star
  *    counts, which are stars but not on GitHub's scale. ~230 rows.
  *
  * Only pass 1 and the repository half of pass 2 end up holding a real GitHub
  * star count. Everything else is calibrated against the star distribution of the
- * repositories in this dataset before it is allowed into the order — see
+ * repositories in this dataset before it is allowed into the order. See
  * src/lib/popularity.ts, which explains why that is defensible and why the
  * calibrated number is never shown to a reader.
  *
@@ -235,7 +235,7 @@ type RepoCandidate = {
  *   angular/angular's 100,995 stars states something false about that page. 487
  *   rows match this way and every one of them is dropped.
  * - **Only single-claimant domains.** 854 hosts are named by two or more
- *   repositories — npmjs.com by 250 of them — and there the host says nothing
+ *   repositories (npmjs.com by 250 of them), and there the host says nothing
  *   about which repository a link means.
  * - **Only above `minInheritedStars`.** Below it the error rate goes from ~2% to
  *   an estimated 35-40%, for 0.2% of the stars. See popularity.yaml.
@@ -342,8 +342,8 @@ async function inheritedCandidates(
  *
  * `repo` returns the repository the package declares, `native` the registry's own
  * figure. A registry that answers `repo` still has its `native` read, because the
- * repository can turn out to be somewhere we cannot count stars — ~20 Perl
- * distributions live on GitLab or sr.ht — and then the native figure is all the
+ * repository can turn out to be somewhere we cannot count stars (~20 Perl
+ * distributions live on GitLab or sr.ht), and then the native figure is all the
  * row has.
  */
 type Registry = {
@@ -784,8 +784,8 @@ async function forgeMeasurements(targets: WebTarget[]): Promise<Measurement[]> {
 /**
  * Turns repository ids into measurements by finding their stars.
  *
- * Most are already here — a project's site and its repository are often both
- * linked, by the same list or by another — and the rest go through one batched
+ * Most are already here (a project's site and its repository are often both
+ * linked, by the same list or by another), and the rest go through one batched
  * GraphQL call each 100 rather than a request apiece. A repository that has
  * since been deleted or renamed away resolves to nothing and its row stays
  * unranked, which is the honest outcome: we matched a link to something that is

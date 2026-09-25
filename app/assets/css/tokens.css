@@ -3,7 +3,7 @@
  *
  * Broadsheet with a terminal graft (DESIGN.md, "Visual direction"): the data is
  * long lists and numbers, and the airy one-column newsletter default handles
- * long lists worst — a roomy card per entry shows eight projects on a list of
+ * long lists worst: a roomy card per entry shows eight projects on a list of
  * three thousand. So: no cards, no shadows, no boxes. Rules. Density, and a
  * hierarchy strong enough to survive it.
  *
@@ -14,7 +14,7 @@
  * Dark is designed, not inverted. The two blocks at the bottom are not each
  * other's negatives: the ground is charcoal rather than black, the ink is a
  * warm off-white rather than #fff, and the serif is set ~20 units heavier
- * because a serif on a dark ground thins out — the light halation around
+ * because a serif on a dark ground thins out: the light halation around
  * light-on-dark strokes eats the thin ones, which is exactly where a
  * transitional serif keeps its contrast.
  */
@@ -84,9 +84,9 @@
    * 13rem holds "Command-Line Productivity" wrapped to two lines and most
    * headings on one, which is the width at which 134 entries stay scannable.
    * The two are a token rather than a number because three things have to
-   * agree on them: the page grid, the column-label strip in the masthead —
-   * which is a different component and has to stay lined up with the row grid
-   * underneath it — and the narrow breakpoint where the rail stops existing.
+   * agree on them: the page grid, the column-label strip in the masthead
+   * (which is a different component and has to stay lined up with the row grid
+   * underneath it), and the narrow breakpoint where the rail stops existing.
    */
   --toc: 13rem;
   --toc-gap: 2rem;
@@ -122,7 +122,7 @@
    * dependency that would ship a thousand.
    *
    * **They are drawn on a 24-unit grid with one-unit features, so they are only
-   * crisp at 24px or 12px** — a 1:1 or 1:2 mapping. At 16px a stroke lands on
+   * crisp at 24px or 12px**, a 1:1 or 1:2 mapping. At 16px a stroke lands on
    * two thirds of a pixel and goes soft. Everything below is 12px; anything
    * added later picks one of those two sizes or accepts the blur.
    *
@@ -145,7 +145,7 @@
   /*
    * The neutrals share the accent's hue family rather than opposing it.
    *
-   * They used to be warm olive — the paper at hue 48, the ink a brown-black —
+   * They used to be warm olive (the paper at hue 48, the ink a brown-black),
    * which was right beside a vermilion and wrong beside an oxblood: two warm
    * families that do not resolve into one temperature. Everything here now sits
    * between hue 340 and 20 at very low saturation, so the page reads as one
@@ -156,8 +156,8 @@
   --ground: #faf7f5; /* paper, with the accent's undertone rather than yellow */
   --sunk: #f2e9e7; /* the expanded row, the rail, the section bands */
   --ink: #1a1214; /* 17.3 : 15.4 */
-  --ink-2: #5b474b; /* the curator's note — 8.0 : 7.2 */
-  --ink-3: #71595f; /* mono metadata — 6.0 : 5.3 */
+  --ink-2: #5b474b; /* the curator's note, 8.0 : 7.2 */
+  --ink-3: #71595f; /* mono metadata, 6.0 : 5.3 */
   --rule: #e8dedd; /* the hairline between rows */
   --rule-2: #cfbfc1; /* between sections */
   --rule-3: #1f1618; /* the masthead rule, and under column labels */
@@ -167,16 +167,16 @@
    * section marks, the current option, focus. Nothing decorative is this
    * colour, which is what lets it mean something when it appears.
    *
-   * Dark rather than bright on purpose — at this density a saturated red rule
+   * Dark rather than bright on purpose: at this density a saturated red rule
    * shouts, while an oxblood reads as a second ink. The cost is measured and
    * real: it is 11.5:1 against the paper, which is what a rule needs, but only
    * **1.5:1 against `--ink`**, so where it touches type rather than sitting on
-   * the ground — the arrow beside a hovered name, a hovered link — it reads as
+   * the ground (the arrow beside a hovered name, a hovered link), it reads as
    * a warm black rather than as a colour. Lighten it to ~#7a2e3f if that
    * matters more than the quiet.
    */
   --accent: #5a2230;
-  --pos: #3f6b47; /* a gain — 5.8 : 5.2 */
+  --pos: #3f6b47; /* a gain, 5.8 : 5.2 */
   --neg: #a8452c; /* a loss. Kept at hue 15 so it cannot be read as the accent */
   --selection: #ecd4d9;
 
@@ -195,7 +195,7 @@
  * was wrong in the way dark themes usually are.
  *
  * It ran a near-white ink on a near-black ground at **14.0:1**, which is inside
- * the band where light-on-dark type *halates* — the glow that blooms around
+ * the band where light-on-dark type *halates*: the glow that blooms around
  * each letter and closes up the counters. It is not a preference: the effect is
  * worst for readers with astigmatism, who see the strokes smear, and extreme
  * contrast is separately harder for dyslexic readers. Material's own rule is
@@ -205,7 +205,7 @@
  * So, deliberately, three moves:
  *
  * 1. **The ink comes down to 11.2:1.** Still comfortably past WCAG AAA, which
- *    is 7:1 — the ceiling matters here, not the floor.
+ *    is 7:1; the ceiling matters here, not the floor.
  * 2. **The ground goes up, to roughly twice the luminance of #121212.** This
  *    page is 25 rows of small type per screen; a reading surface should not be
  *    a hole with text glowing out of it, and the extra light is what stops the
@@ -223,7 +223,7 @@
 
     --ground: #1e1b1c;
     --sunk: #2b2629; /* 1.15 against the ground, so a band reads as a band */
-    --ink: #d6d0cf; /* 11.2 : 9.8 — under the halation band, over AAA */
+    --ink: #d6d0cf; /* 11.2 : 9.8, under the halation band, over AAA */
     --ink-2: #a8a0a2; /* 6.7 : 5.8 */
     --ink-3: #948c8e; /* 5.2 : 4.5 */
     --rule: #332e30;
@@ -232,15 +232,15 @@
     --rule-3: #cbc4c3;
 
     /*
-     * The same oxblood cannot survive here — #5a2230 on this ground is 1.4:1,
+     * The same oxblood cannot survive here: #5a2230 on this ground is 1.4:1,
      * an invisible rule. So dark gets a sibling rather than the same swatch:
      * the hue is held and the lightness raised until it clears the ground
-     * (5.3 : 4.6), which also buys back what light mode gives up — 2.1:1
+     * (5.3 : 4.6), which also buys back what light mode gives up: 2.1:1
      * against the ink, so the accent reads *as a colour* beside type here.
      */
     --accent: #cd7588;
     --pos: #77b98a; /* 7.4 : 6.4 */
-    --neg: #dd9070; /* 6.8 : 5.9 — hue 15, so a loss is never the accent */
+    --neg: #dd9070; /* 6.8 : 5.9, hue 15, so a loss is never the accent */
     --selection: #4d2f38;
     --nil: #5a5255;
   }

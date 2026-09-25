@@ -6,7 +6,7 @@ import { lookup } from "node:dns/promises";
  * For a repository the site's signal is `pushedAt`: nobody has to ask GitHub
  * whether tokio exists, the API says so and says when it last moved. A website
  * has no such API, and the one thing that can be known about it from outside is
- * whether it is still there — which is the more useful half anyway, because link
+ * whether it is still there, which is the more useful half anyway, because link
  * rot on a personal domain is far worse than on github.com. A list from 2016 has
  * entries whose repositories are merely quiet and entries whose domains are now
  * parked, and only the second kind is actually gone.
@@ -55,8 +55,8 @@ const USER_AGENT =
 /**
  * Hosts this crawler will not ask about, whatever a README says.
  *
- * Every URL here was written by a stranger — an awesome list takes pull requests
- * — and this pass turns each one into an outbound GET from a CI runner and from
+ * Every URL here was written by a stranger (an awesome list takes pull requests),
+ * and this pass turns each one into an outbound GET from a CI runner and from
  * whoever runs `pnpm crawl` on their own machine, i.e. from inside their network.
  * Without this, a single merged line ("- [Router](http://192.168.1.1/reboot)")
  * points our request at a private address, and the site then publishes whether it
@@ -94,7 +94,7 @@ const isPrivateV4 = (host: string) =>
  * every address checked, not just parsed.
  *
  * What this cannot close on its own is the gap between the lookup and the
- * connection — a name with a one-second TTL can answer differently the second
+ * connection: a name with a one-second TTL can answer differently the second
  * time (DNS rebinding). Pinning the resolved address into the socket is the only
  * complete answer, and it is not worth an HTTP dispatcher of our own for the
  * thing being protected here: one bit about a host, on a machine that holds no
@@ -125,7 +125,7 @@ function blockedReason(url: URL): string | undefined {
    * Only the ports the web is served on.
    *
    * `URL` leaves `port` empty for 80 on http and 443 on https, so this rejects
-   * exactly the explicit ones — and with them the sharpest edge of the oracle
+   * exactly the explicit ones, and with them the sharpest edge of the oracle
    * this pass would otherwise be: twenty entries pointing at
    * `http://host:6379/`, `:9200`, `:8080` and the rest is a port scan whose
    * results we would publish. A project whose site really lives on :8080 keeps
@@ -254,8 +254,8 @@ export async function probeLink(
     } catch (error) {
       const code = codeOf(error);
       if (DEAD_CODES.has(code)) return { outcome: "dead", reason: code };
-      // everything else — a bad certificate, a reset, a timeout, a DNS server
-      // that shrugged (EAI_AGAIN) — says something about the network between us
+      // everything else (a bad certificate, a reset, a timeout, a DNS server
+      // that shrugged with EAI_AGAIN) says something about the network between us
       // and the page, not about the page
       return { outcome: "unknown", reason: code };
     }
@@ -292,7 +292,7 @@ export async function probeLink(
  * What a probe does to the row it was about.
  *
  * `ok` resets the streak, because a link that answers today is not two thirds of
- * the way to dead. `unknown` touches `checkedAt` and nothing else — in
+ * the way to dead. `unknown` touches `checkedAt` and nothing else. In
  * particular it does *not* reset the streak, so a site alternating between 404
  * and a timeout still gets there, and it does not advance it either.
  */

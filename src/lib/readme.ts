@@ -79,7 +79,7 @@ const SOURCE_LINK_TEXT =
  *    Code](github.com/immich-app/immich))", is a repository row rather than a
  *    website one;
  * 3. it leads with something that is not a repository and offers no source link
- *    at all — gtkmm, GnuTLS, LLDB, Mobilizon — which used to be the end of the
+ *    at all (gtkmm, GnuTLS, LLDB, Mobilizon), which used to be the end of the
  *    entry and is now a `web` target.
  *
  * (2) is checked before (3) on purpose: a project that tells us where its code
@@ -281,8 +281,8 @@ const BOILERPLATE_HEADING =
  *   once the image is dropped, and a row whose name is "https://..." is not a
  *   row anybody scans.
  * - it has to sit under a heading. Everything above the first one is the
- *   list's own front matter — its badges, its "Awesome" cross-links, its
- *   contribution notice — and the headingless bucket the site publishes exists
+ *   list's own front matter (its badges, its "Awesome" cross-links, its
+ *   contribution notice), and the headingless bucket the site publishes exists
  *   for lists that write no headings at all, not for preambles.
  * - the heading has to be about projects rather than about the list itself.
  *

@@ -13,7 +13,7 @@
  *
  *   1. inner-join to `target`, which drops entries pointing at repositories
  *      GitHub no longer serves (215 of them in awesome-go alone);
- *   2. rows in curator order — source first, then position — because that is
+ *   2. rows in curator order (source first, then position), because that is
  *      the default order of the page and the only honest order for the 88% of
  *      non-GitHub entries that carry no popularity signal at all;
  *   3. group by section rather than cutting wherever the slug changes, so a
@@ -68,7 +68,7 @@ const { values: flags } = parseArgs({
  * Wave 1 B owns `src/lib/trending.ts` and `src/lib/activity.ts`. Until they
  * land these are stubs, typed against the aliases in `contracts.ts` so that the
  * compiler refuses a stub that does not have the real signature. Note that
- * `contracts.ts` declares those two functions rather than defining them — they
+ * `contracts.ts` declares those two functions rather than defining them: they
  * are erased at runtime, so importing them from there yields `undefined` and
  * would fail silently. Swapping a stub for the real thing is deleting one line
  * and adding one import; nothing else in this file changes.
@@ -79,8 +79,8 @@ const activityStates: ActivityStates = realActivityStates;
 /**
  * How many of the most recent weeks each window sums.
  *
- * The history is weekly — `star_history` stores one net delta per GitHub week
- * bucket — so a window is a count of weeks and not a count of days: 4 weeks is
+ * The history is weekly (`star_history` stores one net delta per GitHub week
+ * bucket), so a window is a count of weeks and not a count of days: 4 weeks is
  * 28 days and 52 is 364, and pretending otherwise would be precision we do not
  * have. Counting back from the newest week we hold rather than from `now` also
  * keeps the figures stable when a build runs a day or two after the fetch.
@@ -108,12 +108,12 @@ const WINDOW_WEEKS = { d7: 1, d30: 4, d365: 52 } as const;
  * `DEFAULT_FLOOR = 100` for the 30-day window over the 170 the front page uses.
  *
  * B's rule is **six times the median gain over that window**. Measured on the
- * corpus as backfilled on 2026-09-13 — 1,213 repositories with star history,
+ * corpus as backfilled on 2026-09-13: 1,213 repositories with star history,
  * counting only those a score can actually be computed for, which is
  * `trendScore`'s own rule and not `windowSum`'s: `weekly.length - weeks >=
  * minBaselineFor(weeks)`, so 1y needs 78 weeks and not 52. Taking the looser
  * population instead puts 1,181 repositories in the 1y row at a median of 298,
- * and the floor comes out 1,788 — the two are easy to confuse and they do not
+ * and the floor comes out 1,788. The two are easy to confuse, and they do not
  * agree.
  *
  * | window | eligible | median gain | 6× | floor |
@@ -184,7 +184,7 @@ function windowSum(weekly: number[], weeks: number): number | null {
  *
  * Computed once for the whole corpus rather than once per list: a repository
  * linked by six lists has one history and must show the same figures in all
- * six. The table is scanned in primary-key order — `(targetId, week)` — so each
+ * six. The table is scanned in primary-key order, `(targetId, week)`, so each
  * repository's deltas arrive contiguous and oldest-first, which is exactly the
  * shape `trendScore` wants, and the array is folded into four numbers at each
  * boundary rather than kept.
@@ -213,7 +213,7 @@ async function loadMetrics(): Promise<Map<string, Metrics>> {
       /*
        * Three windows, three scores, each measured against the whole history.
        * The 30-day call is written out rather than left to `trendScore`'s
-       * defaults so the family reads as one thing — it is the same call either
+       * defaults so the family reads as one thing. It is the same call either
        * way, `WINDOW_WEEKS.d30` being `RECENT_WEEKS` and `ROW_FLOORS.d30` being
        * `DEFAULT_FLOOR`.
        */
@@ -250,7 +250,7 @@ async function loadMetrics(): Promise<Map<string, Metrics>> {
  * The activity label for every repository in the dataset.
  *
  * Handed the whole population in one call because the thresholds are
- * percentiles *within a language cohort* — see `activityStates` — which cannot
+ * percentiles *within a language cohort* (see `activityStates`), which cannot
  * be computed from one list, and which must not be computed per list either:
  * "stalled" would then mean something different on every page it appeared on.
  */
@@ -315,8 +315,8 @@ type Derived = {
  *
  * Inner join, so an entry pointing at a repository GitHub has since deleted is
  * dropped: it has no url, no name and nothing to render, and it never got a
- * `target` row in the first place. The gap is not small — awesome-go writes
- * 3,044 entries and 2,829 of them resolve — and it is the same gap the old site
+ * `target` row in the first place. The gap is not small (awesome-go writes
+ * 3,044 entries and 2,829 of them resolve), and it is the same gap the old site
  * had, for the same reason.
  */
 async function shardFor(
@@ -359,8 +359,8 @@ async function shardFor(
    * `sorrycc/awesome-javascript` both scatter their headingless entries through
    * the README, and `lauris/awesome-scala` writes two headings that slugify to
    * "misc". Those lists would get the same slug twice in their table of
-   * contents. Grouping instead keeps the contract — each slug once, each
-   * section a contiguous slice — and moves at most a handful of rows out of
+   * contents. Grouping instead keeps the contract (each slug once, each
+   * section a contiguous slice) and moves at most a handful of rows out of
    * strict README order, inside a list that has already told us it does not
    * care where they go.
    */
@@ -421,7 +421,7 @@ function toRow(row: Entry, derived: Derived): Row {
   const t = row.target;
   const github = t.kind === "github";
   /*
-   * A repository is named by its id — the owner sits in the id, the name is
+   * A repository is named by its id: the owner sits in the id, the name is
    * what the row prints beside it, and that is the form you type into a package
    * manager. Anything else has only what the curator called it, and failing
    * that its host: "https://gtkmm.org/en" is an address, not a name.
@@ -534,7 +534,7 @@ type Climb = Record<FrontPage["climbing"][number]["period"], number | null>;
  *
  * **The window is the point of this table.** `FrontPage.climbing` declares 7d,
  * 30d and 1y, and until this existed all three were ordered by one call to
- * `trendScore(weekly)` — the default four-week window — so the 7d and 1y blocks
+ * `trendScore(weekly)` (the default four-week window), so the 7d and 1y blocks
  * were the 30-day ordering wearing different labels while printing a 7-day and
  * a 365-day figure beside it. `weeks` is read from `WINDOW_WEEKS`, the same
  * constant `windowSum` uses, so the window that is *scored* and the window that
@@ -551,12 +551,12 @@ type Climb = Record<FrontPage["climbing"][number]["period"], number | null>;
  * ### The floors
  *
  * `trendScore`'s floor is a count of stars over the window and does not scale
- * itself, so 25 — `DEFAULT_FLOOR`, tuned for a four-week window — is strict
+ * itself, so 25 (`DEFAULT_FLOOR`, tuned for a four-week window) is strict
  * over seven days and meaningless over a year. The caller has to choose, and
  * the choice matters more than it looks, because of how the score behaves at
  * the quiet end: a repository whose baseline weeks are mostly zero has a median
  * of 0 and a spread pinned at `MIN_SPREAD`, so its score collapses to
- * `gained / weeks` — its raw rate. The floor is therefore the only thing
+ * `gained / weeks`, its raw rate. The floor is therefore the only thing
  * standing between the front page and a ranking of small repositories that had
  * one good week, and it is doing ranking work whether or not it is called a
  * noise gate.
@@ -572,7 +572,7 @@ type Climb = Record<FrontPage["climbing"][number]["period"], number | null>;
  * So each floor is **ten times what an ordinary repository gains over that same
  * window**, which is one rule that scales itself correctly because it reads the
  * window's own distribution. The median gain across the backfilled corpus, per
- * window, is 4 stars over a week, 17 over four and 334 over fifty-two — and
+ * window, is 4 stars over a week, 17 over four and 334 over fifty-two, and
  * that median is stable across window lengths as a rate (4.0, 4.3 and 6.4 stars
  * a week) and across the two very different populations backfilled so far. Ten
  * times ordinary, rather than the two or three times `DEFAULT_FLOOR` works out
@@ -583,23 +583,23 @@ type Climb = Record<FrontPage["climbing"][number]["period"], number | null>;
  *
  * The floors are absolute constants and not percentiles computed per build,
  * deliberately. A percentile would be recomputed against whatever happens to be
- * backfilled and would silently move every time a list landed — measured: the
+ * backfilled and would silently move every time a list landed. Measured, the
  * 90th percentile of weekly gains read 25, then 31, then 59 as the corpus grew
  * from 185 to 1,213 repositories over two days. A floor that drifts is a front
  * page that reorders itself for reasons no one can see.
  *
  * They are also *not* relative to a list or a population, which is the other
- * thing that was worth asking. The two backfilled populations are far apart —
- * `awesome-selfhosted` repositories gain a median 5 stars a week against
- * kubernetes' 2, and 15.9% of them clear the 7d floor against kubernetes' 4.9%
- * — so an absolute floor does admit one population three times more readily
+ * thing that was worth asking. The two backfilled populations are far apart
+ * (`awesome-selfhosted` repositories gain a median 5 stars a week against
+ * kubernetes' 2, and 15.9% of them clear the 7d floor against kubernetes'
+ * 4.9%), so an absolute floor does admit one population three times more readily
  * than the other. That asymmetry is correct and must stay: the *score* is
  * already relative to each repository's own history, and the floor is the one
  * absolute check in the pipeline. Making it relative too would leave nothing
  * anywhere in the calculation that knows the difference between forty stars and
  * four, and a corpus of quiet repositories would promote its own quiet weeks.
- * The visible consequence — the front page over-represents consumer-facing
- * lists — is a fact about which projects people are starring this month, and is
+ * The visible consequence (the front page over-represents consumer-facing
+ * lists) is a fact about which projects people are starring this month, and is
  * the front page working rather than failing.
  *
  * Recalibrating: recompute the median window sum over the backfilled corpus and
@@ -639,7 +639,7 @@ function climbScores(weekly: number[]): Climb {
  *   nothing in the database records what the last crawl saw: `awesome_item` is
  *   overwritten in place and carries no first-seen date, and `target.archived`
  *   is a flag with no record of when it flipped. So the previous state is read
- *   from the previous build's own output — the shards already in `--out`, read
+ *   from the previous build's own output: the shards already in `--out`, read
  *   before they are overwritten, a row being `entered` when its id is not in
  *   the shard it is replacing.
  *
@@ -653,7 +653,7 @@ function climbScores(weekly: number[]): Climb {
  *
  *   The fix is a schema change and belongs to whoever owns the schema: a
  *   `first_seen` column on `awesome_item`, written once when a row is first
- *   inserted, plus the same for the archived transition — a nullable
+ *   inserted, plus the same for the archived transition: a nullable
  *   `archived_at` on `target`, stamped when the daily refresh sees the flag go
  *   from false to true. Both then survive in the dataset release asset that CI
  *   already restores, and neither needs a previous build's output to exist.
@@ -680,7 +680,7 @@ function frontPage(
          * field is one number per row and it is the 30-day ordering; reading it
          * here is what made the 7d and 1y blocks copies of the 30-day one, and
          * it is why the score is looked up from `metrics` instead. It orders
-         * and is never rendered either way — `value` is a count of real stars
+         * and is never rendered either way; `value` is a count of real stars
          * and is the only number that reaches the page.
          */
         const trend = metrics.get(row[ROW.ID])?.climb[rubric.period] ?? null;
@@ -722,8 +722,8 @@ function frontPage(
    * Counted off the shards themselves, not with a second query, which is the
    * one thing this number has to get right: it is a promise about the page it
    * links to. A shard holds one row per *appearance*, so a target filed under
-   * two headings is two rows there and has to be two here — five of them in
-   * awesome-go alone — and a count that came from anywhere else could disagree.
+   * two headings is two rows there and has to be two here (five of them in
+   * awesome-go alone), and a count that came from anywhere else could disagree.
    */
   const lists = shards.map((shard) => ({
     slug: shard.slug,
@@ -847,7 +847,7 @@ for (const entry of entries) {
   /*
    * A config entry with nothing behind it gets no shard: `config.yaml` has 80
    * entries and `awesome_list` has 88 rows, the extra seven being the second
-   * README of a merged entry — plus `KotlinBy/awesome-kotlin`, which is no
+   * README of a merged entry, plus `KotlinBy/awesome-kotlin`, which is no
    * longer in the config and parsed to zero items. A shard with no rows is a
    * page with nothing on it and a 404 waiting to happen, so it is skipped
    * loudly rather than written empty.

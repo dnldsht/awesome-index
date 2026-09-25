@@ -5,8 +5,8 @@
  * A newspaper puts its date under its name because the date is the claim: this
  * is today's paper, not the paper. It is the one thing on this site that says
  * the page is worth returning to, so it is set as large as the totals beside
- * it and not hidden in a colophon. Null until the JSON lands — the figures
- * render as an em dash rather than as zeros, because zero lists is a fact and
+ * it and not hidden in a colophon. Null until the JSON lands. The figures
+ * render as a dash rather than as zeros, because zero lists is a fact and
  * "not loaded yet" is not.
  */
 const props = defineProps<{
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const n = new Intl.NumberFormat("en-US");
-const num = (value: number) => (value ? n.format(value) : "—");
+const num = (value: number) => (value ? n.format(value) : "-");
 
 const dated = new Intl.DateTimeFormat("en-GB", {
   weekday: "long",

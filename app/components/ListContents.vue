@@ -6,7 +6,7 @@ import type { ListShard } from "~~/src/lib/contracts";
  *
  * The measurement this component exists to obey: 4,350 categories across the
  * corpus, **median 6 entries**, only 80 over 60. That is not a taxonomy and it
- * cannot be a facet — a dropdown of 4,350 values would be useless and a page per
+ * cannot be a facet: a dropdown of 4,350 values would be useless and a page per
  * category is the combinatorial problem the whole rewrite was undertaken to
  * escape. It is a table of contents, and a table of contents is a column of
  * short headings beside a long document that you scroll.
@@ -19,8 +19,8 @@ import type { ListShard } from "~~/src/lib/contracts";
  *
  * ## When the order is not the curator's
  *
- * A ranked page has no headings to be inside of — the rows come from all over
- * the README — so the rail cannot tell the reader where they are. It says so,
+ * A ranked page has no headings to be inside of (the rows come from all over
+ * the README), so the rail cannot tell the reader where they are. It says so,
  * goes quiet, and each entry becomes a way back: clicking one restores the
  * curator's order *and* goes to that heading. That is stated in the rail rather
  * than left to be discovered, because a control that silently changes meaning is
@@ -57,7 +57,7 @@ function leaf(path: string[]): string {
  * Folded shut on a phone.
  *
  * Above the document rather than beside it, 134 headings are 250 px of table of
- * contents before the reader sees a single row — which is the wrong trade on
+ * contents before the reader sees a single row, which is the wrong trade on
  * the screen with the least of it. It is set after mount rather than bound,
  * because the prerendered HTML has to agree with the first client render and
  * the viewport is not known until there is one.
@@ -89,7 +89,7 @@ const visible = computed(() =>
       </summary>
 
       <p v-if="!live" class="toc-note">
-        headings belong to the curator’s order — choosing one returns to it
+        headings belong to the curator’s order; choosing one returns to it
       </p>
 
       <ol class="toc-l">

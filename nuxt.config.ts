@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 
 /*
  * Static output, no server, and there will not be one. `nuxt generate`
- * prerenders the home page and one document per list; everything below that —
- * sorting, filtering, the table of contents — happens in the browser against a
+ * prerenders the home page and one document per list; everything below that
+ * (sorting, filtering, the table of contents) happens in the browser against a
  * shard it already holds. See DESIGN.md, "Architecture".
  */
 
@@ -27,7 +27,7 @@ const dataDir = usingFixtures ? fixtures : shards;
 
 /*
  * Which list routes to prerender. `front-page.json` carries the list index, so
- * it is also the route manifest — one less thing to keep in step by hand.
+ * it is also the route manifest, one less thing to keep in step by hand.
  *
  * Routes are filtered to the shards that actually exist. In fixture mode that
  * is `/golang` alone, which is the honest answer: prerendering the other 79
@@ -50,8 +50,8 @@ export default defineNuxtConfig({
 
   /*
    * The prerendered HTML is a skeleton: the rows arrive from the JSON on the
-   * client. DESIGN.md records this as a deliberate deferral with a real cost —
-   * the 80 indexable pages currently hold nothing for a crawler — and as a
+   * client. DESIGN.md records this as a deliberate deferral with a real cost
+   * (the 80 indexable pages currently hold nothing for a crawler) and as a
    * build-time switch rather than a rewrite, which is what `crawlLinks: false`
    * plus a client-only fetch keeps true.
    */
@@ -81,7 +81,7 @@ export default defineNuxtConfig({
       ],
       /*
        * Umami, self-hosted. No cookies, no fingerprint, no identifier that
-       * outlives the visit — which is why there is no banner asking permission
+       * outlives the visit, which is why there is no banner asking permission
        * to set one, and why the footer can describe it in a sentence instead of
        * a policy. `defer` so it never delays the shard fetch the page actually
        * needs.
@@ -99,7 +99,7 @@ export default defineNuxtConfig({
   /*
    * Two families, self-hosted. Source Serif 4 as the variable weight axis only
    * (no optical-size axis: one file, and the weight axis is the part that
-   * earns its keep — see `tokens.css`). IBM Plex Mono at 400 and 500, latin
+   * earns its keep; see `tokens.css`). IBM Plex Mono at 400 and 500, latin
    * subset, because the mono only ever sets figures and short labels.
    */
   css: [

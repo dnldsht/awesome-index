@@ -1,8 +1,8 @@
 /*
  * Turning the tuple into the handful of short strings a 32px row can hold.
  *
- * Every function here is called once per row per render — 2,829 times on
- * `avelino/awesome-go` — so they are plain and allocate little, and the two
+ * Every function here is called once per row per render (2,829 times on
+ * `avelino/awesome-go`), so they are plain and allocate little, and the two
  * that consult a table consult a plain object rather than a Map built at call
  * time.
  */
@@ -16,7 +16,7 @@ export function stars(n: number): string {
   return group.format(n);
 }
 
-/** A net star delta, signed. `+412`, `-9`, and `0` stays `0` — a week with no
+/** A net star delta, signed. `+412`, `-9`, and `0` stays `0`: a week with no
  *  change is a measurement, not an absence. */
 export function delta(n: number): string {
   return n > 0 ? `+${group.format(n)}` : group.format(n);
@@ -92,7 +92,7 @@ const DAY = 24 * HOUR;
  * The label (`active` / `slow` / `stalled`) is our judgement and this is the
  * fact it was made from; DESIGN.md requires the two to appear together so a
  * reader can disagree with the first while looking at the second. Until the
- * activity pass lands, every state is null and this age is the entire column —
+ * activity pass lands, every state is null and this age is the entire column,
  * which is the honest arrangement, not a degraded one.
  */
 export function age(
@@ -116,7 +116,7 @@ export function isoDate(unixSeconds: number | null): string {
 }
 
 /** The host of a web row, `www.` dropped. For 260 of golang's rows this is the
- *  only durable fact we hold — they carry no stars, no language and no pulse,
+ *  only durable fact we hold: they carry no stars, no language and no pulse,
  *  and where a link points is what a reader judges it by. */
 export function host(url: string): string {
   try {

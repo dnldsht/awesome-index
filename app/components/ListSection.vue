@@ -12,8 +12,8 @@ import type { Period } from "~/utils/order";
  * of the page. On golang it is 134 sections over 2,829 rows.
  *
  * It takes `indices` into `shard.rows` rather than a slice of rows. `from`/`to`
- * are still what a section *is* in the shard — rows are stored in curator order
- * precisely so a section is a contiguous slice — but `q` filters within a
+ * are still what a section *is* in the shard (rows are stored in curator order
+ * precisely so a section is a contiguous slice), but `q` filters within a
  * section, and after that the section is a subset rather than a slice. Passing
  * indices covers both without the page having to build a second array of rows:
  * the index is also the row's identity (a row is an appearance, not a project,

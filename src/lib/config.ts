@@ -16,7 +16,7 @@ export const GITHUB_PREFIX = "https://github.com/";
  * happen to live on GitHub would put the other three quarters at the bottom and
  * call that a ranking.
  *
- * Chosen per list rather than globally, because the lists genuinely differ —
+ * Chosen per list rather than globally, because the lists genuinely differ:
  * awesome-perl is 296 CPAN distributions and ranks cleanly, awesome-mac is 588
  * commercial applications and never will.
  */
@@ -27,10 +27,10 @@ export type ListOrder = (typeof LIST_ORDERS)[number];
 /**
  * How a list's order is described to a reader, mid-sentence.
  *
- * Defined once because five places state it — the page title, the meta
- * description, the heading above the rows, and the same three on category pages
- * — and a page whose heading and description disagree about what it is sorted by
- * is worse than either wording alone.
+ * Defined once because five places state it (the page title, the meta
+ * description, the heading above the rows, and the same three on category
+ * pages), and a page whose heading and description disagree about what it is
+ * sorted by is worse than either wording alone.
  */
 export function orderedBy(sort: ListOrder): string {
   return sort === "editorial"

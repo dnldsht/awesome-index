@@ -11,7 +11,7 @@ import {
 /**
  * The whole state of the list page, which lives in the query string.
  *
- * `?sort=` `?period=` `?cat=` `?q=` and nothing else — a closed set, settled in
+ * `?sort=` `?period=` `?cat=` `?q=` and nothing else: a closed set, settled in
  * DESIGN.md. Query strings rather than paths because a static host 404s on a
  * path it did not prerender, and there are 4,350 category states; this way there
  * is nothing to 404 and nothing to prerender. Every variant carries a canonical
@@ -30,12 +30,12 @@ import {
  * `replace` is for typing. A search box that pushed a history entry per
  * keystroke would make Back useless for twenty presses, so `q` is written with
  * `replace` and debounced by its control. The state still survives a reload and
- * a share — it is in the URL either way — it simply does not leave a trail.
+ * a share, since it is in the URL either way; it simply does not leave a trail.
  *
  * ## What is not written
  *
  * Defaults are stripped, so the bare `/golang` is what a reader lands on, links
- * to, and gets back to by clicking the masthead — `?sort=curator&period=30d` is
+ * to, and gets back to by clicking the masthead: `?sort=curator&period=30d` is
  * the same page and should not be a different URL.
  *
  * `period` is stripped whenever the order is not `trending`, because outside

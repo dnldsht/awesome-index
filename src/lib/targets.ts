@@ -169,13 +169,13 @@ const githubProvider: Provider = {
  * Until now `normalizeRepoId` returning undefined dropped all of this for free:
  * a badge, a CI link or a donation button was simply "not a repository". The
  * catch-all below has no such luxury, so the noise has to be named. These are
- * the hosts that turn up *inside* an entry rather than as one — a build badge, a
- * coverage shield, a funding link — and a paragraph that leads with one is a
+ * the hosts that turn up *inside* an entry rather than as one (a build badge, a
+ * coverage shield, a funding link), and a paragraph that leads with one is a
  * paragraph whose entry is somewhere else in it.
  *
  * Deliberately not here: youtube.com, twitter.com, meetup.com and the book
- * shops. Those are entries — a list with a "Podcasts" or a "People" heading
- * means them — and deciding they are the wrong *kind* of entry is the curator's
+ * shops. Those are entries (a list with a "Podcasts" or a "People" heading
+ * means them), and deciding they are the wrong *kind* of entry is the curator's
  * call, not ours.
  */
 const DENIED_HOSTS = new Set([
@@ -228,7 +228,7 @@ const TRACKING_PARAMS = /^(utm_|ref$|referrer$|source$|fbclid$|gclid$|mc_)/i;
  * remaining `:8080` is part of the address, not noise), the path, the surviving
  * query and the fragment. Merging
  * `boost.org` with `boost.org/libs` would be a guess, and the query and
- * fragment are load-bearing more often than they look —
+ * fragment are load-bearing more often than they look:
  * `marketplace.visualstudio.com/items?itemName=...` is a different extension
  * per parameter and `groups.google.com/forum/#!forum/golang-nuts` is a
  * different group per fragment. Two rows for one project is a small error;

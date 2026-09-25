@@ -2,7 +2,7 @@
  * Refreshes the sqlite dataset the static site is built from.
  *
  * 1. reads every awesome list declared in config.yaml, parses its README and
- *    stores what it links *together with the heading path* — a repository, a
+ *    stores what it links *together with the heading path*: a repository, a
  *    project's own site, whatever the curator wrote (see src/lib/targets.ts)
  * 2. refreshes the metadata of the repositories among them (stars, forks,
  *    pushedAt, language, topics, license, archived) through batched GraphQL
@@ -198,7 +198,7 @@ async function collectSources() {
  * only the parser can create is the row we have, and pass 3 fills in whether it
  * still answers. A repository gets its row from the GraphQL pass instead, and
  * that asymmetry is the mechanism that drops repositories GitHub no longer
- * serves — no row means no metadata means it never reaches the site.
+ * serves: no row means no metadata means it never reaches the site.
  *
  * On a target that already exists only the address is refreshed: `status`,
  * `failStreak` and the dates belong to the reachability pass and would be
@@ -566,7 +566,7 @@ function persistProbes(
  * Grouped by host rather than thrown at a queue flat: awesome-go alone lists 65
  * meetup.com pages, and 65 parallel requests to one host is the behaviour that
  * gets a crawler blocked, quite reasonably. Each host is walked sequentially with
- * a gap between requests, and it is the *hosts* that run in parallel — which for
+ * a gap between requests, and it is the *hosts* that run in parallel, which for
  * a set of a few thousand mostly-distinct domains is nearly as fast and rude to
  * nobody.
  */
@@ -638,8 +638,8 @@ async function main() {
    * The reachability pass on its own, over what the last parse stored.
    *
    * It is the one pass that needs no token and touches no GitHub API, and it is
-   * also the slowest wall-clock, so being able to run it alone — after a crawl,
-   * or on a schedule of its own — is worth a flag.
+   * also the slowest wall-clock, so being able to run it alone (after a crawl,
+   * or on a schedule of its own) is worth a flag.
    */
   if (flags["links-only"]) {
     const due = await selectLinks(await storedLinkIds(sourceIds));

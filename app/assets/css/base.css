@@ -74,7 +74,7 @@ a {
 /*
  * The running head: identity on one line, column labels on the next, stuck to
  * the top. A reader 2,000 rows down still knows which list they are in and
- * which column the figures belong to — the newspaper's answer to being deep
+ * which column the figures belong to: the newspaper's answer to being deep
  * inside a long document, and the reason this page needs no breadcrumb.
  */
 .mast {
@@ -162,7 +162,7 @@ a {
 /* ---- the control strip ------------------------------------------------- */
 
 /*
- * Order, window, search, count — in the masthead, above the column labels,
+ * Order, window, search, count: in the masthead, above the column labels,
  * inside the same rule the identity sits in. It is a line of words rather than
  * a toolbar: no select, no pill, no chevron. Four orders is few enough to state
  * all four, and stating them is also how the reader learns that "curator" is a
@@ -195,7 +195,7 @@ a {
 
 /*
  * An option is a word. The current one is set in the ink colour with a rule
- * under it in the accent — the same two-pixel accent rule the masthead uses, at
+ * under it in the accent. It is the same two-pixel accent rule the masthead uses, at
  * the scale of a word, so "selected" is said the same way twice on one page.
  */
 .ctl .opt {
@@ -250,9 +250,9 @@ a {
  * A rule under a word is right for an option, which is one word wide and only
  * ever read. It was wrong here: an empty 15rem underline with grey placeholder
  * text in it does not look like somewhere to type, it looks like a field that
- * failed to render. This is the only search on the site, so it gets a shape —
- * the sunk ground the open row uses, a hairline, and enough padding to read as
- * an input — while still owning no box of its own in the broadsheet sense.
+ * failed to render. This is the only search on the site, so it gets a shape
+ * (the sunk ground the open row uses, a hairline, and enough padding to read as
+ * an input) while still owning no box of its own in the broadsheet sense.
  */
 .ctl .q {
   font-family: var(--font-mono);
@@ -302,7 +302,7 @@ a {
 /*
  * The column labels live in the masthead and the rows live in the document
  * column, so the strip has to be pushed over by exactly the rail. Two
- * components, one grid, one number — which is why the rail width is a token.
+ * components, one grid, one number, which is why the rail width is a token.
  */
 .cols-in {
   margin-left: calc(var(--toc) + var(--toc-gap));
@@ -384,7 +384,7 @@ a {
  *
  * The indent must not change: the border is already the mark, and adding to
  * the padding as well made the current entry step to the right of the column
- * it belongs to — which read as a rendering fault rather than as emphasis.
+ * it belongs to, which read as a rendering fault rather than as emphasis.
  */
 .toc-a.on {
   color: var(--ink);
@@ -415,7 +415,7 @@ a {
  * The reason the rows are not virtualised.
  *
  * `content-visibility: auto` lets the browser skip style, layout and paint for
- * a section that is off-screen while every row of it stays in the DOM — so
+ * a section that is off-screen while every row of it stays in the DOM, so
  * Ctrl+F still finds a project 2,400 rows down, which on an index of projects
  * is the feature people actually use. `contain-intrinsic-size: auto <h>` is
  * what stops the scrollbar from lurching: `--sh` is set inline per section to
@@ -510,7 +510,7 @@ a {
    * Licence and language were columns and are not any more. Both were
    * five-eighths of a word, neither is ever the reason somebody scans a list,
    * and between them they took 11.25rem off the only column that carries the
-   * curator's voice — so the note was clipped mid-sentence on almost every row
+   * curator's voice. So the note was clipped mid-sentence on almost every row
    * while two columns of "MIT" and "TypeScript" sat beside it at full width.
    * Both are still on the row, one click down, spelled out in full.
    *
@@ -523,8 +523,8 @@ a {
     var(--col-num) var(--col-num) var(--col-act);
   column-gap: 1.1rem;
   align-items: baseline;
-  /* a gutter for the disclosure caret. `.row` must keep `overflow: hidden` —
-     it is what guarantees the 32px band — so the caret cannot hang outside */
+  /* a gutter for the disclosure caret. `.row` must keep `overflow: hidden`
+     (it is what guarantees the 32px band), so the caret cannot hang outside */
   padding-left: 1rem;
 }
 
@@ -538,7 +538,7 @@ a {
    * Fixed height, baseline alignment, and the top padding tuned so the 14px
    * serif name and the 11.5px mono figures sit on one optical line inside a
    * 32px band. `overflow: hidden` is the guarantee: a note that wraps, an
-   * emoji in a title, a language nobody expected — none of them can push a row
+   * emoji in a title, a language nobody expected: none of them can push a row
    * taller than the band, which is what keeps `contain-intrinsic-size` honest
    * and the scrollbar still.
    */
@@ -691,14 +691,14 @@ a {
 /*
  * Two different silences, and they must not look the same.
  *
- * `.nil` is "we have not measured this yet" — a repository whose star history
+ * `.nil` is "we have not measured this yet": a repository whose star history
  * the fetcher has not reached. It holds a dim figure dash, because something
  * belongs there and is coming.
  *
  * A `web` row gets nothing at all in the numeric columns: a website cannot be
  * starred, has no pulse, and will never have either. Rendering a dash there
  * would promise a number that is not owed. 260 of golang's 2,829 rows are in
- * this state permanently — see DESIGN.md on the 88% of non-GitHub targets that
+ * this state permanently; see DESIGN.md on the 88% of non-GitHub targets that
  * carry no popularity signal at all.
  */
 .nil {
@@ -718,7 +718,7 @@ a {
 
 /* ---- the expanded row -------------------------------------------------- */
 
-/* the panel hangs off the row, so it keeps the row's caret gutter — without it
+/* the panel hangs off the row, so it keeps the row's caret gutter. Without it
    every line of the panel sat 1rem to the left of the row it belongs to */
 .open {
   background: var(--sunk);
@@ -760,7 +760,7 @@ a {
  * star-history.com's SVG, fetched when a row opens and never before: 64 KB per
  * request against somebody else's service, and 2,829 of them on one page load
  * would be indefensible. It is also the reason DESIGN.md rules out an inline
- * sparkline — the row carries four integers and nothing else from the history.
+ * sparkline: the row carries four integers and nothing else from the history.
  *
  * `aspect-ratio` matches the 800 × 533 the service returns, so the expanded row
  * reserves the space before the image arrives and does not jump 500 pixels
@@ -828,7 +828,7 @@ a {
 
 /*
  * The credit. The heart is the one ornament on the site, so it is also the one
- * place the accent is spent on something that is not structure — which is
+ * place the accent is spent on something that is not structure, which is
  * allowed exactly once and here, at the very bottom, after everything.
  *
  * `aria-hidden` on the glyph and a visually-hidden "love" beside it: a screen
@@ -863,8 +863,8 @@ a {
 
 /*
  * A phone gets the two facts that survive the loss of the grid: the name and
- * the stars. The note moves to a second line rather than disappearing — it is
- * the curator's judgement and it is most of why the page is worth reading — so
+ * the stars. The note moves to a second line rather than disappearing (it is
+ * the curator's judgement and it is most of why the page is worth reading), so
  * the row becomes 46px, which is still ~14 projects on a phone screen against
  * the six a card layout would give.
  */
@@ -873,7 +873,7 @@ a {
    * The rail stops being a column and becomes a disclosure above the document.
    * A contents column needs a margin to live in, and the margin has to come
    * from somewhere: the rail is 13rem, and taking it out of a 1,000px viewport
-   * leaves the curator’s note — the reason the page is worth reading — with
+   * leaves the curator’s note, the reason the page is worth reading, with
    * about a hundred pixels. So the rail folds away above the document below
    * 72rem rather than at the width where it merely still fits. The column
    * labels lose their offset in the same breath; they are aligned to a rail

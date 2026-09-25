@@ -2,13 +2,13 @@
 import { PERIODS, SORTS, type Sort } from "~/utils/order";
 
 /*
- * The order, the window and the search — the page's entire control surface, in
+ * The order, the window and the search: the page's entire control surface, in
  * one strip of the masthead.
  *
  * It is a row of words, not a toolbar. No select, no chevron, no pill: four
  * orders is few enough to state all four, and a `<select>` would hide three of
- * them behind a click and hide from the reader that "curator" — the default and
- * the point of the rewrite — is a choice somebody made. The same argument
+ * them behind a click and hide from the reader that "curator" (the default and
+ * the point of the rewrite) is a choice somebody made. The same argument
  * DESIGN.md makes against a 4,350-value dropdown for categories, at a scale
  * where it happens to be easy to obey.
  *
@@ -18,14 +18,14 @@ import { PERIODS, SORTS, type Sort } from "~/utils/order";
  * brief's alternative was to show it disabled; hiding wins because a disabled
  * control invites a click that does nothing, whereas a control that appears
  * beside the order it belongs to *teaches* that trending is windowed. It is
- * dropped from the URL on the same rule — see `useListQuery`.
+ * dropped from the URL on the same rule; see `useListQuery`.
  *
  * ## The count
  *
  * `shown` / `total` is not a progress indicator, it is the search's only
  * feedback. `rankable` is the honest one: under an order that most of the list
- * cannot be placed in — trending on a list the star-history backfill has not
- * reached is *zero of 432* — it says so, in the strip, rather than presenting
+ * cannot be placed in (trending on a list the star-history backfill has not
+ * reached is *zero of 432*), it says so, in the strip, rather than presenting
  * the curator's order under a heading that says "trending".
  *
  * ## What the window does
@@ -37,8 +37,8 @@ import { PERIODS, SORTS, type Sort } from "~/utils/order";
  * different orderings rather than one ordering under three labels.
  *
  * It did not always. The first cut of this page shipped a single 30-day score
- * and a window that moved only the printed figure — a control doing half of
- * what it looked like it did — and the strip had to carry a sentence admitting
+ * and a window that moved only the printed figure (a control doing half of
+ * what it looked like it did), and the strip had to carry a sentence admitting
  * it. The sentence is gone because the cause is: `contracts.ts` grew two fields
  * and `bin/shards.ts` ships them. What remains is `unranked`, below, which is
  * not an apology but a fact that now *varies by window*: a year needs 78 weeks
@@ -58,14 +58,14 @@ const { sort, period, q, set, replace } = useListQuery();
  * The field writes the URL on every keystroke, with `replace` rather than
  * `push`.
  *
- * `replace` is the whole trick: the state still lives in the URL — reload it,
- * share it, and the search is there — but twenty keystrokes do not become
+ * `replace` is the whole trick: the state still lives in the URL (reload it,
+ * share it, and the search is there), but twenty keystrokes do not become
  * twenty entries in the reader's Back button.
  *
  * There is no debounce, and that is a correction rather than an omission. The
  * page filters on `q`, which is the URL; debouncing the write therefore
  * debounces the *results*, so a 200 ms timer does not "let the URL catch up"
- * as it appears to — it makes the list lag the reader's typing by 200 ms.
+ * as it appears to. It makes the list lag the reader's typing by 200 ms.
  * Measured on `avelino/awesome-go`, the worst case in the corpus, a keystroke
  * reaches paint in ~30 ms across 2,829 rows, so there is nothing to protect.
  *

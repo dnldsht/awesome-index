@@ -40,7 +40,7 @@ export const awesomeItemTable = sqliteTable(
       .notNull()
       .references(() => awesomeListTable.id, { onDelete: "cascade" }),
     /**
-     * What the entry points at: `target.id`. Not a foreign key, deliberately —
+     * What the entry points at: `target.id`. Not a foreign key, deliberately:
      * a list keeps linking repositories GitHub has since deleted, and those
      * never get a `target` row. The join is what drops them: the shard
      * builder inner-joins `target`, so an entry we know nothing about never
@@ -55,8 +55,8 @@ export const awesomeItemTable = sqliteTable(
      * The text of the link, i.e. what the curator calls the thing.
      *
      * A GitHub row takes its name from its id and does not need this. Nothing
-     * else has an id worth showing — "https://gtkmm.org/en" is an address, not
-     * a name — so the one thing the parser used to throw away is now the only
+     * else has an id worth showing ("https://gtkmm.org/en" is an address, not
+     * a name), so the one thing the parser used to throw away is now the only
      * name those rows have. Stored per appearance, like the note: two lists may
      * write the same project under different names and neither is wrong.
      */
@@ -107,7 +107,7 @@ export const targetTable = sqliteTable(
     /**
      * The last time the thing itself moved: `pushedAt` for a repository, and
      * where a registry provider gets added, its newest release. Null for a
-     * `web` target, which is the whole reason it is nullable — an entry with no
+     * `web` target, which is the whole reason it is nullable: an entry with no
      * pulse is not a dormant one, and every pulse denominator on the site
      * counts the rows that have this and no others.
      */
@@ -165,8 +165,8 @@ export const targetTable = sqliteTable(
      * `stars` answers "how many people starred this repository" and is left
      * alone: it stays null on everything that cannot be starred, which is the
      * distinction the rest of this file and every row on the site are built
-     * on. This answers the different question the listings actually ask —
-     * "where does this belong in the order" — for the rows that have no star
+     * on. This answers the different question the listings actually ask,
+     * "where does this belong in the order", for the rows that have no star
      * count but do have some other evidence of being wanted.
      *
      * Expressed as a *star equivalent* so one `order by` can rank a repository
@@ -188,8 +188,8 @@ export const targetTable = sqliteTable(
      * `inherited` and `registryRepo` resolved to a real GitHub repository, so
      * their `popularityRaw` *is* a star count and can be shown as one, credited
      * to the repository it belongs to. `forge` and `registryNative` did not:
-     * their raw figure is somebody else's unit — Codeberg stars, monthly
-     * downloads, MetaCPAN "++" — and has to be named.
+     * their raw figure is somebody else's unit (Codeberg stars, monthly
+     * downloads, MetaCPAN "++") and has to be named.
      */
     popularitySource: text("popularity_source").$type<PopularitySource>(),
     /**
@@ -215,7 +215,7 @@ export const targetTable = sqliteTable(
      * Two jobs, and the second is the one that makes it a column rather than a
      * detail of the resolver. A reader has to be told what a number counts, and
      * "1.6M" next to a package means nothing until it says downloads. And a
-     * recalibration — the star distribution moves every crawl — has to be able
+     * recalibration (the star distribution moves every crawl) has to be able
      * to regroup the stored figures into their cohorts and remap them, which it
      * cannot do from the figure alone.
      */
@@ -245,8 +245,8 @@ export const targetTable = sqliteTable(
  *
  * What is kept is the *delta*, not the running total GitHub sends. The totals
  * are a cumulative series and a cumulative series is the wrong thing to store
- * for a question about change: every window the site offers — 7 days, 30 days,
- * a year — is a sum of deltas, the trend score is a comparison of deltas
+ * for a question about change: every window the site offers (7 days, 30 days,
+ * a year) is a sum of deltas, the trend score is a comparison of deltas
  * against each other, and the current total is already `target.stars`. Storing
  * both would be storing the same information twice and inviting them to
  * disagree after a crawl that only refreshed one of them.
@@ -282,9 +282,9 @@ export const starHistoryTable = sqliteTable(
  * Two jobs, and both of them are about not asking GitHub the same question
  * twice. A full backfill is thirteen hours of paced requests against a
  * 5,000/hour quota, so it has to survive being killed at hour nine and resume
- * rather than start again — that is `pagesDone`. And the weekly refresh has to
+ * rather than start again: that is `pagesDone`. And the weekly refresh has to
  * be cheap on the overwhelming majority of repositories that gained no stars
- * since it last looked — that is `etagPage1`, because a 304 does not consume
+ * since it last looked: that is `etagPage1`, because a 304 does not consume
  * quota at all.
  *
  * Pages beyond the first can never change: the endpoint counts backwards from
@@ -304,7 +304,7 @@ export const historyFetchTable = sqliteTable("history_fetch", {
   fetchedAt: integer("fetched_at", { mode: "timestamp" }),
   /**
    * The repository has stopped answering for a reason that will not change on
-   * its own — 404 (deleted or made private), 451 (taken down). Set so the
+   * its own: 404 (deleted or made private), 451 (taken down). Set so the
    * fetcher stops spending a request per run rediscovering it; a row that is
    * merely rate-limited or briefly 500ing is left alone, exactly as
    * `failStreak` above distinguishes "gone" from "could not tell".

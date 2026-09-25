@@ -6,7 +6,7 @@ is being rewritten.
 
 **Read `DESIGN.md` before changing anything, and `PLAN.md` before picking work
 up.** `DESIGN.md` records the decisions and the reasoning that is not
-recoverable from the code — several of them look wrong at a glance and are
+recoverable from the code. Several of them look wrong at a glance and are
 deliberate. `src/lib/contracts.ts` is the shape of everything that crosses a
 boundary, and is what the parallel strands of the rewrite are written against.
 
@@ -15,7 +15,7 @@ the tree at the moment; the Nuxt one arrives with Wave 1 D.
 
 ## Conventions
 
-- pnpm. Node 22+ runs the TypeScript directly — there is no build step, which is
+- pnpm. Node 22+ runs the TypeScript directly; there is no build step, which is
   why imports carry their `.ts` extension.
 - Drizzle over better-sqlite3. Schema changes go in `src/lib/db/schema.ts` and
   the migration is **generated** (`pnpm db:generate`), never hand-written.

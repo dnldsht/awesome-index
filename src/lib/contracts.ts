@@ -4,8 +4,8 @@
  * Everything the site ships to a browser is described here: one JSON document
  * per list, one for the front page, and the two function signatures that turn
  * star history into the numbers a row carries. This file is what makes the rest
- * of the work parallel — the fetcher, the metrics, the shard builder and the
- * pages are written against these types rather than against each other — so it
+ * of the work parallel (the fetcher, the metrics, the shard builder and the
+ * pages are written against these types rather than against each other), so it
  * has no imports, no runtime behaviour and no dependencies. It is a contract,
  * and it is meant to be read in full before anything is written against it.
  *
@@ -26,7 +26,7 @@
  * of the document: the field names would outweigh the data they name. Gzip
  * forgives a lot of that, but not all of it, and the whole rewrite rests on the
  * largest shard staying small enough to send on page load. Positional access is
- * the price, and `ROW` below is how it stays readable — write `row[ROW.STARS]`,
+ * the price, and `ROW` below is how it stays readable: write `row[ROW.STARS]`,
  * never `row[6]`.
  *
  * The order of the fields is part of the contract. Appending is safe; inserting
@@ -40,7 +40,7 @@
 export type Row = [
   /**
    * `target.id`: "<owner>/<name>" for a repository, a normalised URL for
-   * everything else. Identity, and the join key back to the database — not a
+   * everything else. Identity, and the join key back to the database. Not a
    * display string, though a github id is also the form you type into a package
    * manager and is rendered as such.
    */
@@ -48,7 +48,7 @@ export type Row = [
   /**
    * What to call the thing. For a `github` row, the repository name alone (the
    * owner is already in `id`, and the row renders the two together). For a
-   * `web` row, what the curator wrote, falling back to the host — a URL is an
+   * `web` row, what the curator wrote, falling back to the host: a URL is an
    * address, not a name, and those rows have no other name to offer.
    */
   title: string,
@@ -64,7 +64,7 @@ export type Row = [
    * Not unique within a shard, and not a sort key on its own: a merged list
    * (MacOS is two READMEs) holds one position per source, and two curators
    * numbering from 1 interleave into nonsense. `rows` is already in the right
-   * order — source first, then position — so the ordering that matters is the
+   * order (source first, then position), so the ordering that matters is the
    * array index. This field is here to be shown, not to sort by.
    *
    * **Zero-based.** The first entry of a README is `0`, so anything rendering
@@ -76,7 +76,7 @@ export type Row = [
    * zero: a repository with `stars: 0` has none, a website has no such notion,
    * and the row must not print a zero for the second case. The calibrated
    * star-equivalent that ranks the unstarrable rows (see `popularity.ts`) is
-   * deliberately not in this tuple — it sorts, it is never shown, and no
+   * deliberately not in this tuple: it sorts, it is never shown, and no
    * ordering in v2 needs it yet.
    */
   stars: number | null,
@@ -92,7 +92,7 @@ export type Row = [
   archived: 0 | 1,
   /**
    * `pushedAt` for a repository, in unix *seconds*. Null for a `web` row, which
-   * has no pulse to report — again not zero, and not a date the reader should
+   * has no pulse to report; again not zero, and not a date the reader should
    * be shown as 1970.
    *
    * Always rendered beside the `state` label, never instead of it: the label is
@@ -102,8 +102,8 @@ export type Row = [
   lastActivityAt: number | null,
   /**
    * Net stars gained over the window, from the weekly history. Null means we
-   * have no history for this row — a `web` row, a repository the fetcher has
-   * not reached, or one younger than the window — and null is not zero: a
+   * have no history for this row (a `web` row, a repository the fetcher has
+   * not reached, or one younger than the window), and null is not zero: a
    * project that gained nothing this week and a project we have never measured
    * are different claims.
    *
@@ -116,7 +116,7 @@ export type Row = [
   /** see `ActivityState`; null when the cohort was too small to judge */
   state: ActivityState | null,
   /**
-   * Acceleration against the repository's own baseline over **30 days** — see
+   * Acceleration against the repository's own baseline over **30 days**; see
    * `trendScore`. The middle of the three windows below, and the default.
    *
    * **A SORT KEY. NEVER RENDERED.** It exists so "trending" can mean what a
@@ -135,7 +135,7 @@ export type Row = [
    * These exist because the list page offers `?period=7d|30d|1y` under its
    * trending order, and one score cannot answer three questions. Shipping only
    * the 30-day score made the window control change which *figure* the row
-   * printed while leaving the order untouched — a control that does half of
+   * printed while leaving the order untouched: a control that does half of
    * what it appears to do, which is worse than one that does nothing.
    *
    * Slicing `weekly` is not a substitute and `trendScore` says why: a shorter
@@ -167,7 +167,7 @@ export type Row = [
  * Names for the positions in `Row`. Every read goes through this.
  *
  * Kept in the same order as the tuple above, and changed at the same time as
- * it — the compiler will not catch a constant that points one field to the
+ * it; the compiler will not catch a constant that points one field to the
  * left, and the symptom is a language column full of licences.
  */
 export const ROW = {
@@ -199,7 +199,7 @@ export const ROW = {
  * different things in different languages: eighteen months without a commit is
  * abandonment for an npm package and completion for a C library. The thresholds
  * behind these labels are percentiles within the repository's own language
- * cohort, recomputed every crawl — see `activityStates`.
+ * cohort, recomputed every crawl (see `activityStates`).
  *
  * `archived` is the only one of the four the project itself declared. The other
  * three are our inference, which is why the date is always shown next to them.
@@ -212,7 +212,7 @@ export type ActivityState = "active" | "slow" | "stalled" | "archived";
 
 /**
  * One list, whole. This is the unit the browser fetches and then sorts,
- * filters and searches in memory — there is no second request, no pagination
+ * filters and searches in memory: there is no second request, no pagination
  * and no server. The median list is ~400 entries and the largest ~3,000, which
  * at this shape is a couple of hundred kilobytes gzipped: smaller than the hero
  * image the old site did not have.
@@ -241,15 +241,15 @@ export type ListShard = {
    *
    * Two conventions a builder has to honour, both learned from the data:
    *
-   * - Entries that sit above every heading — 1,123 of them, nearly all in
-   *   `uhub/awesome-javascript`, which writes its whole list in the preamble —
+   * - Entries that sit above every heading (1,123 of them, nearly all in
+   *   `uhub/awesome-javascript`, which writes its whole list in the preamble)
    *   are filed under the slug `uncategorized` with the path `["Uncategorized"]`.
    *   The database stores `""` for those; a shard never does.
    * - A slug appears at most once in this array. Three (list, slug) pairs in the
    *   corpus are *not* contiguous in README order, because two headings
    *   slugified to the same thing or a curator returned to the same heading
-   *   later. Rows are grouped by section — ordered by where the section first
-   *   appears, then by position inside it — rather than cut wherever the slug
+   *   later. Rows are grouped by section (ordered by where the section first
+   *   appears, then by position inside it) rather than cut wherever the slug
    *   changes, so the invariant holds for every list and the table of contents
    *   never lists "Misc" twice.
    *
@@ -276,7 +276,7 @@ export type ListShard = {
  *
  * The front page names projects that live in 80 different shards and cannot
  * load them; this is the little that has to be copied out. `value` is whatever
- * the rubric is about — net stars gained over the period for `climbing` — and
+ * the rubric is about (net stars gained over the period for `climbing`), and
  * it is a count of real stars, so it can be printed. `listSlug` is where the
  * link goes.
  */
@@ -298,7 +298,7 @@ export type Ref = {
 export type FrontPage = {
   generatedAt: number;
   /**
-   * What is climbing, one block per window. Ordered by `trendScore` — the score
+   * What is climbing, one block per window. Ordered by `trendScore`. The score
    * itself does not appear here, deliberately; `Ref.value` is the star count for
    * the period, which is the number a reader is shown.
    *
@@ -313,8 +313,8 @@ export type FrontPage = {
   archived: Ref[];
   /**
    * Every list, for the index. `entries` is the number of rows its shard
-   * holds — the same count, so the index does not promise 2,824 and the page
-   * then show 2,829 — and `repos` how many of those are repositories. The gap
+   * holds (the same count, so the index does not promise 2,824 and the page
+   * then show 2,829), and `repos` how many of those are repositories. The gap
    * between the two is the part of the list that has no stars and no pulse,
    * large enough on some lists (awesome-mac is half) that stating it is the
    * honest thing to do.
@@ -348,7 +348,7 @@ export type FrontPage = {
 /**
  * How hard a repository is accelerating against its own past, or null.
  *
- * The question a reader means by "trending" is not "which of these is big" —
+ * The question a reader means by "trending" is not "which of these is big";
  * absolute deltas answer that, and we already have that order under stars.
  * Nor is it percentage growth, which ranks twelve stars going to thirty at
  * +150% forever. It is: this project normally gains three a week and gained
@@ -390,8 +390,8 @@ export declare function trendScore(
  * thresholds are *percentiles within the language cohort*, computed from the
  * population handed in: "stalled" means in the bottom quartile of activity
  * among the projects in that language in this dataset. Fixed day thresholds
- * are systematically wrong about whole families of languages — see
- * `ActivityState` — and a self-calibrating cut asks nobody to believe a
+ * are systematically wrong about whole families of languages (see
+ * `ActivityState`), and a self-calibrating cut asks nobody to believe a
  * hand-picked constant. `popularity.ts` solves the same shape of problem and is
  * worth reading first.
  *

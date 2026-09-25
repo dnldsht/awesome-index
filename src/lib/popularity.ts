@@ -2,8 +2,8 @@
  * Turning somebody else's popularity figure into a position in our order.
  *
  * Two thirds of what the lists link is a repository and sorts itself: stars are
- * one scale and every row on it is measured the same way. The rest — 11,491
- * rows — has no star count, and the reason the listings used to drop it below
+ * one scale and every row on it is measured the same way. The rest, 11,491
+ * rows, has no star count, and the reason the listings used to drop it below
  * the ranking rather than into it is that its evidence arrives in units that do
  * not compare. Measured on this dataset:
  *
@@ -15,7 +15,7 @@
  * the raw numbers together does not merely blur the order, it asserts something
  * false: that every project on a small forge is worse than the median project
  * on a large one. Downloads are worse still, because they are not even a count
- * of people — a crate's `recent_downloads` runs to 224M against a MetaCPAN
+ * of people: a crate's `recent_downloads` runs to 224M against a MetaCPAN
  * "++" tally that tops out at 514.
  *
  * So nothing is compared in its own unit. A row's figure buys it a percentile
@@ -24,8 +24,8 @@
  * star equivalent: not what the thing has, but where it sits.
  *
  * The choice of that last distribution is what makes the mapping defensible
- * rather than arbitrary. Both cohorts have already been filtered the same way —
- * somebody curating an awesome list chose to write them down — so the 90th
+ * rather than arbitrary. Both cohorts have already been filtered the same way
+ * (somebody curating an awesome list chose to write them down), so the 90th
  * percentile of one is being matched against the 90th percentile of a
  * comparable population, not against all of GitHub, where almost every listed
  * project is already exceptional.
@@ -49,8 +49,8 @@ export type PopularitySource = (typeof POPULARITY_SOURCES)[number];
  * The cohort whose percentiles are the scale everything else is mapped onto,
  * i.e. the one population that needs no translating.
  *
- * A measurement in this cohort is already a GitHub star count — it was read off
- * a repository we resolved the link to — so its star equivalent is itself, and
+ * A measurement in this cohort is already a GitHub star count (it was read off
+ * a repository we resolved the link to), so its star equivalent is itself, and
  * `starEquivalents` passes it through untouched rather than round-tripping it
  * through its own distribution and quietly moving it.
  */
@@ -63,7 +63,7 @@ export const GITHUB_COHORT = "github";
  * ranking them against each other would be reading noise as a signal, and the
  * calibrated numbers it produced would be indistinguishable from measured ones
  * once they were in the column. Cohorts under this are reported and left
- * unranked instead — which is the state those rows are in today anyway, so the
+ * unranked instead, which is the state those rows are in today anyway, so the
  * floor costs nothing and buys the column its meaning.
  */
 export const MIN_COHORT = 8;
@@ -80,7 +80,7 @@ export type Measurement = {
    * The population `raw` has to be ranked inside before it means anything:
    * "github" for a real star count, otherwise a name for the scale it is on
    * ("codeberg.org", "crates.io/downloads"). Cohorts are compared internally
-   * and never across, so the name only has to separate incomparable units — two
+   * and never across, so the name only has to separate incomparable units: two
    * registries that both report monthly downloads still get one cohort each,
    * because their audiences differ by orders of magnitude.
    */
@@ -100,7 +100,7 @@ export type Calibration = {
  * Midrank, not "fraction below": with plain `<` the smallest value in a cohort
  * scores 0 and maps to the least starred repository in the dataset, which for a
  * cohort of eight is a claim about the bottom of GitHub that eight rows cannot
- * support. Ties share their midpoint, which matters more than it sounds —
+ * support. Ties share their midpoint, which matters more than it sounds:
  * MetaCPAN reports 42 of its 297 distributions with zero "++", and they have to
  * come out equal rather than in whatever order the array happened to hold them.
  */
@@ -137,7 +137,7 @@ function quantileOf(sorted: number[], fraction: number): number {
  * Star equivalents for a batch of measurements.
  *
  * `starDistribution` is every star count in the dataset that a repository
- * actually has — unsorted is fine, it is copied and sorted here. Pass it once
+ * actually has. Unsorted is fine, it is copied and sorted here. Pass it once
  * for the whole batch: it is the scale, so calibrating two halves of a run
  * against two different snapshots of it would make the halves disagree.
  */
@@ -233,8 +233,8 @@ export function describeRaw(
  * Registry metadata is written by hand into a manifest and reaches us in every
  * spelling a `git remote` accepts: `git://`, `git+https://`, `ssh://git@`, with
  * and without `.git`, occasionally with a `#branch` on the end. `normalizeRepoId`
- * only reads http(s) URLs, correctly — it exists to tell repository links apart
- * from badges on a README, not to guess at transports — so the guessing happens
+ * only reads http(s) URLs, correctly (it exists to tell repository links apart
+ * from badges on a README, not to guess at transports), so the guessing happens
  * here, where the input is known to be somebody's declared source of truth.
  *
  * Returns undefined rather than a URL when there is nothing to clean up, so a

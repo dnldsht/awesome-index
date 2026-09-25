@@ -4,14 +4,16 @@
  *
  * The button cycles auto → light → dark, and the icon can only show two states,
  * so it shows what the reader is actually looking at while `title` and
- * `aria-label` carry the third — including whether the current look is a choice
+ * `aria-label` carry the third, including whether the current look is a choice
  * or the system's. An icon that lied about which of three states it was in
  * would be worse than the word it replaced.
  */
 const { theme, dark, toggle } = useTheme();
 
 const label = computed(() =>
-  theme.value === "auto" ? `auto (${dark.value ? "dark" : "light"})` : theme.value,
+  theme.value === "auto"
+    ? `auto (${dark.value ? "dark" : "light"})`
+    : theme.value,
 );
 </script>
 
@@ -19,7 +21,7 @@ const label = computed(() =>
   <button
     class="btn theme-b"
     type="button"
-    :aria-label="`switch theme — currently ${label}`"
+    :aria-label="`switch theme, currently ${label}`"
     :title="`theme: ${label}`"
     @click="toggle()"
   >

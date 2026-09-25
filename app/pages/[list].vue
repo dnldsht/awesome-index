@@ -13,8 +13,8 @@ import { listCanonical } from "~/utils/site";
  * change everything else follows from"), and this file is where it either
  * pays off or does not.
  *
- * The four pieces of state live in the query string and nowhere else — no
- * refs mirroring the URL, no `localStorage`, no scroll restoration hack — so
+ * The four pieces of state live in the query string and nowhere else (no
+ * refs mirroring the URL, no `localStorage`, no scroll restoration hack), so
  * every state survives a reload, a share and the back button because the URL
  * is the only copy of it. See `useListQuery`.
  *
@@ -22,8 +22,8 @@ import { listCanonical } from "~/utils/site";
  *
  * The page has two shapes, and which one it takes is decided by the order.
  *
- * In the **curator's order** — the default, and the one order the site this
- * replaces could not produce — the page is the README: headings in the
+ * In the **curator's order**, the default and the one order the site this
+ * replaces could not produce, the page is the README: headings in the
  * curator's sequence, rows under them, a contents rail beside it that follows
  * the reader down. `q` narrows it without destroying it, because a search
  * inside a document hides the lines that do not match and the headings left
@@ -40,9 +40,9 @@ import { listCanonical } from "~/utils/site";
  *
  * Nothing below copies a row. Filtering and sorting produce `number[]` into
  * `shard.rows`, which stays in curator order for the whole life of the page.
- * The index is also a row's identity — a row is an *appearance*, not a project,
+ * The index is also a row's identity. A row is an *appearance*, not a project,
  * so the same target can appear twice under two headings and nothing else about
- * it is unique — which is why the open row is held as an index and why it
+ * it is unique, which is why the open row is held as an index and why it
  * survives every reorder.
  */
 
@@ -57,7 +57,7 @@ const { sort, period, cat, q, set } = useListQuery();
 
 const rows = computed(() => shard.value?.rows ?? []);
 
-/* built once per shard and reused for every keystroke — see `haystack` */
+/* built once per shard and reused for every keystroke; see `haystack` */
 const hay = computed(() => haystack(rows.value));
 const find = computed(() => needle(q.value));
 
@@ -67,15 +67,15 @@ const document_ = computed(() => sort.value === "curator");
 /**
  * The sections that survive `q`, each with the indices of its surviving rows.
  *
- * A section is a contiguous slice of `rows` — the shard is built in curator
- * order precisely so that it is — so this is a walk over `[from, to)` and not a
+ * A section is a contiguous slice of `rows` (the shard is built in curator
+ * order precisely so that it is), so this is a walk over `[from, to)` and not a
  * grouping pass. Sections left empty by the search are dropped: on `golang` a
  * search for "kafka" leaves 11 rows under 5 headings out of 134, and listing the
  * other 129 at zero would bury the answer in its own table of contents.
  *
  * Non-contiguous headings are already resolved in the shard: three (list, slug)
  * pairs in the corpus repeat a heading later in the README, and the builder
- * groups them so that a slug appears once. `shell` is the test — `uncategorized`
+ * groups them so that a slug appears once. `shell` is the test: `uncategorized`
  * at rows 0–5, and `javascript`, on the list of the same name, spanning 31–1105.
  */
 const groups = computed(() => {
@@ -139,7 +139,7 @@ const { current, jump } = useScrollSpy(keys, document_);
  * its entries rather than leaving it to be discovered.
  *
  * The scroll itself is left to the effect below, so that a click, a reload and
- * a shared link all take the same path — the click has no shard to wait for,
+ * a shared link all take the same path. The click has no shard to wait for,
  * but the other two do, and one code path for three cases is the difference
  * between "it works" and "it works when I click it".
  */
@@ -148,7 +148,7 @@ function goTo(section: string) {
 }
 
 /*
- * `?cat=` means "the document, at this heading" — so honouring it is a scroll,
+ * `?cat=` means "the document, at this heading", so honouring it is a scroll,
  * and it has to wait for the rows to exist. The prerendered HTML is a skeleton
  * and the shard arrives afterwards, which is also the reason the section is a
  * query parameter and not a fragment: at the moment the browser would honour a
@@ -180,7 +180,7 @@ watchEffect(() => {
  * One open row at a time, held by index into `shard.rows`. An index rather than
  * an id because a row is an appearance, not a project: the same target can be
  * filed under two headings of one list, and two rows would open at once. Because
- * it is the index into the *unsorted* array it also survives every reorder — the
+ * it is the index into the *unsorted* array it also survives every reorder: the
  * row the reader opened is still open after they sort, wherever it has moved to.
  */
 const open = ref(-1);
@@ -209,7 +209,7 @@ const n = new Intl.NumberFormat("en-US");
  * shape of thing that makes a crawler distrust the canonical.
  */
 useHead({
-  title: () => `${shard.value?.name ?? slug} — awesome index`,
+  title: () => `${shard.value?.name ?? slug} · awesome index`,
   link: [{ rel: "canonical", href: listCanonical(slug) }],
 });
 </script>
@@ -279,7 +279,7 @@ useHead({
       <!--
         Branch on the data, never on `status`. With `server: false` the fetch
         has not started when the prerendered HTML is written, so the server
-        sees `idle` and the client's first tick sees `pending` — the same page
+        sees `idle` and the client's first tick sees `pending`: the same page
         by every other measure, and a hydration mismatch by that one. `shard`
         and `error` are both null on both sides at hydration, which is what
         makes the skeleton agree with itself.
@@ -304,8 +304,9 @@ useHead({
 
         <main class="list-doc">
           <p v-if="shown === 0" class="empty">
-            nothing in {{ shard.name }} matches <b>{{ q }}</b> — this search
-            covers this list only, which is the whole of the search on this site
+            nothing in {{ shard.name }} matches <b>{{ q }}</b
+            >. This search covers this list only, which is the whole of the
+            search on this site
           </p>
 
           <template v-else-if="document_">

@@ -2,7 +2,7 @@
 import type { Ref as FrontRef } from "~~/src/lib/contracts";
 
 /**
- * One rubric: a head, the ordering's terms, and up to twenty rows — or the
+ * One rubric: a head, the ordering's terms, and up to twenty rows, or the
  * stated reason there are none.
  *
  * The empty state is the part that had to be designed rather than handled.
@@ -10,18 +10,18 @@ import type { Ref as FrontRef } from "~~/src/lib/contracts";
  * until the schema grows a first-seen date, so a blank slot is the normal
  * condition of this page and not an incident. It gets the same rule and the
  * same head as a full one, and a sentence in the editorial voice saying what is
- * missing and why — an absence reported is a fact like any other. What it must
+ * missing and why: an absence reported is a fact like any other. What it must
  * never do is disappear: a rubric that hides itself when it has nothing leaves
  * a reader unable to tell a quiet week from a broken build.
  *
  * `value` is a count of real stars and is the only figure rendered. The
  * acceleration score that put these rows in this order is deliberately not
- * here, not even as a tooltip — see `Row`'s `trend` in `contracts.ts`. The
+ * here, not even as a tooltip; see `Row`'s `trend` in `contracts.ts`. The
  * consequence is visible and has to be handled rather than hidden: the row
  * ordered first often carries a smaller figure than the row below it, because
  * +253 against a normal week of +1 is a larger event than +529 against +41.
  * The standfirst above the band is where that gets explained, once, in the
- * reader's terms — a page that prints an order it refuses to justify is worse
+ * reader's terms. A page that prints an order it refuses to justify is worse
  * than one that prints the score.
  */
 const props = withDefaults(
@@ -33,7 +33,7 @@ const props = withDefaults(
     rows: FrontRef[];
     /** `delta` signs the figure (+412); `stars` prints a total */
     figure?: "delta" | "stars";
-    /** what to say when there are none — always a reason, never "no data" */
+    /** what to say when there are none: always a reason, never "no data" */
     empty: string;
     /** the lead rubric is set larger; the flanking two are set quieter */
     lead?: boolean;
@@ -52,7 +52,7 @@ const owner = (id: string) => {
 
 /*
  * Into the site, not out of it. The row is an appearance in a list, so the
- * link is that list with the search box already carrying the project's name —
+ * link is that list with the search box already carrying the project's name:
  * `?q=` is the list page's filter (DESIGN.md, "Architecture": all state in the
  * query string). Linking to the bare list would land a reader at the top of
  * three thousand rows holding the name of one of them.
@@ -100,7 +100,7 @@ const href = (ref: FrontRef) =>
 /*
  * Serif head, because these are the page's five headlines and the two families
  * divide by job: prose is the serif, every figure is the mono. The window sits
- * beside it in the mono as a label rather than as part of the sentence — it is
+ * beside it in the mono as a label rather than as part of the sentence. It is
  * a measurement, and it is there because "Thirty days" is a name for a window
  * that is actually four week buckets.
  */
@@ -191,7 +191,7 @@ const href = (ref: FrontRef) =>
   text-underline-offset: 2px;
 }
 
-/* the owner is provenance, the repository is the name — see `format.ts` */
+/* the owner is provenance, the repository is the name; see `format.ts` */
 .ru-owner {
   font-weight: var(--w-body);
   color: var(--ink-3);

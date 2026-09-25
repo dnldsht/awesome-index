@@ -16,8 +16,8 @@ import {
  * "stalled" under an abandoned one.
  *
  * The cohorts below are built from the real shape of `data/awesome.db`,
- * measured 2026-09-12 — days since `pushed_at` at the 0/25/50/75/90/100th
- * percentiles of each language — so that the C-versus-npm case is tested
+ * measured 2026-09-12 (days since `pushed_at` at the 0/25/50/75/90/100th
+ * percentiles of each language), so that the C-versus-npm case is tested
  * against the distributions that actually exist rather than against two numbers
  * chosen to make the test pass.
  */
@@ -41,7 +41,7 @@ const MEASURED = {
 
 /**
  * `n` repositories in `language`, their ages read off `curve` at evenly spaced
- * percentiles — so the fixture has the shape the real cohort has, and not the
+ * percentiles, so the fixture has the shape the real cohort has, and not the
  * shape six numbers spaced evenly would have.
  *
  * The ids carry the age so that a failing assertion says which repository it

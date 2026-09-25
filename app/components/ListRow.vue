@@ -16,13 +16,13 @@ import { PERIOD_FIELD, type Period } from "~/utils/order";
  *
  * 1. `Row[ROW.TREND]` is never rendered. It is the acceleration score, it has
  *    no unit a reader could interpret, and it exists to sort. What the row
- *    shows is `d7`/`d30`/`d365` — counts of actual stars. An ordering is a
+ *    shows is `d7`/`d30`/`d365`, counts of actual stars. An ordering is a
  *    decision; a printed number is a claim. Sorting by `trending` therefore
  *    changes the *order* of these rows and nothing that appears on any of them.
  * 2. Null is not zero. A repository we have not measured and a repository that
  *    gained nothing are different statements and get different marks.
  * 3. A `web` row is not a degraded `github` row. It has no stars, no language,
- *    no licence and no pulse, and it never will — 260 of golang's 2,829 rows
+ *    no licence and no pulse, and it never will: 260 of golang's 2,829 rows
  *    and 88% of the corpus's non-GitHub targets are permanently in this state.
  *    Its numeric columns stay empty and its host takes the tag column, because
  *    where a link points is the one durable fact we hold about it.
@@ -54,7 +54,7 @@ const d = computed(() => r.value[PERIOD_FIELD[props.period]] as number | null);
 const isArchived = computed(() => r.value[ROW.ARCHIVED] === 1);
 
 /*
- * The activity cell is the age since the last push — the fact — and the state
+ * The activity cell is the age since the last push (the fact), and the state
  * label, when we have one, is carried as a colour on it plus a title. Archived
  * is the exception and is marked with a dagger, because it is the one state
  * the author declared rather than one we inferred, and it belongs in a
@@ -83,7 +83,7 @@ const activityTitle = computed(() => {
  * - **It is allowed to fail.** It 500s on some repositories. A broken image
  *   icon in the middle of an expanded row would read as the page being broken,
  *   so the failure is caught and stated in one line, with the link out still
- *   offered — the reader can go and look, which is all the image was doing.
+ *   offered: the reader can go and look, which is all the image was doing.
  *
  * The 14 months of history the site holds never appear here. They exist only at
  * build time, to compute the four integers the row carries; this curve goes
@@ -151,13 +151,13 @@ watch(
   <!--
     Expansion. Everything the 32px band had to drop: the note in full, the
     licence and language spelled out, the unrounded date, all three windows,
-    the URL — and, for a repository, the whole star curve.
+    the URL and, for a repository, the whole star curve.
   -->
   <div v-if="open" class="open">
     <!--
       Only when the band clipped it. Roughly 90 characters fit in the note
       column at a usual width, and repeating a note the reader can already see
-      one line above is noise — the panel exists for what the 32px band could
+      one line above is noise. The panel exists for what the 32px band could
       not hold, not for a second copy of what it could.
     -->
     <p v-if="(r[ROW.NOTE]?.length ?? 0) > 90" class="open-note">
@@ -171,9 +171,9 @@ watch(
         }}</b></span
       >
       <span v-if="isRepo"
-        >7d <b>{{ r[ROW.D7] == null ? "—" : delta(r[ROW.D7]!) }}</b> · 30d
-        <b>{{ r[ROW.D30] == null ? "—" : delta(r[ROW.D30]!) }}</b> · 1y
-        <b>{{ r[ROW.D365] == null ? "—" : delta(r[ROW.D365]!) }}</b></span
+        >7d <b>{{ r[ROW.D7] == null ? "-" : delta(r[ROW.D7]!) }}</b> · 30d
+        <b>{{ r[ROW.D30] == null ? "-" : delta(r[ROW.D30]!) }}</b> · 1y
+        <b>{{ r[ROW.D365] == null ? "-" : delta(r[ROW.D365]!) }}</b></span
       >
       <span v-if="r[ROW.LANGUAGE]"
         >language <b>{{ r[ROW.LANGUAGE] }}</b></span
@@ -216,7 +216,7 @@ watch(
       />
       <figcaption class="chart-cap">
         <template v-if="failed"
-          >no star history for this repository —
+          >no star history for this repository;
           <a
             :href="`https://star-history.com/#${r[ROW.ID]}&Date`"
             rel="noopener nofollow"
