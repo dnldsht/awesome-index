@@ -994,6 +994,16 @@ a {
     display: block;
     grid-area: 1 / 2;
   }
+
+  /* likewise under activity: the order is by last push, so that is the figure */
+  .by-push .st {
+    display: none;
+  }
+  .by-push .ac {
+    display: block;
+    grid-area: 1 / 2;
+    text-align: right;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
