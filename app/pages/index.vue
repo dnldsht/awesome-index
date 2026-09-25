@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FrontPage, Ref as FrontRef } from "~~/src/lib/contracts";
+import { SITE } from "~/utils/site";
 
 /*
  * The front page.
@@ -32,16 +33,16 @@ const { data: front, error } = useAsyncData<FrontPage>(
   { server: false },
 );
 
-useHead({
+const description =
+  "Eighty awesome lists, refreshed daily: which projects are gaining " +
+  "stars, which were archived, and the lists themselves.";
+
+useSeoMeta({
   title: "awesome index",
-  meta: [
-    {
-      name: "description",
-      content:
-        "Eighty awesome lists, refreshed daily: which projects are gaining " +
-        "stars, which were archived, and the lists themselves.",
-    },
-  ],
+  description,
+  ogTitle: "awesome index",
+  ogDescription: description,
+  ogUrl: `${SITE}/`,
 });
 
 /** mirrors `TOP` in `bin/shards.ts`: how many rows a full rubric carries */

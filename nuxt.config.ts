@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { SITE } from "./app/utils/site.ts";
 
 /*
  * Static output, no server, and there will not be one. `nuxt generate`
@@ -45,6 +46,8 @@ function listRoutes(): string[] {
     .map((l) => `/${l.slug}`);
 }
 
+const routes = ["/", ...listRoutes()];
+
 export default defineNuxtConfig({
   ssr: true,
 
@@ -59,7 +62,7 @@ export default defineNuxtConfig({
     preset: "static",
     prerender: {
       crawlLinks: false,
-      routes: ["/", ...listRoutes()],
+      routes: [...routes, "/sitemap.xml"],
       failOnError: true,
     },
     publicAssets: usingFixtures
@@ -78,6 +81,18 @@ export default defineNuxtConfig({
          * overscroll gutter follow the page instead of staying light.
          */
         { name: "color-scheme", content: "light dark" },
+        /*
+         * One card for the whole site. `public/og.png` is a static render of
+         * the nameplate rather than one image per list: the list pages hold no
+         * data at prerender time (DESIGN.md, the skeleton deferral), so a
+         * per-list card could say nothing a title does not.
+         */
+        { property: "og:site_name", content: "awesome index" },
+        { property: "og:type", content: "website" },
+        { property: "og:image", content: `${SITE}/og.png` },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        { name: "twitter:card", content: "summary_large_image" },
       ],
       /*
        * Umami, self-hosted. No cookies, no fingerprint, no identifier that
@@ -114,6 +129,8 @@ export default defineNuxtConfig({
   telemetry: false,
 
   runtimeConfig: {
+    /* server-only, for `server/routes/sitemap.xml.ts`; never reaches the client */
+    routes,
     public: {
       /* surfaced so the list page can say why a shard is missing */
       usingFixtures,

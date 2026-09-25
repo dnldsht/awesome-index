@@ -212,6 +212,10 @@ useHead({
   title: () => `${shard.value?.name ?? slug} · awesome index`,
   link: [{ rel: "canonical", href: listCanonical(slug) }],
 });
+useSeoMeta({
+  ogTitle: () => `${shard.value?.name ?? slug} · awesome index`,
+  ogUrl: listCanonical(slug),
+});
 </script>
 
 <template>
