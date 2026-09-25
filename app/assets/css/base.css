@@ -111,12 +111,12 @@ a {
 .mast-meta {
   margin-left: auto;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1rem;
 }
 
 .mast-rule {
-  height: 2px;
+  height: 1px;
   background: var(--accent);
 }
 
@@ -134,8 +134,16 @@ a {
   background: currentColor;
   mask: var(--px) center / 12px 12px no-repeat;
   -webkit-mask: var(--px) center / 12px 12px no-repeat;
-  vertical-align: -1px;
   flex: none;
+}
+
+/* whatever holds an icon is a flex row that centres it on the text, rather
+   than a baseline nudged by hand a pixel at a time */
+.ctl-l,
+.ctl-x,
+.theme-b {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* ---- the column-label strip -------------------------------------------- */
@@ -212,13 +220,31 @@ a {
 
 .ctl-q {
   margin-left: auto;
+  align-items: center;
+  position: relative;
 }
 
-/*
- * The search field. No box: a rule under it, like everything else here. It is
- * the only search on the site — DESIGN.md defers a global index — so it is
- * given the width to say what it searches rather than a magnifying glass.
- */
+/* the magnifier and the clear cross sit inside the field, one at each end,
+   so the field reads as one control rather than three things in a row */
+.ctl-q .ctl-l,
+.ctl-q .ctl-x {
+  position: absolute;
+  padding: 0;
+  border: 0;
+}
+
+.ctl-q .ctl-l {
+  left: 8px;
+  pointer-events: none;
+}
+
+.ctl-q .ctl-x {
+  right: 7px;
+}
+
+.ctl-q:focus-within .ctl-l {
+  color: var(--accent);
+}
 /*
  * A rule under a word is right for an option, which is one word wide and only
  * ever read. It was wrong here: an empty 15rem underline with grey placeholder
@@ -234,13 +260,18 @@ a {
   background: var(--sunk);
   border: 1px solid var(--rule-2);
   border-radius: 2px;
-  padding: 4px 8px;
+  padding: 4px 26px;
   width: 17rem;
   max-width: 100%;
 }
 
 .ctl .q::placeholder {
   color: var(--nil);
+}
+
+/* the browser's own cancel cross would sit beside ours */
+.ctl .q::-webkit-search-cancel-button {
+  appearance: none;
 }
 
 .ctl .q:focus {

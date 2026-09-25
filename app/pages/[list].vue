@@ -354,18 +354,11 @@ useHead({
 
 /* the way back. First in the meta row, because leaving is a likelier want than
    opening the source README, and it is the only exit the page had none of */
-/*
- * Not a flex box. `.mast-meta` aligns its children on the baseline, and an
- * inline-flex establishes its own, so this link sat a pixel or two off the
- * source links and the theme button beside it. Inline, with the icon riding on
- * `.px`'s own vertical-align, puts it back on the row's baseline.
- */
 .mast-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
   color: var(--ink-3);
-}
-
-.mast-up .px {
-  margin-right: 0.35em;
 }
 
 .mast-up:hover {

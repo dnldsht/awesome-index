@@ -109,7 +109,6 @@
   --w-name: 600;
   --w-mast: 620;
 
-
   /* ---- pixelarticons ---------------------------------------------------- */
 
   /*
@@ -131,22 +130,14 @@
    * direction"): controls, affordances, state. Never beside the curator's prose
    * or inside a project name, where a pixel grid would argue with the serif.
    */
-  --px-external-link:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M11%205H5v2h6zM5%207H3v12h2zm12%2012H5v2h12zm2-6h-2v6h2zm-8%200H9v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v8h2z%22%2F%3E%3Cpath%20d%3D%22M21%203h-8v2h8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  --px-chevron-right:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M16%2013v-2h-2v2zm-2-2V9h-2v2zm0%204v-2h-2v2zm-2-6V7h-2v2zm0%208v-2h-2v2zM10%207V5H8v2zm0%2012v-2H8v2z%22%2F%3E%3C%2Fsvg%3E");
-  --px-chevron-right-2:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M9%2017h2v-2h2v-2h2v-2h-2V9h-2V7H9z%22%2F%3E%3C%2Fsvg%3E");
-  --px-sun:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M13%2022h-2v-3h2zm-6-3H5v-2h2zm12%200h-2v-2h2zm-4-2H9v-2h6zm-6-2H7V9h2zm8%200h-2V9h2zM5%2013H2v-2h3zm17%200h-3v-2h3zm-7-4H9V7h6zM7%207H5V5h2zm12%200h-2V5h2zm-6-2h-2V2h2z%22%2F%3E%3C%2Fsvg%3E");
-  --px-moon:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M18%2022H8v-2h10zM8%2020H6v-2h2zm12%200h-2v-2h2zM6%2018H4v-2h2zm16%200h-2v-4h-2v-2h2v-2h2zM4%2016H2V6h2zm14%200h-6v-2h6zm-6-2h-2v-2h2zm-2-2H8V6h2zM6%206H4V4h2zm8-2h-2v2h-2V4H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
-  --px-search:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M22%2022h-2v-2h2zm-2-2h-2v-2h2zm-6-2H6v-2h8zm4%200h-2v-2h2zM6%2016H4v-2h2zm10%200h-2v-2h2zM4%2014H2V6h2zm14%200h-2V6h2zM6%206H4V4h2zm10%200h-2V4h2zm-2-2H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
-  --px-close:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M7%2019H5v-2h2zm12%200h-2v-2h2zM9%2015v2H7v-2zm8%202h-2v-2h2zm-6-2H9v-2h2zm4%200h-2v-2h2zm-2-2h-2v-2h2zm-2-2H9V9h2zm4%200h-2V9h2zM9%209H7V7h2zm8%200h-2V7h2zM7%207H5V5h2zm12%200h-2V5h2z%22%2F%3E%3C%2Fsvg%3E");
-  --px-arrow-left:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M20%2011v2H4v-2zM8%2013v2H6v-2zm2%202v2H8v-2zm2%202v2h-2v-2zm-4-6V9H6v2z%22%2F%3E%3Cpath%20d%3D%22M10%2015V7H8v8zm2%202V5h-2v12z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --px-external-link: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M11%205H5v2h6zM5%207H3v12h2zm12%2012H5v2h12zm2-6h-2v6h2zm-8%200H9v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v2h2zm2-2h-2v8h2z%22%2F%3E%3Cpath%20d%3D%22M21%203h-8v2h8z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --px-chevron-right: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M16%2013v-2h-2v2zm-2-2V9h-2v2zm0%204v-2h-2v2zm-2-6V7h-2v2zm0%208v-2h-2v2zM10%207V5H8v2zm0%2012v-2H8v2z%22%2F%3E%3C%2Fsvg%3E");
+  --px-chevron-right-2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M9%2017h2v-2h2v-2h2v-2h-2V9h-2V7H9z%22%2F%3E%3C%2Fsvg%3E");
+  --px-sun: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M13%2022h-2v-3h2zm-6-3H5v-2h2zm12%200h-2v-2h2zm-4-2H9v-2h6zm-6-2H7V9h2zm8%200h-2V9h2zM5%2013H2v-2h3zm17%200h-3v-2h3zm-7-4H9V7h6zM7%207H5V5h2zm12%200h-2V5h2zm-6-2h-2V2h2z%22%2F%3E%3C%2Fsvg%3E");
+  --px-moon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M18%2022H8v-2h10zM8%2020H6v-2h2zm12%200h-2v-2h2zM6%2018H4v-2h2zm16%200h-2v-4h-2v-2h2v-2h2zM4%2016H2V6h2zm14%200h-6v-2h6zm-6-2h-2v-2h2zm-2-2H8V6h2zM6%206H4V4h2zm8-2h-2v2h-2V4H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
+  --px-search: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M22%2022h-2v-2h2zm-2-2h-2v-2h2zm-6-2H6v-2h8zm4%200h-2v-2h2zM6%2016H4v-2h2zm10%200h-2v-2h2zM4%2014H2V6h2zm14%200h-2V6h2zM6%206H4V4h2zm10%200h-2V4h2zm-2-2H6V2h8z%22%2F%3E%3C%2Fsvg%3E");
+  --px-close: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M7%2019H5v-2h2zm12%200h-2v-2h2zM9%2015v2H7v-2zm8%202h-2v-2h2zm-6-2H9v-2h2zm4%200h-2v-2h2zm-2-2h-2v-2h2zm-2-2H9V9h2zm4%200h-2V9h2zM9%209H7V7h2zm8%200h-2V7h2zM7%207H5V5h2zm12%200h-2V5h2z%22%2F%3E%3C%2Fsvg%3E");
+  --px-arrow-left: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M20%2011v2H4v-2zM8%2013v2H6v-2zm2%202v2H8v-2zm2%202v2h-2v-2zm-4-6V9H6v2z%22%2F%3E%3Cpath%20d%3D%22M10%2015V7H8v8zm2%202V5h-2v12z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
 
   /* ---- light: newsprint, tinted toward the accent --------------------- */
 
@@ -235,7 +226,8 @@
     --ink-2: #a8a0a2; /* 6.7 : 5.8 */
     --ink-3: #948c8e; /* 5.2 : 4.5 */
     --rule: #332e30;
-    --rule-2: #453f42;
+    --rule-2: #332e30;
+
     --rule-3: #cbc4c3;
 
     /*
@@ -264,7 +256,8 @@
   --ink-2: #a8a0a2;
   --ink-3: #948c8e;
   --rule: #332e30;
-  --rule-2: #453f42;
+  --rule-2: #332e30;
+
   --rule-3: #cbc4c3;
 
   --accent: #cd7588;
