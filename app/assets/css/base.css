@@ -82,7 +82,8 @@ a {
   top: 0;
   z-index: 20;
   background: var(--ground);
-  border-bottom: 1px solid var(--rule-3);
+  /* no border: `.mast-rule` directly below is the accent rule that terminates
+     the masthead, and the two together read as one very heavy line */
 }
 
 .mast-in {
@@ -421,7 +422,7 @@ a {
   margin-top: 1.6rem;
   padding: 0.85rem 0.5rem 0;
   background: var(--sunk);
-  border-top: 2px solid var(--rule);
+  border-top: 1px solid var(--rule-2);
 }
 
 /* the run has no headings, so nothing needs separating */
@@ -568,13 +569,15 @@ a {
 .nm::after {
   content: "";
   display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-left: 0.35em;
-  vertical-align: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: 0.3em;
+  /* sunk one pixel so the glyph's optical centre sits on the x-height of the
+     14px serif beside it rather than on its baseline */
+  vertical-align: -2px;
   background: var(--accent);
-  mask: var(--px-external-link) center / 10px 10px no-repeat;
-  -webkit-mask: var(--px-external-link) center / 10px 10px no-repeat;
+  mask: var(--px-external-link) center / 12px 12px no-repeat;
+  -webkit-mask: var(--px-external-link) center / 12px 12px no-repeat;
   opacity: 0;
 }
 
@@ -590,13 +593,15 @@ a {
 .row::before {
   content: "";
   position: absolute;
-  left: 0.1rem;
-  top: 10px;
-  width: 12px;
-  height: 12px;
-  background: var(--nil);
-  mask: var(--px-chevron-right) center / 12px 12px no-repeat;
-  -webkit-mask: var(--px-chevron-right) center / 12px 12px no-repeat;
+  left: 0.05rem;
+  top: 9px;
+  width: 14px;
+  height: 14px;
+  background: var(--ink-3);
+  /* the filled chevron, not the stepped one: at 12px the stepped variant is
+     four separate two-pixel blocks and reads as dust rather than as a control */
+  mask: var(--px-chevron-right-2) center / 14px 14px no-repeat;
+  -webkit-mask: var(--px-chevron-right-2) center / 14px 14px no-repeat;
   opacity: 0;
   transition: transform 0.12s ease;
 }
