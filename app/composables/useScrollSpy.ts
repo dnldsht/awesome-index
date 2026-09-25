@@ -36,7 +36,20 @@ export function useScrollSpy(keys: Ref<string[]>, enabled: Ref<boolean>) {
   let io: IntersectionObserver | null = null;
   const visible = new Set<string>();
 
+  /*
+   * While a jump is in flight the observer must not answer.
+   *
+   * `jump` sets `current` to the heading the reader asked for, then the smooth
+   * scroll crosses every section between here and there and the observer
+   * reports each one — so `pick` overwrites the answer, and the rail lands on
+   * whichever section happened to be under the masthead when the animation
+   * stopped. With the correction pass still to run that is usually the one
+   * *above* the one that was clicked, which is exactly what it looked like.
+   */
+  let pinnedUntil = 0;
+
   function pick() {
+    if (performance.now() < pinnedUntil) return;
     /*
      * Keep the last answer when nothing is in the strip. That happens for a
      * few frames during a fast scroll and at the very top and bottom of the
@@ -107,14 +120,24 @@ export function useScrollSpy(keys: Ref<string[]>, enabled: Ref<boolean>) {
   function jump(slug: string, smooth = true) {
     const el = document.getElementById(`s-${slug}`);
     if (!el) return false;
-    el.scrollIntoView({
-      block: "start",
-      behavior: smooth ? "smooth" : "auto",
-    });
+    /*
+     * Instant, not smooth, and the `smooth` argument is now only a hint about
+     * how long to hold the rail still.
+     *
+     * A smooth scroll to the 43rd of 134 headings animates across tens of
+     * thousands of pixels, and every section it crosses is laid out for the
+     * first time *while it travels* — so the destination moves under the
+     * animation and `scrollBy` corrections issued mid-flight are swallowed by
+     * it. The observed result was landing six rows into the section instead of
+     * at its heading. An instant jump is computed against the layout as it
+     * stands and then corrected once it settles, which is the only order of
+     * operations that converges.
+     */
+    el.scrollIntoView({ block: "start", behavior: "auto" });
     current.value = slug;
-    /* after the smooth animation has run, or immediately for an instant one */
-    if (smooth) setTimeout(() => correct(el, 2), 450);
-    else correct(el, 3);
+    /* hold the rail through the correction passes */
+    pinnedUntil = performance.now() + (smooth ? 400 : 150);
+    correct(el, 4);
     return true;
   }
 

@@ -101,8 +101,6 @@
 
   /* ---- columns -------------------------------------------------------- */
   --col-name: minmax(9rem, 17rem);
-  --col-tag: 6.5rem; /* language, or the host of a web row */
-  --col-lic: 4.75rem;
   --col-num: 4.5rem;
   --col-act: 4.5rem;
 
@@ -131,7 +129,7 @@
    * masthead rule, the section marks, focus. Nothing decorative is this colour,
    * which is what lets it mean something when it appears.
    */
-  --accent: #9c2f14;
+  --accent: #5A2230;
   --pos: #2b6237; /* a gain */
   --neg: #973219; /* a loss */
   --selection: #f6e2a6;

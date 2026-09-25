@@ -144,19 +144,25 @@ a {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.25rem 1.5rem;
-  padding-block: 0.15rem 0.4rem;
+  gap: 0.5rem 2.25rem;
+  padding-block: 0.7rem 0.75rem;
   border-top: 1px solid var(--rule);
 }
 
+/*
+ * A group is a label and its words. It was legible but airless: at 0.55rem the
+ * options crowded their own label, so "order curator stars trending activity"
+ * read as one string of five words rather than as a label and four choices.
+ */
 .ctl-g {
   display: flex;
   align-items: baseline;
-  gap: 0.55rem;
+  gap: 0.8rem;
 }
 
 .ctl-l {
-  color: var(--ink-3);
+  color: var(--nil);
+  padding-right: 0.15rem;
 }
 
 /*
@@ -172,7 +178,7 @@ a {
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
-  padding: 0 0 1px;
+  padding: 0 0 3px;
   cursor: pointer;
 }
 
@@ -194,15 +200,23 @@ a {
  * the only search on the site — DESIGN.md defers a global index — so it is
  * given the width to say what it searches rather than a magnifying glass.
  */
+/*
+ * A rule under a word is right for an option, which is one word wide and only
+ * ever read. It was wrong here: an empty 15rem underline with grey placeholder
+ * text in it does not look like somewhere to type, it looks like a field that
+ * failed to render. This is the only search on the site, so it gets a shape —
+ * the sunk ground the open row uses, a hairline, and enough padding to read as
+ * an input — while still owning no box of its own in the broadsheet sense.
+ */
 .ctl .q {
   font-family: var(--font-mono);
   font-size: var(--t-meta);
   color: var(--ink);
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--rule-2);
-  padding: 1px 0;
-  width: 15rem;
+  background: var(--sunk);
+  border: 1px solid var(--rule-2);
+  border-radius: 2px;
+  padding: 4px 8px;
+  width: 17rem;
   max-width: 100%;
 }
 
@@ -212,7 +226,7 @@ a {
 
 .ctl .q:focus {
   outline: none;
-  border-bottom-color: var(--accent);
+  border-color: var(--accent);
 }
 
 .ctl-n {
@@ -314,11 +328,17 @@ a {
   color: var(--ink);
 }
 
-/* where the reader is, marked the same way a chosen option is */
+/*
+ * Where the reader is, marked the same way a chosen option is.
+ *
+ * The indent must not change: the border is already the mark, and adding to
+ * the padding as well made the current entry step to the right of the column
+ * it belongs to — which read as a rendering fault rather than as emphasis.
+ */
 .toc-a.on {
   color: var(--ink);
+  font-weight: 500;
   border-left-color: var(--accent);
-  padding-left: calc(var(--d, 0) * 0.65rem + 0.4rem);
 }
 
 .toc-t {
@@ -368,20 +388,34 @@ a {
   border-top-color: var(--accent);
 }
 
+/*
+ * A section break has to be louder than a row rule, or the document reads as
+ * one undifferentiated run and the contents rail is pointing at nothing the eye
+ * can find. It was a hairline the same weight as the 32px rows it separated,
+ * set 0.55rem clear of them; now it takes real space above, a heavier rule, and
+ * a tinted band, so a heading is a place rather than a line of small caps.
+ */
 .section-head {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  height: 2rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--rule-2);
+  height: 2.5rem;
+  margin-top: 1.6rem;
+  padding: 0.85rem 0.5rem 0;
+  background: var(--sunk);
+  border-top: 2px solid var(--rule);
+}
+
+/* the run has no headings, so nothing needs separating */
+.list-run .section-head {
+  margin-top: 0;
 }
 
 .section-head h2 {
   font: inherit;
   margin: 0;
   font-family: var(--font-mono);
-  font-size: var(--t-section);
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -419,11 +453,28 @@ a {
 .row,
 .cols-in {
   display: grid;
+  /*
+   * Name, note, stars, change, activity.
+   *
+   * Licence and language were columns and are not any more. Both were
+   * five-eighths of a word, neither is ever the reason somebody scans a list,
+   * and between them they took 11.25rem off the only column that carries the
+   * curator's voice — so the note was clipped mid-sentence on almost every row
+   * while two columns of "MIT" and "TypeScript" sat beside it at full width.
+   * Both are still on the row, one click down, spelled out in full.
+   *
+   * A web row has no language, and the host it had instead is the only durable
+   * fact it carries, so the host moved into the name's own dimmed slot where a
+   * repository writes its owner. Same column, same role: who this belongs to.
+   */
   grid-template-columns:
-    var(--col-name) minmax(0, 1fr) var(--col-tag) var(--col-lic)
+    var(--col-name) minmax(0, 1fr)
     var(--col-num) var(--col-num) var(--col-act);
-  column-gap: 0.9rem;
+  column-gap: 1.1rem;
   align-items: baseline;
+  /* a gutter for the disclosure caret. `.row` must keep `overflow: hidden` —
+     it is what guarantees the 32px band — so the caret cannot hang outside */
+  padding-left: 1rem;
 }
 
 .cols-in {
@@ -470,11 +521,68 @@ a {
   color: var(--ink-3);
 }
 
-.row:hover .nm,
+/*
+ * A repository's owner already carries its own "/" separator. A host does not,
+ * and a trailing space inside the span collapses, so `veloren.net` ran straight
+ * into `Veloren`. Margin rather than a punctuation mark: the host is not a
+ * namespace the title hangs off, it is where the thing lives.
+ */
+.nm .ow.host {
+  margin-right: 0.45em;
+}
+
+/*
+ * The row does two things and used to advertise neither: the name opens the
+ * project in a new tab, the rest of the band opens the panel underneath. A
+ * reader clicked a row expecting one and got the other.
+ *
+ * So each says which it is on hover. The name gains the accent underline it
+ * already had plus an arrow that only appears when it is the thing under the
+ * cursor; the band gains a caret in its left margin that turns when the panel
+ * is open. Two affordances, no extra column, nothing shown at rest.
+ */
 .nm:hover {
   text-decoration: underline;
   text-decoration-color: var(--accent);
   text-underline-offset: 2px;
+}
+
+.nm::after {
+  content: "↗";
+  font-family: var(--font-mono);
+  font-size: 9px;
+  vertical-align: 2px;
+  margin-left: 0.3em;
+  color: var(--accent);
+  opacity: 0;
+}
+
+.nm:hover::after {
+  opacity: 1;
+}
+
+.row {
+  position: relative;
+  cursor: pointer;
+}
+
+.row::before {
+  content: "›";
+  position: absolute;
+  left: 0.15rem;
+  font-family: var(--font-mono);
+  color: var(--nil);
+  opacity: 0;
+  transition: transform 0.12s ease;
+}
+
+.row:hover::before {
+  opacity: 1;
+}
+
+.row.is-open::before {
+  opacity: 1;
+  transform: rotate(90deg);
 }
 
 /* the curator's prose. 73 bytes on average, so this truncates rarely */
@@ -548,10 +656,12 @@ a {
 
 /* ---- the expanded row -------------------------------------------------- */
 
+/* the panel hangs off the row, so it keeps the row's caret gutter — without it
+   every line of the panel sat 1rem to the left of the row it belongs to */
 .open {
   background: var(--sunk);
   border-bottom: 1px solid var(--rule);
-  padding: 0.1rem 0 0.75rem;
+  padding: 0.1rem 0 0.75rem 1rem;
 }
 
 .open-note {

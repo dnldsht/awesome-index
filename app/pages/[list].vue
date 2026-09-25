@@ -228,6 +228,7 @@ useHead({
             </NuxtLink>
           </h1>
           <div class="mast-meta">
+            <NuxtLink to="/" class="kicker mast-up">← all lists</NuxtLink>
             <a
               v-for="s in shard?.sources ?? []"
               :key="s.id"
@@ -252,8 +253,6 @@ useHead({
           <div class="cols-in kicker">
             <span>project</span>
             <span>note</span>
-            <span>lang · host</span>
-            <span>licence</span>
             <span class="r">stars</span>
             <!-- the delta column names its own window; it only ever moves off
                  30d under the trending order, where the reader chose it -->
@@ -342,6 +341,16 @@ useHead({
 }
 
 .mast .src:hover {
+  color: var(--accent);
+}
+
+/* the way back. First in the meta row, because leaving is a likelier want than
+   opening the source README, and it is the only exit the page had none of */
+.mast-up {
+  color: var(--ink-3);
+}
+
+.mast-up:hover {
   color: var(--accent);
 }
 

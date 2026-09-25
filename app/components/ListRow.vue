@@ -116,16 +116,11 @@ watch(
       target="_blank"
       @click.stop
       ><span v-if="ownerPrefix" class="ow">{{ ownerPrefix }}</span
+      ><span v-else-if="!isRepo" class="ow host">{{ host(r[ROW.URL]) }}</span
       >{{ r[ROW.TITLE] }}</a
     >
 
     <span class="nt">{{ r[ROW.NOTE] }}</span>
-
-    <!-- language for a repository; the host for a link, which is all it has -->
-    <span v-if="isRepo" class="tg">{{ r[ROW.LANGUAGE] }}</span>
-    <span v-else class="tg host">{{ host(r[ROW.URL]) }}</span>
-
-    <span class="lc">{{ license(r[ROW.LICENSE]) }}</span>
 
     <!-- stars: a number, a dim dash for "not measured", nothing for a link -->
     <span class="st" :class="{ nil: isRepo && r[ROW.STARS] == null }">{{
