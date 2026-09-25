@@ -39,3 +39,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# playwright mcp scratch
+.playwright-mcp/
