@@ -79,6 +79,20 @@ export default defineNuxtConfig({
          */
         { name: "color-scheme", content: "light dark" },
       ],
+      /*
+       * Umami, self-hosted. No cookies, no fingerprint, no identifier that
+       * outlives the visit — which is why there is no banner asking permission
+       * to set one, and why the footer can describe it in a sentence instead of
+       * a policy. `defer` so it never delays the shard fetch the page actually
+       * needs.
+       */
+      script: [
+        {
+          src: "https://umami.donld.me/script.js",
+          "data-website-id": "8b350941-9854-4caa-b6ac-7f3456f2d310",
+          defer: true,
+        },
+      ],
     },
   },
 
