@@ -109,37 +109,52 @@
   --w-name: 600;
   --w-mast: 620;
 
-  /* ---- light: newsprint ----------------------------------------------- */
+  /* ---- light: newsprint, tinted toward the accent --------------------- */
 
   /*
-   * Warm off-white rather than #fff. Paper, and it takes the edge off a page
-   * that is 90% small text; pure white at this density glares.
+   * The neutrals share the accent's hue family rather than opposing it.
+   *
+   * They used to be warm olive — the paper at hue 48, the ink a brown-black —
+   * which was right beside a vermilion and wrong beside an oxblood: two warm
+   * families that do not resolve into one temperature. Everything here now sits
+   * between hue 340 and 20 at very low saturation, so the page reads as one
+   * ink-and-paper decision with a second ink in it, which is what a two-colour
+   * broadsheet actually is. Measured, not asserted: every ratio below is
+   * against `--ground` first and `--sunk` second.
    */
-  --ground: #fbfaf6;
-  --sunk: #f1eee4; /* the expanded row, and the table of contents rail */
-  --ink: #16130d;
-  --ink-2: #56503f; /* the curator's note */
-  --ink-3: #6d6656; /* mono metadata — 5.5:1 on --ground, 4.9:1 on --sunk */
-  --rule: #e4dfd1; /* the hairline between rows */
-  --rule-2: #c8c1ad; /* between sections */
-  --rule-3: #1d1a13; /* the masthead rule, and under column labels */
+  --ground: #faf7f5; /* paper, with the accent's undertone rather than yellow */
+  --sunk: #f2e9e7; /* the expanded row, the rail, the section bands */
+  --ink: #1a1214; /* 17.3 : 15.4 */
+  --ink-2: #5b474b; /* the curator's note — 8.0 : 7.2 */
+  --ink-3: #71595f; /* mono metadata — 6.0 : 5.3 */
+  --rule: #e8dedd; /* the hairline between rows */
+  --rule-2: #cfbfc1; /* between sections */
+  --rule-3: #1f1618; /* the masthead rule, and under column labels */
 
   /*
-   * One accent, a newspaper red, and it is spent only on structure: the
-   * masthead rule, the section marks, focus. Nothing decorative is this colour,
-   * which is what lets it mean something when it appears.
+   * One accent, an oxblood, spent only on structure: the masthead rule, the
+   * section marks, the current option, focus. Nothing decorative is this
+   * colour, which is what lets it mean something when it appears.
+   *
+   * Dark rather than bright on purpose — at this density a saturated red rule
+   * shouts, while an oxblood reads as a second ink. The cost is measured and
+   * real: it is 11.5:1 against the paper, which is what a rule needs, but only
+   * **1.5:1 against `--ink`**, so where it touches type rather than sitting on
+   * the ground — the arrow beside a hovered name, a hovered link — it reads as
+   * a warm black rather than as a colour. Lighten it to ~#7a2e3f if that
+   * matters more than the quiet.
    */
-  --accent: #5A2230;
-  --pos: #2b6237; /* a gain */
-  --neg: #973219; /* a loss */
-  --selection: #f6e2a6;
+  --accent: #5a2230;
+  --pos: #3f6b47; /* a gain — 5.8 : 5.2 */
+  --neg: #a8452c; /* a loss. Kept at hue 15 so it cannot be read as the accent */
+  --selection: #ecd4d9;
 
   /*
    * The mark for "not measured yet". Subordinate to everything else on the
    * row and still legible as a mark, because it has to be distinguishable
    * from the genuinely empty cell of a `web` row two lines below it.
    */
-  --nil: #b6ae9a;
+  --nil: #bcabae;
 }
 
 /* ---- dark: charcoal, designed ----------------------------------------- */
@@ -150,20 +165,27 @@
     --w-name: 620;
     --w-mast: 640;
 
-    --ground: #1a1c1d;
-    --sunk: #232628;
-    --ink: #e9e6dd;
-    --ink-2: #a6a195;
-    --ink-3: #948e80; /* 5.2:1 on --ground, 4.6:1 on --sunk */
-    --rule: #2e3133;
-    --rule-2: #3d4144;
-    --rule-3: #cdc8bc;
+    --ground: #1b1719;
+    --sunk: #242023;
+    --ink: #eae3e2; /* 14.0 : 12.7 */
+    --ink-2: #aa9da0; /* 6.8 : 6.2 */
+    --ink-3: #988b8e; /* 5.4 : 4.9 */
+    --rule: #302b2d;
+    --rule-2: #403a3d;
+    --rule-3: #cfc6c5;
 
-    --accent: #e07a5c;
-    --pos: #79bd8b;
-    --neg: #dd8368;
-    --selection: #4a4325;
-    --nil: #4e5356;
+    /*
+     * The same oxblood cannot survive here — #5a2230 on charcoal is 1.2:1, an
+     * invisible rule. So dark gets a sibling rather than the same swatch:
+     * the hue is held and the lightness raised until it clears the ground
+     * (5.1 : 4.6), which also buys back what light mode loses — 2.8:1 against
+     * the ink, so the accent is legible *as a colour* beside type here.
+     */
+    --accent: #d0697a;
+    --pos: #7fbe8e;
+    --neg: #e0946e;
+    --selection: #4a2b33;
+    --nil: #524b4e;
   }
 }
 
@@ -172,18 +194,18 @@
   --w-name: 620;
   --w-mast: 640;
 
-  --ground: #1a1c1d;
-  --sunk: #232628;
-  --ink: #e9e6dd;
-  --ink-2: #a6a195;
-  --ink-3: #948e80;
-  --rule: #2e3133;
-  --rule-2: #3d4144;
-  --rule-3: #cdc8bc;
+  --ground: #1b1719;
+  --sunk: #242023;
+  --ink: #eae3e2;
+  --ink-2: #aa9da0;
+  --ink-3: #988b8e;
+  --rule: #302b2d;
+  --rule-2: #403a3d;
+  --rule-3: #cfc6c5;
 
-  --accent: #e07a5c;
-  --pos: #79bd8b;
-  --neg: #dd8368;
-  --selection: #4a4325;
-  --nil: #4e5356;
+  --accent: #d0697a;
+  --pos: #7fbe8e;
+  --neg: #e0946e;
+  --selection: #4a2b33;
+  --nil: #524b4e;
 }
