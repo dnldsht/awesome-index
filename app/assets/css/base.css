@@ -984,6 +984,16 @@ a {
   .ac {
     display: none;
   }
+
+  /* one figure fits beside the name, and under trending the gain is the one
+     being ranked by: the total would print a claim the order is not making */
+  .by-gain .st {
+    display: none;
+  }
+  .by-gain .dl {
+    display: block;
+    grid-area: 1 / 2;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -329,6 +329,7 @@ useSeoMeta({
 
           <ListRun
             v-else
+            :class="{ 'by-gain': sort === 'trending' }"
             :rows="shard.rows"
             :indices="run"
             :open="open"
