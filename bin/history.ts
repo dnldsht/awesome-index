@@ -99,17 +99,21 @@ const GAP_MS = 1000 / (Number(flags.rps) || 1.4);
  * How many repositories are in flight at once, and why the default is one.
  *
  * `pace()` puts a floor under the gap between requests, but requests are
- * awaited, so a single chain is capped at one round trip at a time — about
- * 4/s against this API however high `--rps` is set. Raising `--rps` alone does
- * nothing past that, which is exactly what it looked like: 79 repositories a
- * minute at `--rps=8`.
+ * awaited, so a single chain is capped at one round trip at a time — about 4/s
+ * however high `--rps` is set. That is what concurrency is for.
  *
- * The default stays 1 because that is the polite shape for an unattended
- * nightly job. A backfill run by hand is a different case: measured, this
- * endpoint does **not** consume the core quota at all — five calls to it move
- * `used` by zero while five ordinary repo calls move it by five — so the only
- * ceiling is the secondary limit, which is 900 points a minute, i.e. 15/s.
- * Eight in flight at 12/s sits under it with room.
+ * It does **not** buy a faster backfill against one token, and it is worth
+ * saying why so nobody tries again. This endpoint has an hourly budget of its
+ * own that `GET /rate_limit` does not report: that endpoint shows `core`
+ * untouched while a backfill runs, and the 403 the backfill eventually gets
+ * carries `x-ratelimit-remaining: 0` for `core` all the same. Four in flight
+ * reached 238 repositories a minute, emptied the invisible budget in minutes,
+ * and earned a 27-minute wait — a net loss against the steady 1.4/s that
+ * spends exactly what the hour allows.
+ *
+ * Concurrency is therefore for the case `--rps` cannot help with on its own:
+ * a pool of tokens on different accounts, where the budget is genuinely larger
+ * and one chain cannot spend it fast enough.
  */
 const CONCURRENCY = Math.max(1, Number(flags.concurrency) || 1);
 

@@ -127,6 +127,37 @@ async function request(
         continue;
       }
 
+      /*
+       * A 403 that still reports budget left is a *secondary* limit — too many
+       * requests too fast — and it clears in a minute or two, so it must not
+       * fall through to the hourly-reset branch below and sleep out an hour.
+       *
+       * It is worth being precise about the budget this endpoint spends,
+       * because the obvious measurement is misleading. `GET /rate_limit` shows
+       * `core` barely touched while a backfill runs — five calls to
+       * `/stargazers/history` move `used` by zero where five ordinary repo
+       * calls move it by five — and it is tempting to conclude the endpoint is
+       * free and pace accordingly. It is not. The 403 it eventually returns
+       * carries `x-ratelimit-remaining: 0` and `x-ratelimit-resource: core`
+       * while `/rate_limit` reports 4,922 of 5,000 left on that same name: the
+       * endpoint draws on a budget of its own, roughly 5,000 an hour, that the
+       * reporting endpoint does not expose. Running it at four in flight
+       * emptied that budget in minutes and bought a 27-minute wait.
+       *
+       * So the honest pace is still about 1.4 requests a second, and this
+       * branch only catches the genuine burst limit.
+       */
+      const left = Number(response.headers.get("x-ratelimit-remaining"));
+      if (Number.isFinite(left) && left > 0) {
+        const pause = Math.min(attempt * 30_000, 120_000);
+        console.warn(
+          `[secondary limit] ${label}: quota is fine (${left} left), ` +
+            `waiting ${pause / 1000}s`,
+        );
+        await sleep(pause);
+        continue;
+      }
+
       if (rotateToken()) continue;
       const reset = Number(response.headers.get("x-ratelimit-reset"));
       const waitMs = Number.isFinite(reset)
