@@ -57,8 +57,11 @@ jobs:
 
       - run: pnpm db:migrate
 
+      # not `inputs.crawl != false`: on a schedule run `inputs.crawl` is null,
+      # expressions coerce null and false alike to 0, and the nightly crawl
+      # was silently skipped for five weeks
       - name: Refresh the dataset
-        if: github.event_name != 'push' && inputs.crawl != false
+        if: github.event_name == 'schedule' || inputs.crawl
         env:
           # the built-in token allows 1000 requests/hour; set CRAWL_GITHUB_TOKEN
           # to a PAT (or several comma separated, on different accounts) for more
@@ -86,7 +89,7 @@ jobs:
       # not for the 1y one (that needs 78). So nightly coverage grows the short
       # windows first, and depth past page 1 stays a deliberate, manual run.
       - name: Refresh the star history
-        if: github.event_name != 'push' && inputs.crawl != false
+        if: github.event_name == 'schedule' || inputs.crawl
         env:
           GITHUB_TOKEN: ${{ secrets.CRAWL_GITHUB_TOKEN || github.token }}
         run: |
@@ -94,7 +97,7 @@ jobs:
           pnpm history --refresh --skip-ids --max-repos=4000
 
       - name: Publish the dataset
-        if: github.event_name != 'push' && inputs.crawl != false
+        if: github.event_name == 'schedule' || inputs.crawl
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
