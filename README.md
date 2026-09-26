@@ -1,42 +1,38 @@
-# Awesome Index
+# awesome index
 
-**[awesome.donld.me](https://awesome.donld.me)**: 80 awesome lists, ordered by
-what is actually moving.
+**[awesome.donld.me](https://awesome.donld.me)**: 78 awesome lists you can reorder.
+
+![](docs/list.png)
 
 Awesome lists are long, and the order they are written in tells you nothing
-about what is alive. This crawls 80 of them into a local sqlite dataset, follows
-every entry to GitHub, keeps fourteen months of weekly star history behind each
-repository, and renders a list you can reorder: the curator's own order, most
-stars, most recently pushed, or **climbing**, which is not the biggest gain but
-the one furthest above its own normal week.
+about what is alive. This crawls them into a local sqlite dataset, follows every
+entry to GitHub, keeps fourteen months of weekly star history, and lets you sort
+by the curator's order, stars, recent pushes, or **climbing**: stars gained
+measured against the repository's own usual week, so a small repo having a big
+week sits above a large one having a normal one.
 
-A project that usually gains three stars a week and gained forty has moved. One
-that gains four hundred every week and gained four hundred has not.
+![](docs/home.png)
 
 ## What it knows
 
-- **47,416 entries** across 80 lists, of which **35,288 are GitHub repositories**.
-- The rest (11,491 sites, papers, videos, registries and books) carry no
-  popularity signal at all, so they keep the curator's order. That is the only
-  honest information anybody holds about them, and the site says so rather than
-  ranking them below a three-star toy nobody has touched since 2019.
-- Weekly star history per repository, used to compute 7-day, 30-day and 1-year
-  movement. The history never reaches the browser; the page carries the counts.
+- ~47,000 entries across 78 lists, ~35,000 of them GitHub repositories.
+- The other ~12,000 (sites, papers, videos, registries, books) carry no
+  popularity signal, so they keep the curator's order.
+- Weekly star history per repository, behind the 7-day, 30-day and 1-year
+  numbers. The history stays in the dataset; the pages carry only the counts.
 - An activity label (active, slow, stalled, archived), computed as a percentile
   **inside each language's cohort**, because eighteen months without a commit
-  means abandonment for a TypeScript package and completion for a C library.
-  Measured on this corpus, the oldest quartile of a cohort begins at 239 days
-  for TypeScript and 3,138 for Objective-C.
+  means abandonment for a TypeScript package and completion for a C library. On
+  this corpus the oldest quartile starts at about 200 days for TypeScript and
+  about 3,100 for Objective-C.
 
-The score that produces the climbing order is deliberately never shown. An
-ordering is a decision; a printed number is a claim.
+The score behind the climbing order is never shown.
 
 ## How it is put together
 
 Nuxt, generated statically, no server. Each list is one JSON shard (the largest
 is 173 KB gzipped), so the browser holds the whole list and reordering it is a
-`.sort()` rather than a new page. That is the entire reason the site can offer
-four orders and three windows without generating four thousand pages.
+`.sort()` instead of four thousand pre-rendered pages.
 
 ```
 bin/crawl.ts      read the list READMEs, resolve every entry, refresh GitHub metadata
@@ -67,13 +63,6 @@ pnpm generate
 ```
 
 `pnpm test` · `pnpm typecheck` · `pnpm format`
-
-## Reading the code
-
-`DESIGN.md` records the decisions and the reasoning that is not recoverable from
-the code. Several of them look wrong at a glance and are deliberate.
-`src/lib/contracts.ts` is the shape of everything that crosses a boundary.
-`PLAN.md` is the build order.
 
 ## Credits
 
