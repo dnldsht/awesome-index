@@ -673,6 +673,7 @@ a {
   font-family: var(--font-mono);
   font-size: var(--t-meta);
   color: var(--ink-3);
+  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -718,6 +719,21 @@ a {
 
 .archived {
   color: var(--neg);
+}
+
+/*
+ * Our three guesses, told apart without spending contrast. The age sits at
+ * --ink-3, which is 6.0:1 and leaves no room below it for a dimmer step that
+ * still passes AA, so the scale runs up and sideways instead: active is the
+ * full ink, slow is the plain metadata grey, stalled is the same grey in
+ * italic. Not green and not red, because in this row green already means
+ * stars gained and red means archived, and a finished C library is neither.
+ */
+.ac.active {
+  color: var(--ink);
+}
+.ac.stalled {
+  font-style: italic;
 }
 
 /* a web row: the host is the only fact we hold, so it takes the tag column */
@@ -1002,7 +1018,6 @@ a {
   .by-push .ac {
     display: block;
     grid-area: 1 / 2;
-    text-align: right;
   }
 }
 

@@ -272,7 +272,7 @@ useSeoMeta({
             <!-- the delta column names its own window; it only ever moves off
                  30d under the trending order, where the reader chose it -->
             <span class="r">{{ period }}</span>
-            <span>pushed</span>
+            <span class="r">pushed</span>
           </div>
         </div>
       </div>

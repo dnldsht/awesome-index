@@ -55,7 +55,7 @@ const isArchived = computed(() => r.value[ROW.ARCHIVED] === 1);
 
 /*
  * The activity cell is the age since the last push (the fact), and the state
- * label, when we have one, is carried as a colour on it plus a title. Archived
+ * label, when we have one, is carried as a weight on it plus a title. Archived
  * is the exception and is marked with a dagger, because it is the one state
  * the author declared rather than one we inferred, and it belongs in a
  * different category from our three guesses. The expanded row spells both out
@@ -142,7 +142,7 @@ watch(
 
     <span
       class="ac"
-      :class="{ archived: isArchived }"
+      :class="isArchived ? 'archived' : r[ROW.STATE]"
       :title="activityTitle || undefined"
       >{{ isArchived ? "† " : "" }}{{ age(r[ROW.LAST_ACTIVITY]) }}</span
     >
