@@ -371,7 +371,7 @@ a {
   font-size: var(--t-meta);
   line-height: 1.3;
   color: var(--ink-3);
-  padding: 2px 0 2px calc(var(--d, 0) * 0.65rem);
+  padding: 2px 0 2px calc(0.3rem + var(--d, 0) * 0.65rem);
   border-left: 2px solid transparent;
 }
 
