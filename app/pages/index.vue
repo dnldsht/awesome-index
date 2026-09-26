@@ -34,8 +34,8 @@ const { data: front, error } = useAsyncData<FrontPage>(
 );
 
 const description =
-  "Eighty-six awesome lists, refreshed daily: which projects are gaining " +
-  "stars, which were archived, and the lists themselves.";
+  "Awesome lists, refreshed daily: which projects are gaining stars, which " +
+  "were archived, and the lists themselves.";
 
 useSeoMeta({
   title: "awesome index",
@@ -90,7 +90,7 @@ const short = (rows: FrontRef[], why: string) =>
 const BACKFILL = "Star history is still backfilling.";
 
 const DEPTH =
-  "A year needs 78 weeks of star history. Most lists have 60 so far.";
+  "A year needs 78 weeks of star history; the backfill is not that deep yet.";
 </script>
 
 <template>

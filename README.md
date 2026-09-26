@@ -1,6 +1,6 @@
 # awesome index
 
-**[awesome.donld.me](https://awesome.donld.me)**: 78 awesome lists you can reorder.
+**[awesome.donld.me](https://awesome.donld.me)**: awesome lists you can reorder.
 
 ![](docs/list.png)
 
@@ -15,9 +15,10 @@ week sits above a large one having a normal one.
 
 ## What it knows
 
-- ~47,000 entries across 78 lists, ~35,000 of them GitHub repositories.
-- The other ~12,000 (sites, papers, videos, registries, books) carry no
-  popularity signal, so they keep the curator's order.
+- Every entry of every list, and which of them are GitHub repositories. The
+  counts are on the front page, taken from the shards themselves.
+- The rest (sites, papers, videos, registries, books) carry no popularity
+  signal, so they keep the curator's order.
 - Weekly star history per repository, behind the 7-day, 30-day and 1-year
   numbers. The history stays in the dataset; the pages carry only the counts.
 - An activity label (active, slow, stalled, archived), computed as a percentile
@@ -30,8 +31,8 @@ The score behind the climbing order is never shown.
 
 ## How it is put together
 
-Nuxt, generated statically, no server. Each list is one JSON shard (the largest
-is 173 KB gzipped), so the browser holds the whole list and reordering it is a
+Nuxt, generated statically, no server. Each list is one JSON shard small enough
+to ship whole, so the browser holds the whole list and reordering it is a
 `.sort()` instead of four thousand pre-rendered pages.
 
 ```
