@@ -105,6 +105,138 @@ watch(
   () => r.value[ROW.ID],
   () => (failed.value = false),
 );
+
+/* ---- health, on demand -------------------------------------------------- */
+
+/*
+ * What the past twelve months looked like from the outside, from ecosyste.ms:
+ * `commits.` for who writes the code, `issues.` for who answers. Both are
+ * free, need no key, are CORS-open and come back under 5 KB gzipped, which is
+ * what makes the reader's browser the right place to ask from: the 5,000/hour
+ * rate limit is theirs, one repository at a time, rather than ours and 40,659
+ * of them. Nothing caches it but the browser, which is enough — the responses
+ * are public for a day.
+ *
+ * Same three rules as the curve below: only while the row is open, only for a
+ * repository, and allowed to fail in silence. The two calls fail
+ * independently, because a repository indexed for one and not the other is
+ * common and half a section still says something.
+ *
+ * Bots are subtracted from every count here, and that is most of the point.
+ * `pushed_at`, which the band shows, cannot tell a dependabot run from six
+ * people working — DESIGN.md records it as the weakest link in the activity
+ * design — and in this corpus `terraform-linters/tflint` is 197 commits of
+ * which 141 are a bot.
+ *
+ * What it costs to fetch it here rather than store it: none of these numbers
+ * can sort, filter or label anything, because the build never sees them. That
+ * is the crawl-side job DESIGN.md already earmarks against `pushed_at`.
+ */
+type CommitsJson = {
+  past_year_total_commits?: number;
+  past_year_total_bot_commits?: number;
+  past_year_total_committers?: number;
+  past_year_dds?: number;
+};
+
+type IssuesJson = {
+  past_year_issues_count?: number;
+  past_year_bot_issues_count?: number;
+  past_year_avg_time_to_close_issue?: number | null;
+  past_year_pull_requests_count?: number;
+  past_year_bot_pull_requests_count?: number;
+  past_year_pull_request_authors?: Record<string, number>;
+  active_maintainers?: unknown[];
+};
+
+const commits = ref<CommitsJson | null>(null);
+const issues = ref<IssuesJson | null>(null);
+
+async function ask<T>(host: string, id: string): Promise<T | null> {
+  try {
+    const res = await fetch(
+      `https://${host}.ecosyste.ms/api/v1/hosts/GitHub/repositories/${encodeURIComponent(id)}`,
+    );
+    /* 202 is "indexing it now, ask again later" and 404 "never seen it"; to a
+     * reader the two are the same thing, which is nothing */
+    return res.status === 200 ? ((await res.json()) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+watchEffect(() => {
+  commits.value = null;
+  issues.value = null;
+  if (!props.open || !isRepo.value) return;
+  const id = r.value[ROW.ID];
+  /* the component is reused as the list reorders, so a late answer belongs to
+   * the repository it was asked about, not to the slot it comes back to */
+  const mine = () => r.value[ROW.ID] === id;
+  void ask<CommitsJson>("commits", id).then((d) => {
+    if (mine()) commits.value = d;
+  });
+  void ask<IssuesJson>("issues", id).then((d) => {
+    if (mine()) issues.value = d;
+  });
+});
+
+/** commits by people, bots removed; null when nobody committed at all, which
+ *  is a different statement from "we could not ask" but reads the same here */
+const humanCommits = computed(() => {
+  const d = commits.value;
+  if (!d) return null;
+  const n =
+    (d.past_year_total_commits ?? 0) - (d.past_year_total_bot_commits ?? 0);
+  return n > 0 ? n : null;
+});
+
+/** the busiest committer's share of the year, from `dds`, which ecosyste.ms
+ *  reports as the share that is *not* theirs */
+const topShare = computed(() =>
+  commits.value?.past_year_dds == null ? null : 1 - commits.value.past_year_dds,
+);
+
+const humanIssues = computed(() => {
+  const d = issues.value;
+  if (!d) return null;
+  const n =
+    (d.past_year_issues_count ?? 0) - (d.past_year_bot_issues_count ?? 0);
+  return n > 0 ? n : null;
+});
+
+const humanPrs = computed(() => {
+  const d = issues.value;
+  if (!d) return null;
+  const n =
+    (d.past_year_pull_requests_count ?? 0) -
+    (d.past_year_bot_pull_requests_count ?? 0);
+  return n > 0 ? n : null;
+});
+
+/*
+ * How many *people* opened them. `past_year_pull_request_authors` is a
+ * complete login → count map (checked against `..._authors_count` on
+ * repositories with 4, 5, 170 and 320 authors), so the bots can be named and
+ * dropped rather than estimated.
+ *
+ * The count of merged pull requests is deliberately not shown beside this:
+ * ecosyste.ms counts merges with the bot's included, so `Tochemey/goakt` reads
+ * "61 pull requests, 80 merged" — two true numbers that cannot share a line.
+ */
+const humanPrAuthors = computed(() => {
+  const a = issues.value?.past_year_pull_request_authors;
+  if (!a) return null;
+  const n = Object.keys(a).filter((login) => !login.endsWith("[bot]")).length;
+  return n > 0 ? n : null;
+});
+
+/** average days to close an issue; null when the year closed none, which is
+ *  itself worth not printing rather than printing as zero */
+const closeDays = computed(() => {
+  const s = issues.value?.past_year_avg_time_to_close_issue;
+  return s ? Math.round(s / 86400) : null;
+});
 </script>
 
 <template>
@@ -164,17 +296,6 @@ watch(
       {{ r[ROW.NOTE] }}
     </p>
     <div class="open-grid">
-      <span v-if="isRepo"
-        >stars
-        <b>{{
-          r[ROW.STARS] == null ? "not measured" : stars(r[ROW.STARS]!)
-        }}</b></span
-      >
-      <span v-if="isRepo"
-        >7d <b>{{ r[ROW.D7] == null ? "-" : delta(r[ROW.D7]!) }}</b> · 30d
-        <b>{{ r[ROW.D30] == null ? "-" : delta(r[ROW.D30]!) }}</b> · 1y
-        <b>{{ r[ROW.D365] == null ? "-" : delta(r[ROW.D365]!) }}</b></span
-      >
       <span v-if="r[ROW.LANGUAGE]"
         >language <b>{{ r[ROW.LANGUAGE] }}</b></span
       >
@@ -203,28 +324,109 @@ watch(
       >{{ r[ROW.URL] }}</a
     >
 
-    <figure v-if="isRepo" class="chart">
-      <img
-        v-if="!failed"
-        class="chart-img"
-        :src="chart"
-        :alt="`star history of ${r[ROW.ID]}`"
-        width="800"
-        height="533"
-        decoding="async"
-        @error="failed = true"
-      />
-      <!-- a caption only for the failure: the chart carries its own
-           star-history.com mark, and a line repeating it was noise -->
-      <figcaption v-if="failed" class="chart-cap">
-        no star history for this repository;
-        <a
-          :href="`https://star-history.com/#${r[ROW.ID]}&Date`"
-          rel="noopener nofollow"
-          target="_blank"
-          >try star-history.com</a
+    <!--
+      Health: four counts about the past year that the band cannot hold and
+      the dataset does not have. Each is printed only when it says something —
+      a repository with no closed issues gets the count without the average,
+      and the busiest committer's share appears only above half and only with
+      more than one committer, since below that the people count said it
+      already. The credit is not decoration: the numbers are somebody else's
+      measurement, given away for free, and saying so is the price.
+    -->
+    <template v-if="commits || issues">
+      <hr class="open-sep" />
+      <div class="open-grid sect">
+        <span class="sect-h">past 12 months</span>
+        <span v-if="humanCommits != null"
+          ><b>{{ count(humanCommits, "commit") }}</b> from
+          <b>{{
+            count(commits?.past_year_total_committers ?? 0, "person", "people")
+          }}</b
+          ><template
+            v-if="
+              (commits?.past_year_total_committers ?? 0) > 1 &&
+              topShare != null &&
+              topShare >= 0.5
+            "
+            >, <b>{{ Math.round(topShare * 100) }}%</b> of them by one</template
+          ></span
         >
-      </figcaption>
-    </figure>
+        <span v-if="issues?.active_maintainers?.length"
+          ><b>{{
+            count(issues.active_maintainers.length, "active maintainer")
+          }}</b></span
+        >
+        <span v-if="humanIssues != null"
+          ><b>{{ count(humanIssues, "issue") }}</b
+          ><template v-if="closeDays != null">
+            · closed in <b>{{ count(closeDays, "day") }}</b> on
+            average</template
+          ></span
+        >
+        <span v-if="humanPrs != null"
+          ><b>{{ count(humanPrs, "pull request") }}</b
+          ><template v-if="humanPrAuthors != null">
+            from
+            <b>{{ count(humanPrAuthors, "person", "people") }}</b></template
+          ></span
+        >
+        <span class="health-src"
+          >via
+          <a
+            href="https://ecosyste.ms"
+            rel="noopener"
+            target="_blank"
+            @click.stop
+            >ecosyste.ms</a
+          ></span
+        >
+      </div>
+    </template>
+
+    <!--
+      Stars: our four integers immediately above the curve they were derived
+      from, so a reader checking "+101 this year" against the shape of the line
+      does not have to hold the number in their head while scrolling past the
+      rest of the panel.
+    -->
+    <template v-if="isRepo">
+      <hr class="open-sep" />
+      <div class="open-grid sect">
+        <span class="sect-h">stars</span>
+        <span
+          ><b>{{
+            r[ROW.STARS] == null ? "not measured" : stars(r[ROW.STARS]!)
+          }}</b></span
+        >
+        <span
+          >7d <b>{{ r[ROW.D7] == null ? "-" : delta(r[ROW.D7]!) }}</b> · 30d
+          <b>{{ r[ROW.D30] == null ? "-" : delta(r[ROW.D30]!) }}</b> · 1y
+          <b>{{ r[ROW.D365] == null ? "-" : delta(r[ROW.D365]!) }}</b></span
+        >
+      </div>
+      <figure class="chart">
+        <img
+          v-if="!failed"
+          class="chart-img"
+          :src="chart"
+          :alt="`star history of ${r[ROW.ID]}`"
+          width="800"
+          height="533"
+          decoding="async"
+          @error="failed = true"
+        />
+        <!-- a caption only for the failure: the chart carries its own
+             star-history.com mark, and a line repeating it was noise -->
+        <figcaption v-if="failed" class="chart-cap">
+          no star history for this repository;
+          <a
+            :href="`https://star-history.com/#${r[ROW.ID]}&Date`"
+            rel="noopener nofollow"
+            target="_blank"
+            >try star-history.com</a
+          >
+        </figcaption>
+      </figure>
+    </template>
   </div>
 </template>

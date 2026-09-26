@@ -134,3 +134,10 @@ export function owner(id: string, kind: "github" | "web"): string {
   const i = id.indexOf("/");
   return i < 0 ? "" : id.slice(0, i + 1);
 }
+
+/** `1, "person", "people"` → `"1 person"`. The health section counts four
+ *  things whose plural matters, and none of them is worth a ternary in the
+ *  template. */
+export function count(n: number, one: string, many = `${one}s`): string {
+  return `${group.format(n)} ${n === 1 ? one : many}`;
+}

@@ -872,7 +872,26 @@ a {
   text-underline-offset: 2px;
 }
 
-.made a:hover {
+/*
+ * The prose beside the credit, which names four services a reader may want to
+ * go and check. The global reset would leave them indistinguishable from the
+ * sentence they sit in.
+ *
+ * Underlined in the text's own colour rather than the hairline the credit
+ * uses, and the difference is not an inconsistency: the credit is three mono
+ * words at the end of a rule, where a faint line is enough to be seen, and
+ * this is six lines of dim serif, where the same line disappears. `:not(.made)`
+ * because the credit is a `p` here and a `span` on a list page, and it should
+ * not change depending on which. */
+.colophon p:not(.made) a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: currentcolor;
+  text-underline-offset: 2px;
+}
+
+.made a:hover,
+.colophon p a:hover {
   color: var(--accent);
   text-decoration-color: var(--accent);
 }
@@ -1025,4 +1044,60 @@ a {
   * {
     scroll-behavior: auto !important;
   }
+}
+
+/* ---- the panel's sections ----------------------------------------------- */
+
+/*
+ * The panel is three things now and used to be one run of text: what the row
+ * is (licence, language, pulse, link), what the past year looked like
+ * (ecosyste.ms), and the stars, sitting directly above the curve they were
+ * measured from.
+ *
+ * One fact to a line inside a section, unlike the flat grid at the top, which
+ * packs as many as fit. Four sentences flowed into one paragraph have to be
+ * re-parsed at every window width to find where one ends and the next begins,
+ * and the grid gets away with it only because its items are two words each.
+ * The label hangs in its own column so the facts line up under each other.
+ */
+.sect {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 1.6rem;
+  row-gap: 0.25rem;
+}
+
+.sect-h {
+  grid-column: 1;
+  color: var(--nil);
+}
+
+/* everything that is not the label stacks down the second column */
+.sect > :not(.sect-h) {
+  grid-column: 2;
+}
+
+/* The break between them is short on purpose. A rule across the full panel
+   reads as the end of the row rather than the end of a paragraph, and the
+   panel already has one of those along its bottom edge.
+   `--nil` and not `--rule`: the panel sits on `--sunk`, and `--rule` is mixed
+   against the page background, where it disappears. */
+.open-sep {
+  width: 2.5rem;
+  margin: 0.8rem 0;
+  border: 0;
+  border-top: 1px solid var(--nil);
+}
+
+/* the ecosyste.ms credit: not decoration, the price of free data */
+.health-src {
+  justify-self: start;
+  color: var(--ink-3);
+}
+
+.health-src a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 2px;
 }

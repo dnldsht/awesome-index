@@ -242,6 +242,36 @@ curve back to 2012 without storing a byte of it.
 The consequence worth noting: the 14 months of history exist **only at build
 time**, to compute the deltas. They never enter a payload.
 
+### Health
+
+**Four counts from ecosyste.ms, fetched by the reader's browser on expansion**,
+never stored: commits and committers (`commits.ecosyste.ms`), active
+maintainers, issues and pull requests (`issues.ecosyste.ms`). Free, no key,
+CORS-open, under 5 KB gzipped each, and the 5,000/hour rate limit is the
+reader's rather than ours and 40,659 repositories'. Verified 2026-09-26,
+including on obscure corpus rows: coverage is near total, 202 means "indexing,
+ask later" and 404 "never seen it".
+
+**Bots are subtracted from every count**, which is the point: this section is
+what `pushed_at` cannot say, and `terraform-linters/tflint` is 197 commits of
+which 141 are a bot.
+
+Two things it is deliberately not:
+
+- **Not sortable.** The build never sees these numbers, so they cannot order,
+  filter or label a row. Making an axis of them is the crawl-side job this
+  document already earmarks against `pushed_at`, and nothing above changes that
+  plan; it makes the case for it visible while it waits.
+- **Not the merged-PR count.** ecosyste.ms counts merges with the bot's
+  included, so beside a bot-free "61 pull requests" it reads "80 merged". Two
+  true numbers that cannot share a line.
+
+**`packages.ecosyste.ms` was measured and rejected**: dependent repositories and
+downloads are the best facts on offer anywhere (`axios`: 453,457 dependents,
+428M downloads a month), but on a random sample of this corpus 7 rows in 12 have
+no package at all and most of the rest have single-digit dependents, against a
+30–120 KB payload per expansion. Worth revisiting only for a library-heavy list.
+
 ### Refresh
 
 Two jobs, both cheap:

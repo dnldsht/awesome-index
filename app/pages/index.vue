@@ -189,11 +189,14 @@ const DEPTH =
 
         <footer class="colophon">
           <p>
-            Stars, languages and activity come from GitHub and refresh daily.
-            The climbing order uses fourteen months of weekly star history.
-            Visits are counted by a self-hosted
-            <a href="https://umami.is" rel="noopener">Umami</a>: the page, where
-            you came from, the country. No cookie, nothing that identifies you.
+            Stars, languages and activity come from GitHub, daily. The climbing
+            order uses fourteen months of star history. Opening a row fetches
+            <a href="https://ecosyste.ms" rel="noopener">ecosyste.ms</a> and
+            <a href="https://star-history.com" rel="noopener"
+              >star-history.com</a
+            >, and keeps nothing of either. Visits are counted by a self-hosted
+            <a href="https://umami.is" rel="noopener">Umami</a>: the page, the
+            referrer, the country. No cookie, nothing that identifies you.
           </p>
           <p class="made kicker">
             Made with <span class="heart" aria-hidden="true">♥</span

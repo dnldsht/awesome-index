@@ -21,6 +21,9 @@ week sits above a large one having a normal one.
   signal, so they keep the curator's order.
 - Weekly star history per repository, behind the 7-day, 30-day and 1-year
   numbers. The history stays in the dataset; the pages carry only the counts.
+- Who still works on a repository, asked for only when you open its row: a
+  year of commits, committers, active maintainers, issues and pull requests,
+  with the bots deducted. It is never stored, so it orders nothing.
 - An activity label (active, slow, stalled, archived), computed as a percentile
   **inside each language's cohort**, because eighteen months without a commit
   means abandonment for a TypeScript package and completion for a C library. On
@@ -67,10 +70,21 @@ pnpm generate
 
 ## Credits
 
-The lists belong to their curators; this only reads them. Star history comes
-from GitHub's `/stargazers/history` endpoint, and the full curve behind an
-expanded row is drawn by [star-history.com](https://star-history.com). Icons are
-[Pixelarticons](https://github.com/halfmage/pixelarticons) by Gerrit Halfmann.
-Type is Source Serif 4 and IBM Plex Mono.
+The lists belong to their curators; this only reads them.
+
+The numbers come from three places, and only the first of them is stored here:
+
+- **GitHub** for stars, languages, licences and pushes, and for the weekly star
+  history behind the 7-day, 30-day and 1-year columns, through
+  `/stargazers/history`.
+- **[ecosyste.ms](https://ecosyste.ms)** for the past year in an expanded row:
+  commits, committers, active maintainers, issues and pull requests, bots
+  deducted. Your browser asks for it when you open the row, and nothing is kept.
+- **[star-history.com](https://star-history.com)** for the full curve
+  underneath, drawn on demand for the same reason.
+
+Icons are [Pixelarticons](https://github.com/halfmage/pixelarticons) by Gerrit
+Halfmann. Type is Source Serif 4 and IBM Plex Mono. Visits are counted by a
+self-hosted [Umami](https://umami.is).
 
 Made with ♥ by [Donald](https://donld.me) and Opus. MIT.
