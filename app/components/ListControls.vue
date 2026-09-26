@@ -96,7 +96,7 @@ const SORT_TITLE: Record<Sort, string> = {
   curator: "the order the curator wrote the README in",
   stars:
     "most GitHub stars first; rows that cannot be starred keep the curator’s order at the foot",
-  trending:
+  climbing:
     "accelerating hardest against its own past over the chosen window, not merely biggest; unmeasured rows last",
   activity: "most recently pushed first",
 };
@@ -122,7 +122,7 @@ const unranked = computed(() => props.shown - props.rankable);
       </button>
     </div>
 
-    <div v-if="sort === 'trending'" class="ctl-g">
+    <div v-if="sort === 'climbing'" class="ctl-g">
       <span class="kicker ctl-l">window</span>
       <button
         v-for="p in PERIODS"

@@ -75,7 +75,7 @@ export function useListQuery(): ListQuery {
    * outside `trending` is what makes the hidden control and the URL agree.
    */
   const period = computed(() =>
-    parseSort(route.query.sort) === "trending"
+    parseSort(route.query.sort) === "climbing"
       ? parsePeriod(route.query.period)
       : DEFAULT_PERIOD,
   );
@@ -89,7 +89,7 @@ export function useListQuery(): ListQuery {
     const text = patch.q ?? q.value;
     const query: Record<string, string> = {};
     if (s !== DEFAULT_SORT) query.sort = s;
-    if (s === "trending" && p !== DEFAULT_PERIOD) query.period = p;
+    if (s === "climbing" && p !== DEFAULT_PERIOD) query.period = p;
     if (c) query.cat = c;
     if (text.trim()) query.q = text;
     return { query };

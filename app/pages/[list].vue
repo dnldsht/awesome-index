@@ -330,7 +330,7 @@ useSeoMeta({
           <ListRun
             v-else
             :class="{
-              'by-gain': sort === 'trending',
+              'by-gain': sort === 'climbing',
               'by-push': sort === 'activity',
             }"
             :rows="shard.rows"
