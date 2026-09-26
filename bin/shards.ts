@@ -880,9 +880,26 @@ for (const { slug, gz } of sizes.slice(0, 5)) {
 console.log(`  ${"…".padEnd(24)} median ${kb(median?.gz ?? 0).toFixed(1)} KB`);
 console.log(`  front-page.json          ${kb(front).toFixed(1)} KB`);
 
-// the whole rewrite rests on the largest list fitting in a page load; if it
-// stops fitting, that is a design decision to revisit and not a warning to skim
-const LIMIT = 200 * 1024;
+/*
+ * The whole rewrite rests on the largest list fitting in a page load; if it
+ * stops fitting, that is a design decision to revisit and not a warning to
+ * skim.
+ *
+ * 200 KB was the budget while `avelino/awesome-go` was the worst case at 171
+ * KB. `punkpeye/awesome-mcp-servers` broke that: 3,944 rows whose notes run
+ * 212 characters against a corpus average of 84, because the list's convention
+ * is a paragraph per server rather than a curator's half-line. Notes are 72%
+ * of its shard (479 KB, and 135 KB without them), so nothing cheap rescues it
+ * -- capping notes at 90 characters still leaves 272 KB, and brotli, which is
+ * what Pages actually serves, leaves 374 KB.
+ *
+ * So the budget moved to 500 KB rather than the list being dropped. This is a
+ * ceiling on one route out of 80 and not a new normal: the median shard is 24
+ * KB and the next largest is 185 KB. If a second list arrives here, the answer
+ * is to fetch notes separately (a 135 KB shard plus a lazy note file) instead
+ * of raising this number again.
+ */
+const LIMIT = 500 * 1024;
 const largest = sizes[0];
 if (largest && largest.gz > LIMIT) {
   throw new Error(

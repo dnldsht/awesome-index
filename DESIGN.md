@@ -24,11 +24,21 @@ It does not have to be. Measured on this dataset:
 - The largest, `avelino/awesome-go`, is 3,044 `awesome_item` rows but **2,829
   renderable**: 215 point at repositories GitHub no longer serves, which have
   no name, URL or metadata and are dropped by the join. Built as a shard it is
-  630 KB of JSON, **171 KB gzipped**, and that is the worst case in the corpus.
+  630 KB of JSON, **171 KB gzipped**, and that was the worst case in the corpus
+  when this was measured.
 
 171 KB is a photograph. Ship the list to the browser and sorting it is
 `.sort()`, filtering it is `.filter()`, and the category is a heading you scroll
 to. No new URLs, no canonicals, no pagination arithmetic, nothing to reindex.
+
+One list has since left that envelope. `punkpeye/awesome-mcp-servers` is 3,944
+rows at **479 KB gzipped**, because it writes a paragraph per server where the
+corpus averages 84 characters a note: notes alone are 72% of its shard. It was
+kept and the build budget raised to 500 KB (see `bin/shards.ts`), which is a
+deliberate exception on one route out of 80 -- the median shard is 24 KB and the
+next largest 185 KB. The argument below is unchanged for the other 79; if a
+second list lands here, notes get fetched separately rather than the budget
+moving again.
 
 A second measurement decided the shape of the page: **4,350 categories, median 6
 entries each**, only 80 over 60 entries. The curator's structure is not a
