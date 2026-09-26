@@ -34,7 +34,7 @@ const { data: front, error } = useAsyncData<FrontPage>(
 );
 
 const description =
-  "Eighty-five awesome lists, refreshed daily: which projects are gaining " +
+  "Eighty-six awesome lists, refreshed daily: which projects are gaining " +
   "stars, which were archived, and the lists themselves.";
 
 useSeoMeta({

@@ -4,8 +4,9 @@ on:
   push:
     branches: [main]
   schedule:
-    # nightly, a bit after the hour so it does not pile onto GitHub's own peak
-    - cron: "17 3 * * *"
+    # 06:00 in Italy in summer, 05:00 in winter: cron is UTC. GitHub starts
+    # scheduled runs late, and at 03:17 they were starting around 08:30
+    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       crawl:

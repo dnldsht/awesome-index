@@ -275,6 +275,12 @@ repos:
     group: Editors & CLI
     url: https://github.com/akrawchyk/awesome-vim
     icon: ⌨️
+  - name: VSCode
+    group: Editors & CLI
+    url: https://github.com/viatsko/awesome-vscode
+    icon: 🧑‍💻
+    # 2% of its entries can be ranked; the rest are Marketplace extensions, which carry no stars
+    sort: editorial
   - name: RaspberryPi
     group: Hardware
     url: https://github.com/thibmaek/awesome-raspberry-pi

@@ -13,7 +13,7 @@ import { resolveTarget, type ResolvedTarget } from "./targets.ts";
  * otherwise an improvement to this file would only reach a list on the day its
  * author happens to edit it.
  */
-export const PARSER_VERSION = 6;
+export const PARSER_VERSION = 7;
 
 export type ParsedItem = {
   /** what the entry points at, and who owns it; see lib/targets.ts */
@@ -201,6 +201,47 @@ function resolveTableRow(
 }
 
 /**
+ * The entry a heading is, when the heading is nothing but a link.
+ *
+ * awesome-vscode gives its better known extensions a heading of their own,
+ * "### [CSS Peek](marketplace...)", with the description in the blockquote
+ * under it and a screenshot below that, and lists the rest as ordinary bullets
+ * in the same section. Two thirds of that list were written this way and none
+ * of it was read.
+ *
+ * Only a heading whose whole text is the one link counts ("## Tools for
+ * [Rust](...)" is a category that happens to link something), and only when a
+ * blockquote follows it, which is the description and the note. That second
+ * condition is what separates an entry from a category: awesome-privacy's
+ * "#### [GNU/Linux](...)", awesome-ai-agents' "## [Adala](...)" and
+ * awesome-capacitor's "## [Capgo plugins](...)" are linked headings with
+ * entries or sub-headings under them, and all three open on a plain paragraph.
+ * It costs awesome-vscode the thirty or so headings it follows with a
+ * paragraph instead, which stay unread.
+ */
+function resolveHeading(
+  heading: Node,
+  next: Node | undefined,
+  definitions: Map<string, string>,
+): Entry | undefined {
+  const links = collectLinks(heading);
+  if (links.length !== 1) return undefined;
+  const text = toText(heading).trim();
+  if (!text || text !== toText(links[0]!).trim()) return undefined;
+
+  if (next?.type !== "blockquote") return undefined;
+
+  const entry = resolveEntry(heading, definitions);
+  if (!entry) return undefined;
+  const prose = next.children?.find((c) => c.type === "paragraph");
+  return {
+    target: entry.target,
+    title: titleOf(entry.display),
+    note: prose ? extractNote(prose, entry.display) : null,
+  };
+}
+
+/**
  * awesome-emacs ships its list as README.org, and remark reads org-mode as
  * prose: "** Version control" is a bullet rather than a heading, and
  * "[[url][name]]" is plain text, which cost the list its section paths and a
@@ -323,30 +364,51 @@ export function parseAwesomeReadme(
   /** a target may be listed twice under the same section, keep the first note */
   const seen = new Set<string>();
   let position = 0;
+  /** whether the "# Awesome Rust" at the top has gone by yet */
+  let titled = false;
 
-  visit(tree, (node: Node) => {
+  visit(tree, (node: Node, index, parent: Node | undefined) => {
+    let resolved: Entry | undefined;
     if (node.type === "heading") {
       const depth = node.depth ?? 1;
       for (const known of [...headings.keys()]) {
         if (known >= depth) headings.delete(known);
       }
-      const text = toText(node).trim();
-      if (text && !NAVIGATION_HEADING.test(text)) headings.set(depth, text);
-      return;
+      // an entry that is a heading still closes the sections deeper than it,
+      // but is not one itself: the bullets after it belong to the category
+      resolved = resolveHeading(
+        node,
+        index === undefined ? undefined : parent?.children?.[index + 1],
+        definitions,
+      );
+      if (!resolved) {
+        const text = toText(node).trim();
+        // the first h1 is the list's own title and never part of a path
+        const title = depth === 1 && !titled;
+        if (depth === 1) titled = true;
+        if (text && !title && !NAVIGATION_HEADING.test(text)) {
+          headings.set(depth, text);
+        }
+        return;
+      }
+    } else {
+      resolved = resolveNode(node, definitions);
     }
-
-    const resolved = resolveNode(node, definitions);
     if (!resolved) return;
     const { target, title, note } = resolved;
     // the list's own repository, which every list links from its own header
     if (target.kind === "github" && target.id === options.exclude) return;
 
-    // depth 1 is the list's own title ("# Awesome Rust"), it would prefix
-    // every single path without telling the reader anything
-    const section = [...headings.entries()]
+    // a later h1 prefixes nothing either ("# Resources" above "## Books" in
+    // awesome-go, and every section URL built on that), but it is the only
+    // category an entry has when no h2 sits between them, which is how
+    // awesome-vscode files most of its extensions
+    const nested = [...headings.entries()]
       .filter(([depth]) => depth > 1)
       .sort(([a], [b]) => a - b)
       .map(([, text]) => text);
+    const top = headings.get(1);
+    const section = nested.length === 0 && top ? [top] : nested;
 
     // a blockquote is only an entry where entries live; the one a list opens
     // with ("> A curated list of awesome Go frameworks...") sits under no
