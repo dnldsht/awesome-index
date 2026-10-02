@@ -1,0 +1,58 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  // Unlike a project that ships an image, there is no release to cut here: every
+  // push to main rebuilds and deploys the site. So there is no `fix`/`chore` split
+  // to make, and every bump is `chore(deps)`, the default.
+  extends: ['config:recommended'],
+
+  timezone: 'Europe/Rome',
+  // One window a week. The PRs land together early on Monday instead of trickling
+  // in for seven days; `prHourlyLimit: 0` keeps them from being spread two at a
+  // time inside that window, which would defeat the grouping.
+  schedule: ['before 6am on monday'],
+  prHourlyLimit: 0,
+  labels: ['dependencies'],
+  // A version published today can be pulled tomorrow. Five days cost nothing to a
+  // side project and keep out the broken releases and the compromised packages,
+  // which live a few hours.
+  minimumReleaseAge: '5 days',
+
+  // Transitive dependencies are not in package.json: without this, pnpm-lock.yaml
+  // would stay put until a manifest changes.
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: ['before 6am on the first day of the month'],
+  },
+
+  packageRules: [
+    {
+      description: [
+        'The site is built on the Node LTS line (`node-version` in deploy.yml), and',
+        "the types have to describe that runtime, not the newest one: a newer API typed",
+        'here would pass typecheck and fail in CI. Raise this with the workflow.',
+      ],
+      matchPackageNames: ['@types/node'],
+      allowedVersions: '26.x',
+    },
+    // Minor and patch are reviewed as a block; majors stay one PR each, because
+    // those are the ones worth reading.
+    {
+      matchManagers: ['npm'],
+      matchDepTypes: ['dependencies'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'site dependencies',
+    },
+    {
+      matchManagers: ['npm'],
+      matchDepTypes: ['devDependencies'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'toolchain',
+    },
+    {
+      description: 'Pinned to the major (`@v7`): usually nothing moves here, and when it does it is a single PR.',
+      matchManagers: ['github-actions'],
+      groupName: 'GitHub Actions',
+    },
+  ],
+}
