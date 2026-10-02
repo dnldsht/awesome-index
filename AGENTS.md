@@ -15,7 +15,7 @@ the tree at the moment; the Nuxt one arrives with Wave 1 D.
 
 ## Conventions
 
-- pnpm. Node 22+ runs the TypeScript directly; there is no build step, which is
+- pnpm. Node 26+ runs the TypeScript directly; there is no build step, which is
   why imports carry their `.ts` extension.
 - Drizzle over better-sqlite3. Schema changes go in `src/lib/db/schema.ts` and
   the migration is **generated** (`pnpm db:generate`), never hand-written.
