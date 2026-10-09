@@ -57,6 +57,15 @@ const { sort, period, cat, q, set } = useListQuery();
 
 const rows = computed(() => shard.value?.rows ?? []);
 
+/*
+ * The clock every row's age is read against: the crawl, not the reader's
+ * `Date.now()`. The rows are prerendered, so an age taken from the clock is
+ * one value at build time and another at hydration, and with ~3,000 rows some
+ * always cross a rounding edge in between. Ages "as of the crawl" are off by at
+ * most the day between crawls, and the footer already says when that was.
+ */
+provide("crawledAt", shard.value?.crawledAt);
+
 /* built once per shard and reused for every keystroke; see `haystack` */
 const hay = computed(() => haystack(rows.value));
 const find = computed(() => needle(q.value));

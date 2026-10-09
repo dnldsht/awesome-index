@@ -37,6 +37,9 @@ const props = defineProps<{
 }>();
 defineEmits<{ toggle: [] }>();
 
+/* see the page: ages are measured from the crawl, so prerender and hydration agree */
+const crawledAt = inject<number | undefined>("crawledAt", undefined);
+
 const r = computed(() => props.row);
 const isRepo = computed(() => r.value[ROW.KIND] === "github");
 
@@ -276,7 +279,8 @@ const closeDays = computed(() => {
       class="ac"
       :class="isArchived ? 'archived' : r[ROW.STATE]"
       :title="activityTitle || undefined"
-      >{{ isArchived ? "† " : "" }}{{ age(r[ROW.LAST_ACTIVITY]) }}</span
+      >{{ isArchived ? "† " : ""
+      }}{{ age(r[ROW.LAST_ACTIVITY], crawledAt) }}</span
     >
   </div>
 
