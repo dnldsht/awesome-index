@@ -125,6 +125,15 @@ export default defineNuxtConfig({
     "~/assets/css/base.css",
   ],
 
+  /*
+   * The static host serves each list as `slug/index.html` and 301s the bare
+   * path to the slashed one, so every internal link carries the slash and a
+   * crawler following one never takes the redirect. Matches `listCanonical`.
+   */
+  experimental: {
+    defaults: { nuxtLink: { trailingSlash: "append" } },
+  },
+
   devtools: { enabled: true },
   telemetry: false,
 
