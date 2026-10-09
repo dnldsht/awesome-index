@@ -9,16 +9,9 @@ import type { ListShard } from "~~/src/lib/contracts";
  * "Architecture", for why this beats SQLite-over-Range and why it is not a
  * question of the dataset being small enough to get away with.
  *
- * `server: false` keeps the fetch off the prerender: the generated HTML is a
- * skeleton and the rows arrive in the browser. That is a deliberate deferral
- * with a stated cost (the 80 indexable pages currently hold nothing for a
- * crawler) and a cheap reversal: dropping this one option prerenders every
- * row into the HTML against the same component.
+ * It is read at prerender too, so every row is in the generated HTML (see
+ * `useData`). Callers `await` it, or the HTML is written before it resolves.
  */
 export function useShard(slug: string) {
-  return useAsyncData<ListShard>(
-    () => `shard:${slug}`,
-    () => $fetch<ListShard>(`/data/${slug}.json`),
-    { server: false, watch: [] },
-  );
+  return useData<ListShard>(slug);
 }

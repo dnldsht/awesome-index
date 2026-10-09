@@ -27,11 +27,7 @@ import { SITE } from "~/utils/site";
  *    reader unable to tell a quiet week from a broken build.
  */
 
-const { data: front, error } = useAsyncData<FrontPage>(
-  "front-page",
-  () => $fetch<FrontPage>("/data/front-page.json"),
-  { server: false },
-);
+const { data: front, error } = await useData<FrontPage>("front-page");
 
 const description =
   "Awesome lists, refreshed daily: which projects are gaining stars, which " +

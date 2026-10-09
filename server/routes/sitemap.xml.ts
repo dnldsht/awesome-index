@@ -1,4 +1,4 @@
-import { listCanonical, SITE } from "~~/app/utils/site";
+import { SITE } from "~~/app/utils/site";
 
 /*
  * The sitemap, prerendered to a file like every other route. It lists exactly
@@ -9,8 +9,7 @@ import { listCanonical, SITE } from "~~/app/utils/site";
 export default defineEventHandler((event) => {
   const routes = useRuntimeConfig().routes as string[];
   const urls = routes
-    .map((path) => (path === "/" ? `${SITE}/` : listCanonical(path.slice(1))))
-    .map((url) => `  <url><loc>${url}</loc></url>`)
+    .map((path) => `  <url><loc>${SITE}${path}</loc></url>`)
     .join("\n");
   setHeader(event, "content-type", "application/xml");
   return `<?xml version="1.0" encoding="UTF-8"?>

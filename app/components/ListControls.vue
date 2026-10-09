@@ -141,14 +141,18 @@ const unranked = computed(() => props.shown - props.rankable);
       <label class="kicker ctl-l" for="q" aria-label="find">
         <span class="px" style="--px: var(--px-search)" />
       </label>
+      <!-- not `v-model`: its `mounted` hook runs after Nuxt restores the real
+           route on a prerendered page, and writes the hydration-time value
+           back over the restored one, so `?q=` opened to an empty field -->
       <input
         id="q"
-        v-model="text"
+        :value="text"
         class="q"
         type="search"
         autocomplete="off"
         spellcheck="false"
         placeholder="name, owner, note, language"
+        @input="text = ($event.target as HTMLInputElement).value"
       />
       <button
         v-if="text"

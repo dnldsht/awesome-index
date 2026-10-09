@@ -52,16 +52,20 @@ export default defineNuxtConfig({
   ssr: true,
 
   /*
-   * The prerendered HTML is a skeleton: the rows arrive from the JSON on the
-   * client. DESIGN.md records this as a deliberate deferral with a real cost
-   * (the 80 indexable pages currently hold nothing for a crawler) and as a
-   * build-time switch rather than a rewrite, which is what `crawlLinks: false`
-   * plus a client-only fetch keeps true.
+   * Every row is in the prerendered HTML, read from the shard at build time
+   * (`app/utils/data.ts`), so the 80 indexable pages hold what a crawler came
+   * for. `crawlLinks: false` keeps the route list the one computed above.
    */
   nitro: {
     preset: "static",
     prerender: {
       crawlLinks: false,
+      /*
+       * `golang.html`, not `golang/index.html`. GitHub Pages serves the first
+       * at `/golang` and the second only behind a 301 to `/golang/`, which
+       * left every canonical and sitemap entry pointing at a redirect.
+       */
+      autoSubfolderIndex: false,
       routes: [...routes, "/sitemap.xml"],
       failOnError: true,
     },
@@ -83,9 +87,9 @@ export default defineNuxtConfig({
         { name: "color-scheme", content: "light dark" },
         /*
          * One card for the whole site. `public/og.png` is a static render of
-         * the nameplate rather than one image per list: the list pages hold no
-         * data at prerender time (DESIGN.md, the skeleton deferral), so a
-         * per-list card could say nothing a title does not.
+         * the nameplate rather than one image per list. The list pages now
+         * hold their data at prerender time, so a per-list card is possible;
+         * it is not built because nothing yet says it would earn its keep.
          */
         { property: "og:site_name", content: "awesome index" },
         { property: "og:type", content: "website" },
@@ -126,13 +130,11 @@ export default defineNuxtConfig({
   ],
 
   /*
-   * The static host serves each list as `slug/index.html` and 301s the bare
-   * path to the slashed one, so every internal link carries the slash and a
-   * crawler following one never takes the redirect. Matches `listCanonical`.
+   * The payload carries no data (see `app/utils/data.ts`), so extracting it
+   * would only add a `golang/` directory beside `golang.html`, and a static
+   * host that finds a directory at `/golang` redirects to `/golang/`.
    */
-  experimental: {
-    defaults: { nuxtLink: { trailingSlash: "append" } },
-  },
+  experimental: { payloadExtraction: false },
 
   devtools: { enabled: true },
   telemetry: false,
@@ -140,6 +142,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     /* server-only, for `server/routes/sitemap.xml.ts`; never reaches the client */
     routes,
+    /* server-only, for `app/utils/data.ts`: where prerender reads shards from */
+    dataDir,
     public: {
       /* surfaced so the list page can say why a shard is missing */
       usingFixtures,

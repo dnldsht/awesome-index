@@ -110,12 +110,23 @@ nothing to 404.
 position, it is what the old memos call "original", and it is the one order the
 current site cannot produce.
 
-**Prerendered HTML is a skeleton for now**; rows arrive from the JSON. This is a
-deliberate deferral and it has a cost worth stating plainly: until it changes,
-the 80 indexable pages contain nothing for a crawler to index, so the SEO bet
-above currently returns zero. With `nuxt generate` the reverse (emitting all
-rows into the HTML) is a build-time configuration change against the same
-component, not a rewrite, so the deferral is cheap and reversible.
+**Every row is in the prerendered HTML.** It started as a skeleton with rows
+arriving from the JSON, a deliberate deferral that left the 80 indexable pages
+with nothing for a crawler, and was reversed on 2026-10-09 once Search Console
+showed why it mattered: Google had demoted the old site's ~2,000 category pages
+as thin copies of their READMEs (619 moved to "crawled, not indexed" on
+2026-08-29, impressions to zero within a week), so the list pages are the only
+bet left and they have to carry their content.
+
+The cost is weight: the shard is read twice on a first visit, once as HTML and
+once as JSON to hydrate against. `avelino/awesome-go` is 192 KB gzipped of HTML
+plus its 171 KB shard; `awesome-mcp-servers` about 1 MB together. The shard is
+deliberately not in Nuxt's payload (`app/utils/data.ts`), which would have sent
+it a third time and larger.
+
+Pages are emitted as `golang.html`, not `golang/index.html`: GitHub Pages
+serves the first at `/golang` and 301s the second to `/golang/`, and a
+canonical that redirects is one a crawler resolves on its own terms.
 
 **Every row stays in the DOM**, with `content-visibility: auto` per section. The
 browser skips layout for off-screen sections while the content remains findable,
@@ -315,11 +326,11 @@ hierarchy and a high density at the same time.
 ## Deliberately out of scope
 
 Registry and forge adapters · global cross-list search · `localStorage` ·
-prerendered rows · history beyond 14 months · running the backfill on the
+history beyond 14 months · running the backfill on the
 homelab · renaming the domain · ecosyste.ms.
 
 None is precluded. The endpoint pages backwards, so deepening history later costs
-only the additional pages; prerendering rows is a configuration change.
+only the additional pages.
 
 ## Still open
 

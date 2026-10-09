@@ -9,14 +9,7 @@
  */
 export const SITE = "https://awesome.donld.me";
 
-/**
- * The canonical URL of a list: the bare path, never a query variant.
- *
- * With the trailing slash, because the static host serves `golang/index.html`
- * at `/golang/` and answers `/golang` with a 301. A canonical that redirects
- * is a contradiction a crawler resolves on its own terms, so it names the URL
- * that actually returns 200.
- */
+/** The canonical URL of a list: the bare path, never a query variant. */
 export function listCanonical(slug: string): string {
-  return `${SITE}/${slug}/`;
+  return `${SITE}/${slug}`;
 }

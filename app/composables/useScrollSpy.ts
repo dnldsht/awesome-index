@@ -109,9 +109,9 @@ export function useScrollSpy(keys: Ref<string[]>, enabled: Ref<boolean>) {
   /**
    * Go to a heading.
    *
-   * `scrollIntoView` rather than a fragment: the prerendered HTML is a skeleton
-   * and the rows arrive from the JSON, so at the moment the browser would
-   * honour a `#hash` the target does not exist yet. That is also the reason the
+   * `scrollIntoView` rather than a fragment: the page settles into the order
+   * the query asks for only after hydration, so at the moment the browser
+   * would honour a `#hash` the target may not be where it will end up. That is also the reason the
    * section lives in `?cat=` and not in the fragment; see `useListQuery`.
    *
    * The offset under the masthead comes from `scroll-margin-top` on the

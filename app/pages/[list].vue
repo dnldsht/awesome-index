@@ -48,7 +48,7 @@ import { listCanonical } from "~/utils/site";
 
 const route = useRoute();
 const slug = String(route.params.list);
-const { data: shard, error } = useShard(slug);
+const { data: shard, error } = await useShard(slug);
 const fixtures = useRuntimeConfig().public.usingFixtures;
 
 const { sort, period, cat, q, set } = useListQuery();
@@ -149,10 +149,10 @@ function goTo(section: string) {
 
 /*
  * `?cat=` means "the document, at this heading", so honouring it is a scroll,
- * and it has to wait for the rows to exist. The prerendered HTML is a skeleton
- * and the shard arrives afterwards, which is also the reason the section is a
- * query parameter and not a fragment: at the moment the browser would honour a
- * `#hash` there is nothing under it.
+ * and it has to wait for the page to settle. The prerendered HTML is the bare
+ * document and the query is applied after hydration, which is also the reason
+ * the section is a query parameter and not a fragment: at the moment the
+ * browser would honour a `#hash` the heading may not be where it will end up.
  *
  * `jumped` stops the effect from re-scrolling every time the reader types a
  * character or the spy moves. The first landing is instant and later ones
@@ -281,12 +281,9 @@ useSeoMeta({
 
     <div class="wrap list-page">
       <!--
-        Branch on the data, never on `status`. With `server: false` the fetch
-        has not started when the prerendered HTML is written, so the server
-        sees `idle` and the client's first tick sees `pending`: the same page
-        by every other measure, and a hydration mismatch by that one. `shard`
-        and `error` are both null on both sides at hydration, which is what
-        makes the skeleton agree with itself.
+        Branch on the data. The shard is awaited in setup on both sides
+        (`useData`), so `shard` and `error` hold the same thing at prerender
+        and at hydration, which is what makes the two agree.
       -->
       <p v-if="error" class="empty">
         No shard for <b>{{ slug }}</b> at
