@@ -303,6 +303,7 @@ type Entry = {
   note: string | null;
   position: number;
   listId: string;
+  firstSeen: Date | null;
 };
 
 type Derived = {
@@ -322,7 +323,7 @@ type Derived = {
 async function shardFor(
   entry: ConfigEntry,
   derived: Derived,
-): Promise<{ shard: ListShard; keys: number[] }> {
+): Promise<{ shard: ListShard; keys: number[]; recent: Recent }> {
   const rows = (await db
     .select({
       target: targetTable,
@@ -332,6 +333,7 @@ async function shardFor(
       note: awesomeItemTable.note,
       position: awesomeItemTable.position,
       listId: awesomeItemTable.listId,
+      firstSeen: awesomeItemTable.firstSeen,
     })
     .from(awesomeItemTable)
     .innerJoin(targetTable, D.eq(targetTable.id, awesomeItemTable.targetId))
@@ -394,6 +396,16 @@ async function shardFor(
     sections.push({ slug, path: group.path, from, to: shardRows.length });
   }
 
+  const recent: Recent = { entered: new Set(), archived: new Set() };
+  for (const row of rows) {
+    if (row.firstSeen && row.firstSeen >= RECENT_SINCE) {
+      recent.entered.add(row.target.id);
+    }
+    if (row.target.archivedAt && row.target.archivedAt >= RECENT_SINCE) {
+      recent.archived.add(row.target.id);
+    }
+  }
+
   const crawledAt = rows.reduce(
     (max, row) => Math.max(max, seconds(row.target.refreshedAt) ?? 0),
     0,
@@ -413,6 +425,7 @@ async function shardFor(
       rows: shardRows,
     },
     keys,
+    recent,
   };
 }
 
@@ -628,36 +641,20 @@ function climbScores(weekly: number[]): Climb {
  * The home page: what is climbing, what has just arrived, what has just been
  * declared finished, and the index of every list, by shelf.
  *
- * Two of the three rubrics are differences against a *previous state*, and this
- * is where that comes from:
- *
  * - `climbing` is a difference against the repository's own past, and the past
- *   is in `star_history`. It needs no snapshot; a block is empty only where the
- *   backfill is not deep enough to answer that window, and it fills in on its
- *   own as the fetcher goes deeper. See `RUBRICS`.
- * - `entered` and `archived` are differences against the previous *crawl*, and
- *   nothing in the database records what the last crawl saw: `awesome_item` is
- *   overwritten in place and carries no first-seen date, and `target.archived`
- *   is a flag with no record of when it flipped. So the previous state is read
- *   from the previous build's own output: the shards already in `--out`, read
- *   before they are overwritten, a row being `entered` when its id is not in
- *   the shard it is replacing.
+ *   is in `star_history`. A block is empty only where the backfill is not deep
+ *   enough to answer that window, and it fills in on its own as the fetcher
+ *   goes deeper. See `RUBRICS`.
+ * - `entered` and `archived` are what changed in the last `RECENT_DAYS`, read
+ *   off `awesome_item.first_seen` and `target.archived_at`, which the crawl
+ *   stamps. They used to be diffed against the previous build's shards, which
+ *   CI never has (`public/data/` is gitignored), so in production both were
+ *   permanently empty. The dates live in the dataset, which CI restores.
  *
- *   **That fallback is dead in CI and is known to be.** `public/data/` is
- *   gitignored (deliberately: the shards rebuild from the dataset in a second,
- *   and the alternative was 2.9 MB of generated JSON in every commit), so a
- *   fresh checkout has no previous build to compare against and both rubrics
- *   are permanently empty there. It still works locally, on a second run in a
- *   directory that already holds shards, which is enough to exercise the code
- *   path and not enough to build a page on.
- *
- *   The fix is a schema change and belongs to whoever owns the schema: a
- *   `first_seen` column on `awesome_item`, written once when a row is first
- *   inserted, plus the same for the archived transition: a nullable
- *   `archived_at` on `target`, stamped when the daily refresh sees the flag go
- *   from false to true. Both then survive in the dataset release asset that CI
- *   already restores, and neither needs a previous build's output to exist.
- *   `PLAN.md` wave 3 is where that lands.
+ *   A window rather than "since the last crawl", so a quiet night does not
+ *   blank the blocks, and a cap of `TOP` so a busy one does not flood them.
+ *   Both start empty and fill as the crawl sees things change: nothing before
+ *   the columns existed has a date, and none is invented.
  *
  * They are emitted empty rather than filled with plausible-looking rows. A
  * front page that invents a difference is a front page that lies every day
@@ -666,7 +663,7 @@ function climbScores(weekly: number[]): Climb {
  */
 function frontPage(
   shards: ListShard[],
-  previous: Map<string, PrevShard>,
+  recent: Map<string, Recent>,
   metrics: Map<string, Metrics>,
 ) {
   const climbing: FrontPage["climbing"] = [];
@@ -701,8 +698,7 @@ function frontPage(
   const entered: Ref[] = [];
   const archived: Ref[] = [];
   for (const shard of shards) {
-    const before = previous.get(shard.slug);
-    if (!before) continue;
+    const changed = recent.get(shard.slug)!;
     for (const row of shard.rows) {
       const ref = {
         listSlug: shard.slug,
@@ -710,9 +706,8 @@ function frontPage(
         title: row[ROW.TITLE],
         value: row[ROW.STARS] ?? 0,
       };
-      const was = before.get(row[ROW.ID]);
-      if (was === undefined) entered.push(ref);
-      else if (was === 0 && row[ROW.ARCHIVED] === 1) archived.push(ref);
+      if (changed.entered.has(ref.id)) entered.push(ref);
+      if (changed.archived.has(ref.id)) archived.push(ref);
     }
   }
   entered.sort((a, b) => b.value - a.value);
@@ -768,32 +763,12 @@ function best(refs: Ref[]): Ref[] {
   return out;
 }
 
-/** id -> archived, from the shard this build is about to replace */
-type PrevShard = Map<string, 0 | 1>;
+/** target ids of one shard that entered it, or were archived, recently */
+type Recent = { entered: Set<string>; archived: Set<string> };
 
-/**
- * The previous build's shards, as the little of them the two difference rubrics
- * need. Absent, unreadable or malformed is not an error: it means this is the
- * first build here, and the answer to "what changed" is then "we cannot say".
- */
-async function loadPrevious(
-  out: string,
-  slugs: string[],
-): Promise<Map<string, PrevShard>> {
-  const previous = new Map<string, PrevShard>();
-  for (const slug of slugs) {
-    try {
-      const raw = await fs.readFile(path.join(out, `${slug}.json`), "utf8");
-      const shard = JSON.parse(raw) as ListShard;
-      const ids: PrevShard = new Map();
-      for (const row of shard.rows) ids.set(row[ROW.ID], row[ROW.ARCHIVED]);
-      previous.set(slug, ids);
-    } catch {
-      continue;
-    }
-  }
-  return previous;
-}
+/** how far back "just entered" and "just archived" look */
+const RECENT_DAYS = 7;
+const RECENT_SINCE = new Date(Date.now() - RECENT_DAYS * 86_400_000);
 
 /* -------------------------------------------------------------------------- */
 /* writing                                                                    */
@@ -836,15 +811,11 @@ console.log(
     `${derived.states.size} with an activity state`,
 );
 
-const previous = await loadPrevious(
-  flags.out,
-  entries.map((e) => e.slug),
-);
-
 const shards: ListShard[] = [];
+const recent = new Map<string, Recent>();
 const sizes: { slug: string; gz: number }[] = [];
 for (const entry of entries) {
-  const { shard, keys } = await shardFor(entry, derived);
+  const { shard, keys, recent: changed } = await shardFor(entry, derived);
   /*
    * A config entry with nothing behind it gets no shard: `config.yaml` has 80
    * entries and `awesome_list` has 88 rows, the extra seven being the second
@@ -859,13 +830,14 @@ for (const entry of entries) {
   }
   validate(shard, keys);
   shards.push(shard);
+  recent.set(shard.slug, changed);
   const gz = await write(path.join(flags.out, `${shard.slug}.json`), shard);
   sizes.push({ slug: shard.slug, gz });
 }
 
 const front = await write(
   path.join(flags.out, "front-page.json"),
-  frontPage(shards, previous, derived.metrics),
+  frontPage(shards, recent, derived.metrics),
 );
 
 sizes.sort((a, b) => b.gz - a.gz);

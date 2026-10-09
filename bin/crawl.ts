@@ -220,6 +220,31 @@ function persistList(id: string, readmeDigest: string, items: ParsedItem[]) {
       })
       .run();
 
+    /*
+     * The rows are about to be rewritten, so `firstSeen` is read off them
+     * first and carried across: a target already in the list keeps the date
+     * it had (null included), a new one gets today. A list with no rows yet is
+     * on its first crawl and stamps nothing, or every entry of a newly added
+     * list would show up as "just entered".
+     */
+    const before = new Map(
+      tx
+        .select({
+          targetId: awesomeItemTable.targetId,
+          firstSeen: awesomeItemTable.firstSeen,
+        })
+        .from(awesomeItemTable)
+        .where(D.eq(awesomeItemTable.listId, id))
+        .all()
+        .map((row) => [row.targetId, row.firstSeen]),
+    );
+    const firstSeen = (targetId: string) =>
+      before.size === 0
+        ? null
+        : before.has(targetId)
+          ? before.get(targetId)!
+          : now;
+
     tx.delete(awesomeItemTable).where(D.eq(awesomeItemTable.listId, id)).run();
 
     for (const rows of chunk(items, INSERT_CHUNK)) {
@@ -233,6 +258,7 @@ function persistList(id: string, readmeDigest: string, items: ParsedItem[]) {
             title: item.title,
             note: item.note,
             position: item.position,
+            firstSeen: firstSeen(item.target.id),
           })),
         )
         .run();
@@ -427,6 +453,12 @@ function persistProjects(projects: Map<string, GithubProject>) {
           license: D.sql`excluded.license`,
           primaryLanguage: D.sql`excluded.primary_language`,
           archived: D.sql`excluded.archived`,
+          // stamped on the false -> true flip only; a row first seen archived,
+          // or archived before we started counting, stays null (`target.archived`
+          // is the stored value, `excluded` the incoming one)
+          archivedAt: D.sql`case when excluded.archived then
+            case when target.archived = 0 then excluded.refreshed_at
+            else target.archived_at end end`,
           lastActivityAt: D.sql`excluded.last_activity_at`,
           createdAt: D.sql`excluded.created_at`,
           refreshedAt: D.sql`excluded.refreshed_at`,

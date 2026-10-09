@@ -65,6 +65,16 @@ export const awesomeItemTable = sqliteTable(
     note: text("note"),
     /** order of appearance in the README, so we can preserve the curation */
     position: integer("position").notNull(),
+    /**
+     * When the crawl first saw this target in this list, which is what "just
+     * entered" on the front page is. The rows are deleted and rewritten on
+     * every refresh of a list, so the crawl carries this across by hand.
+     *
+     * Null means "it was already there": every row that predates the column,
+     * and every row of a list on its first crawl. A list joining the index is
+     * not a list's worth of entries joining that list.
+     */
+    firstSeen: integer("first_seen", { mode: "timestamp" }),
   },
   (t) => [
     primaryKey({ columns: [t.listId, t.targetId, t.sectionSlug] }),
@@ -104,6 +114,13 @@ export const targetTable = sqliteTable(
     license: text("license"),
     primaryLanguage: text("primary_language"),
     archived: integer("archived", { mode: "boolean" }),
+    /**
+     * When a refresh saw `archived` go from false to true, for "just
+     * archived". Null on anything not archived, and on anything that was
+     * already archived when we first saw it or before this column existed:
+     * we know it happened, not when.
+     */
+    archivedAt: integer("archived_at", { mode: "timestamp" }),
     /**
      * The last time the thing itself moved: `pushedAt` for a repository, and
      * where a registry provider gets added, its newest release. Null for a

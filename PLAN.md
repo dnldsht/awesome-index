@@ -143,8 +143,8 @@ export type Ref = {
 export type FrontPage = {
   generatedAt: number;
   climbing: { period: "7d" | "30d" | "1y"; rows: Ref[] }[];
-  entered: Ref[]; // newly present in a list since the previous crawl
-  archived: Ref[]; // archived flag flipped on since the previous crawl
+  entered: Ref[]; // first seen in a list in the last 7 days
+  archived: Ref[]; // archived flag flipped on in the last 7 days
   lists: {
     slug: string;
     name: string;

@@ -170,15 +170,13 @@ const DEPTH =
               title="Just entered"
               figure="stars"
               :rows="front?.entered ?? []"
-              empty="Empty for now. The index doesn't record when an entry
-                was added to a list yet."
+              empty="Nothing entered a list in the last week."
             />
             <FrontRubric
               title="Just archived"
               figure="stars"
               :rows="front?.archived ?? []"
-              empty="Empty for now. The index knows which projects are
-                archived, but not when."
+              empty="Nothing was archived in the last week."
             />
           </div>
         </section>

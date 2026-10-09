@@ -43,6 +43,13 @@
       "when": 1789238676613,
       "tag": "0005_remarkable_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791553224536,
+      "tag": "0006_abandoned_maelstrom",
+      "breakpoints": true
     }
   ]
 }

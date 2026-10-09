@@ -307,9 +307,9 @@ export type FrontPage = {
    * 1y answers the other question, whether a thing is growing or has stalled.
    */
   climbing: { period: "7d" | "30d" | "1y"; rows: Ref[] }[];
-  /** newly present in a list since the previous crawl; `value` is its stars */
+  /** first seen in a list in the last week, at most 20; `value` is its stars */
   entered: Ref[];
-  /** the archived flag flipped on since the previous crawl; `value` is stars */
+  /** archived flag flipped on in the last week, at most 20; `value` is stars */
   archived: Ref[];
   /**
    * Every list, for the index. `entries` is the number of rows its shard
