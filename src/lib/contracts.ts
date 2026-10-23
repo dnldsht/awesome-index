@@ -272,19 +272,20 @@ export type ListShard = {
 /* -------------------------------------------------------------------------- */
 
 /**
- * A pointer to one row of one shard, with the figure that earned it its place.
+ * One row of one shard, with the figure that earned it its place.
  *
  * The front page names projects that live in 80 different shards and cannot
- * load them; this is the little that has to be copied out. `value` is whatever
- * the rubric is about (net stars gained over the period for `climbing`), and
- * it is a count of real stars, so it can be printed. `listSlug` is where the
- * link goes.
+ * load them, so the row is copied out whole: it is what the front page opens
+ * onto, the same panel a list row opens onto, and a hundred rows of it cost a
+ * few kilobytes where fetching the shard behind one of them could cost 374.
+ * `value` is whatever the rubric is about (net stars gained over the period
+ * for `climbing`), and it is a count of real stars, so it can be printed.
+ * `listSlug` is where the link goes.
  */
 export type Ref = {
   listSlug: string;
-  id: string;
-  title: string;
   value: number;
+  row: Row;
 };
 
 /**

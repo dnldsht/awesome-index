@@ -533,8 +533,9 @@ function validate(shard: ListShard, keys: number[]) {
  * How many rows each rubric carries.
  *
  * The front page is fetched before anything is on screen, so it is kept to a
- * few kilobytes: three climbing blocks and two difference blocks at this size
- * is under 10 KB of refs, and the list index below them is the rest.
+ * few kilobytes: three climbing blocks and two difference blocks at this size,
+ * each carrying its whole row so it can open in place, and the list index
+ * below them.
  */
 const TOP = 20;
 
@@ -682,13 +683,7 @@ function frontPage(
          */
         const trend = metrics.get(row[ROW.ID])?.climb[rubric.period] ?? null;
         if (trend === null || value === null) continue;
-        candidates.push({
-          listSlug: shard.slug,
-          id: row[ROW.ID],
-          title: row[ROW.TITLE],
-          value,
-          trend,
-        });
+        candidates.push({ listSlug: shard.slug, value, row, trend });
       }
     }
     candidates.sort((a, b) => b.trend - a.trend);
@@ -700,14 +695,9 @@ function frontPage(
   for (const shard of shards) {
     const changed = recent.get(shard.slug)!;
     for (const row of shard.rows) {
-      const ref = {
-        listSlug: shard.slug,
-        id: row[ROW.ID],
-        title: row[ROW.TITLE],
-        value: row[ROW.STARS] ?? 0,
-      };
-      if (changed.entered.has(ref.id)) entered.push(ref);
-      if (changed.archived.has(ref.id)) archived.push(ref);
+      const ref = { listSlug: shard.slug, value: row[ROW.STARS] ?? 0, row };
+      if (changed.entered.has(row[ROW.ID])) entered.push(ref);
+      if (changed.archived.has(row[ROW.ID])) archived.push(ref);
     }
   }
   entered.sort((a, b) => b.value - a.value);
@@ -750,14 +740,10 @@ function best(refs: Ref[]): Ref[] {
   const seen = new Set<string>();
   const out: Ref[] = [];
   for (const ref of refs) {
-    if (seen.has(ref.id)) continue;
-    seen.add(ref.id);
-    out.push({
-      listSlug: ref.listSlug,
-      id: ref.id,
-      title: ref.title,
-      value: ref.value,
-    });
+    const id = ref.row[ROW.ID];
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ listSlug: ref.listSlug, value: ref.value, row: ref.row });
     if (out.length === TOP) break;
   }
   return out;

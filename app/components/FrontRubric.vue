@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Ref as FrontRef } from "~~/src/lib/contracts";
+import { ROW, type Ref as FrontRef } from "~~/src/lib/contracts";
 
 /**
  * One rubric: a head, the ordering's terms, and up to twenty rows, or the
@@ -51,14 +51,19 @@ const owner = (id: string) => {
 };
 
 /*
- * Into the site, not out of it. The row is an appearance in a list, so the
- * link is that list with the search box already carrying the project's name:
- * `?q=` is the list page's filter (DESIGN.md, "Architecture": all state in the
- * query string). Linking to the bare list would land a reader at the top of
- * three thousand rows holding the name of one of them.
+ * The row opens in place, onto the panel a list row opens onto, so a reader can
+ * see what is climbing without leaving the page. The one way out is the list's
+ * name, which goes to that list: a project reaches this page through a list,
+ * and a reader deserves to know which door that was. One open row per rubric;
+ * reset when the rows change under it, because the index is a position in this
+ * rubric and not a project.
  */
-const href = (ref: FrontRef) =>
-  `/${ref.listSlug}?q=${encodeURIComponent(ref.title)}`;
+const open = ref(-1);
+watch(
+  () => props.rows,
+  () => (open.value = -1),
+);
+const toggle = (i: number) => (open.value = open.value === i ? -1 : i);
 </script>
 
 <template>
@@ -69,20 +74,31 @@ const href = (ref: FrontRef) =>
     </h2>
 
     <ol v-if="rows.length" class="ru-rows">
-      <li v-for="(ref, i) in rows" :key="ref.listSlug + ref.id">
-        <NuxtLink :to="href(ref)" class="ru-row">
+      <li v-for="(ref, i) in rows" :key="ref.listSlug + ref.row[ROW.ID]">
+        <div
+          class="ru-row"
+          :class="{ 'is-open': open === i }"
+          :aria-expanded="open === i"
+          @click="toggle(i)"
+        >
           <span class="ru-rank mono">{{ i + 1 }}</span>
           <span class="ru-name">
-            <span v-if="owner(ref.id)" class="ru-owner">{{
-              owner(ref.id)
+            <span v-if="owner(ref.row[ROW.ID])" class="ru-owner">{{
+              owner(ref.row[ROW.ID])
             }}</span
-            >{{ ref.title }}
+            >{{ ref.row[ROW.TITLE] }}
           </span>
-          <span class="ru-list mono">{{ ref.listSlug }}</span>
+          <NuxtLink :to="`/${ref.listSlug}`" class="ru-list mono" @click.stop>{{
+            ref.listSlug
+          }}</NuxtLink>
           <span class="ru-fig mono" :class="{ up: figure === 'delta' }">
             {{ figure === "delta" ? delta(ref.value) : stars(ref.value) }}
           </span>
-        </NuxtLink>
+          <span v-if="ref.row[ROW.NOTE]" class="ru-note">{{
+            ref.row[ROW.NOTE]
+          }}</span>
+        </div>
+        <RowPanel v-if="open === i" :row="ref.row" />
       </li>
     </ol>
 
@@ -146,23 +162,27 @@ const href = (ref: FrontRef) =>
 }
 
 /*
- * The same 32px band as every row on the site, and the same rules-not-boxes
- * treatment. Four columns: the rank, the project, the list it was found in,
- * and the only figure this page prints.
+ * Two lines rather than the site's 32px band: twenty rows is not three
+ * thousand, and a name with nothing under it says little about why it is
+ * climbing. Four columns on the first line: the rank, the project, the list it
+ * was found in, and the only figure this page prints. The curator's note runs
+ * under the name on the second.
  */
 .ru-row {
   display: grid;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto 4.25rem;
   column-gap: 0.6rem;
+  row-gap: 1px;
   align-items: baseline;
-  height: var(--row-h);
-  padding-top: 5px;
+  padding: 5px 0 6px;
   border-bottom: 1px solid var(--rule);
   line-height: 1.25;
   overflow: hidden;
+  cursor: pointer;
 }
 
-.ru-row:hover {
+.ru-row:hover,
+.ru-row.is-open {
   background: var(--sunk);
 }
 
@@ -185,10 +205,21 @@ const href = (ref: FrontRef) =>
   font-size: var(--t-name);
 }
 
-.ru-row:hover .ru-name {
+.ru-list:hover {
+  color: var(--ink);
   text-decoration: underline;
   text-decoration-color: var(--accent);
   text-underline-offset: 2px;
+}
+
+/* one line of it; the panel holds the rest when the band clips it */
+.ru-note {
+  grid-column: 2 / -1;
+  font-size: var(--t-meta);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* the owner is provenance, the repository is the name; see `format.ts` */
@@ -198,10 +229,8 @@ const href = (ref: FrontRef) =>
 }
 
 /*
- * Which list this was found in. Subordinate to the project and to the figure,
- * and it is not decoration: a project reaches this page through a list, the
- * link goes to that list, and a reader deserves to know which door they are
- * about to walk through.
+ * Which list this was found in, and the row's one link: it goes to that list.
+ * Subordinate to the project and to the figure.
  */
 .ru-list {
   font-size: var(--t-micro);
@@ -245,17 +274,21 @@ const href = (ref: FrontRef) =>
   max-width: 40ch;
 }
 
-/* no room for a column, but the row is 46px down here, so the list takes the
-   second line under the name rather than disappearing: the door still matters */
+/* no room for a column, so the list takes the line under the name and the
+   note the one under that, rather than disappearing: the door still matters */
 @media (max-width: 44rem) {
   .ru-row {
     grid-template-columns: 1.5rem minmax(0, 1fr) 4.25rem;
-    row-gap: 1px;
   }
 
   .ru-list {
-    grid-area: 2 / 2;
+    grid-area: 2 / 2 / 3 / -1;
+    justify-self: start;
     max-width: none;
+  }
+
+  .ru-note {
+    grid-row: 3;
   }
 }
 </style>
