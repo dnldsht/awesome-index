@@ -1,0 +1,38 @@
+name: Check
+
+# Every pull request, which in practice means Renovate's: deploy.yml only runs
+# on main, so without this a dependency bump was first built by the deploy
+# that shipped it.
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      # no dataset and no shards here, so nuxt.config.ts builds from fixtures/:
+      # enough to prove the site still generates, which is what a bump can break
+      - run: pnpm generate
