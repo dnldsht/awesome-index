@@ -28,7 +28,7 @@
   packageRules: [
     {
       description: [
-        'The site is built on the Node LTS line (`node-version` in deploy.yml), and',
+        'The site is built on the Node LTS line (`.nvmrc`, which deploy.yml reads), and',
         "the types have to describe that runtime, not the newest one: a newer API typed",
         'here would pass typecheck and fail in CI. Raise this with the workflow.',
       ],
