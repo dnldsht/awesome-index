@@ -223,6 +223,8 @@ const closeDays = computed(() => {
     <a
       class="open-url"
       :href="r[ROW.URL]"
+      data-umami-event="outbound"
+      :data-umami-event-url="r[ROW.URL]"
       rel="noopener nofollow"
       target="_blank"
       >{{ r[ROW.URL] }}</a
