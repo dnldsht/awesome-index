@@ -250,6 +250,8 @@ useSeoMeta({
               :key="s.id"
               class="kicker src"
               :href="s.url"
+              data-umami-event="source"
+              :data-umami-event-list="s.id"
               rel="noopener"
               target="_blank"
               >{{ s.id }}</a
